@@ -61,7 +61,7 @@ for (ann_root, ann_dirs, ann_files) in os.walk(ann_path):
                     # be drawn as lines; otherwise only points will appear.
                     cv2.polylines(viz, [points], isClosed=True,
                                   color=(0, 0, 255), thickness=1,
-                                  lineType=cv2.CV_AA)
+                                  lineType=cv2.LINE_AA)
 
             # Continue by drawing text boxes in the annotation
             if len(ann['text']) > 0:
@@ -73,7 +73,7 @@ for (ann_root, ann_dirs, ann_files) in os.walk(ann_path):
                     start, end = tuple(rect[0]), tuple(rect[1])
                     # Draw the rectangle
                     cv2.rectangle(viz, start, end, color=(255, 0, 0),
-                                  thickness=1, lineType=cv2.CV_AA)
+                                  thickness=1, lineType=cv2.LINE_AA)
 
             # Next, we draw any arrows in the annotation
             if len(ann['arrows']) > 0:
@@ -87,7 +87,7 @@ for (ann_root, ann_dirs, ann_files) in os.walk(ann_path):
                     # be drawn as lines; otherwise only points will appear.
                     cv2.polylines(viz, [points], isClosed=True,
                                   color=(0, 255, 0), thickness=1,
-                                  lineType=cv2.CV_AA)
+                                  lineType=cv2.LINE_AA)
 
             # Combine image and the visualization
             preview = np.concatenate([img, viz], axis=1)
