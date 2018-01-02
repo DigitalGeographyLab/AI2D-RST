@@ -63,7 +63,7 @@ for (ann_root, ann_dirs, ann_files) in os.walk(ann_path):
                                   color=(0, 0, 255), thickness=1,
                                   lineType=cv2.CV_AA)
 
-            # Continue by drawing text boxes
+            # Continue by drawing text boxes in the annotation
             if len(ann['text']) > 0:
                 # Draw text blocks
                 for t in ann['text']:
@@ -75,7 +75,7 @@ for (ann_root, ann_dirs, ann_files) in os.walk(ann_path):
                     cv2.rectangle(viz, start, end, color=(255, 0, 0),
                                   thickness=1, lineType=cv2.CV_AA)
 
-            # Next, we draw any arrows in the diagram.
+            # Next, we draw any arrows in the annotation
             if len(ann['arrows']) > 0:
                 # Draw arrows
                 for a in ann['arrows']:
