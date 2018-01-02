@@ -50,9 +50,10 @@ for (ann_root, ann_dirs, ann_files) in os.walk(ann_path):
             # Begin by drawing blobs (i.e. polygons). First, we check if blobs
             # exist in the JSON annotation.
             if len(ann['blobs']) > 0:
-                # Draw the polygon for each blob
+                # Draw the polygon for each blob 'b' in the annotation
                 for b in ann['blobs']:
-                    # Assign the points into a variable
+                    # Assign the points into a variable and convert into a numpy
+                    # array
                     points = np.array(ann['blobs'][b]['polygon'], np.int32)
                     # Reshape the numpy array for drawing
                     points = points.reshape((-1, 1, 2))
