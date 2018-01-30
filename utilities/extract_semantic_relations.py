@@ -30,7 +30,6 @@ ap = argparse.ArgumentParser()
 ap.add_argument("-a", "--annotation", required=True)
 ap.add_argument("-o", "--output", required=True)
 
-
 # Parse arguments
 args = vars(ap.parse_args())
 
@@ -106,11 +105,11 @@ for path in annotation_paths:
             try:
                 relation_conn = ann['relationships'][relation]['connector']
             except KeyError:
-                continue
+                pass
             try:
                 relation_dir = ann['relationships'][relation]['hasDirectionality']
             except KeyError:
-                continue
+                pass
 
             # Append the relation information to the DataFrame
             annotation_df.at[current_index, 'relation_id'] = relation_id
@@ -140,9 +139,6 @@ for path in annotation_paths:
 
             # Increment current index by one
             current_index += 1
-
-# Drop empty rows
-annotation_df = annotation_df.dropna(axis=0)
 
 # Save the pandas DataFrame to disk
 annotation_df.to_pickle(output_path)
