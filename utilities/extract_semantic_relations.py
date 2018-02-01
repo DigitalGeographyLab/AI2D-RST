@@ -133,6 +133,10 @@ for path in annotation_paths:
                     polygon_dict[rel] = {'type': 'arrow',
                                          'coords': ann['arrows'][rel]['polygon']}
 
+                if rel in ann['imageConsts']:
+                    polygon_dict[rel] = {'type': 'entire_image',
+                                         'coords': None}
+
             # Check that some polygon information has been collected
             if len(polygon_dict) > 0:
                 annotation_df.at[current_index, 'polygons'] = polygon_dict
@@ -140,5 +144,11 @@ for path in annotation_paths:
             # Increment current index by one
             current_index += 1
 
+# Print status to user
+print("[INFO] Extracted a total of {} relations.".format(len(annotation_df)))
+
 # Save the pandas DataFrame to disk
 annotation_df.to_pickle(output_path)
+
+# Print status to user
+print("[INFO] Done. Saved the output to {}.".format(output_path))
