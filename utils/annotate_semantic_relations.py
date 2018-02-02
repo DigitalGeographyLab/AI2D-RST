@@ -97,7 +97,7 @@ def draw(image, element_type, coords, role):
                       lineType=cv2.LINE_AA)
 
 
-def print_info(question):
+def print_info(question, request):
     """
     A function that prints provides additional commands and information during
     the annotation.
@@ -107,12 +107,18 @@ def print_info(question):
                   annotation. The question must be one of the following:
                   rel_q (RST relation), nuclearity of origin (origin_q)
                   or nuclearity of destination (dest_q).
+        request: A string indicating the requested information. Valid values
+                 include 'info' for information and 'rels' for a list of RST
+                 relations.
 
     Returns:
         A string containing the user's answer to the standard question.
     """
-    # Print additional information to the user
-    print(info)
+    # Print the requested information to the user
+    if request == 'info':
+        print(info)
+    if request == 'rels':
+        print(rels)
     # Use input to wait until the user is ready to continue
     input("Press Enter to continue ...")
     # Clear screen
@@ -127,15 +133,33 @@ def print_info(question):
 info = """
        Available commands include:
 
-       rels: print a list of RST relations and their descriptions.
-       quit: exit without saving.
+       rels: Print a list of RST relations and their descriptions.
+       quit: Exit without saving.
        """
 
-# TODO Document relations here
 # Define a string containing information on relations defined by Rhetorical
 # Structure Theory.
-rels = """Available RST relations include:
-
+rels = """Common RST relations for describing diagrams include:
+        
+        identification: A short text segment, such as a single noun or a noun 
+                        group, which identifies an entity or its part(s). A 
+                        common example would be a label for a part of an entity.
+        elaboration:    A more extensive verbal description, such as a clause, 
+                        which provides more specific information about some 
+                        entity or its part(s).
+        effect:         A generic mononuclear relation for describing processes 
+                        that take place between entities, which are often 
+                        reinforced using lines or arrows. The affected entity 
+                        acts as the nucleus, while the origin of the effect acts
+                        as the satellite.
+        restatement:    A multinuclear relation holding between two entities 
+                        that could act as a substitute for each other, such as 
+                        the name of an entity and its visualisation.
+        sequence:       A multinuclear relation indicating a temporal or spatial 
+                        sequence holding between entities.
+        title:          A text segment acting as the title for the entire 
+                        diagram or its parts.
+        
         """
 
 # Define a dictionary of RST relations.
@@ -147,7 +171,7 @@ rel_dict = {'antithesis', 'background', 'circumstance', 'concession',
             'summary', 'unless', 'volitional-cause', 'volitional-result',
             'contrast', 'joint', 'list', 'restatement', 'sequence',
             'identification', 'class-ascription', 'property-ascription',
-            'possession', 'projection', 'effect'}
+            'possession', 'projection', 'effect', 'none'}
 
 # Define a dictionary of roles for diagram elements
 nuc_dict = {'nuc', 'nucleus', 'sat', 'satellite'}
@@ -253,8 +277,11 @@ for ix, row in annotation_df.iterrows():
             # If the user requests additional information on the available
             # commands, print the information.
             if rel == 'info':
-                # Print the information and present the question again
-                rel = print_info(rel_q)
+                # Print available commands and present the question again
+                rel = print_info(rel_q, 'info')
+            if rel == 'rels':
+                # Print information on RST relations and present the question
+                rel = print_info(rel_q, 'rels')
             # If requested, exit the program
             if rel == 'quit':
                 print("Quitting.")
@@ -268,6 +295,13 @@ for ix, row in annotation_df.iterrows():
         # Append the RST annotation to the DataFrame at the current index
         annotation_df.at[ix, 'rst_relation'] = rel
 
+        # If the RST relation was annotated as 'none', set both values for
+        # nuclearity also to 'none' and continue
+        if rel == 'none':
+            annotation_df.at[ix, 'origin_role'] = 'none'
+            annotation_df.at[ix, 'destination_role'] = 'none'
+            continue
+
         # Then ask the standard question about nuclei and satellites. Begin by
         # clearing the screen, then pose the question for the origin.
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -279,10 +313,10 @@ for ix, row in annotation_df.iterrows():
             # If the user requests additional information, print the information
             # and present the question again.
             if origin_role == 'info':
-                origin_role = print_info(origin_q)
+                origin_role = print_info(origin_q, 'info')
             # If the input is not valid, print a message and repeat question
             else:
-                print("Sorry, that is not a valid relation.")
+                print("Sorry, that is not a valid role for nuclearity.")
                 origin_role = input(origin_q)
 
         # When a valid entry is entered, enter the value to the DataFrame
@@ -299,10 +333,10 @@ for ix, row in annotation_df.iterrows():
         while dest_role not in nuc_dict:
             # If additional information is requested, print and repeat question
             if dest_role == 'info':
-                dest_role = print_info(dest_q)
+                dest_role = print_info(dest_q, 'info')
             # If the input is not valid, print a message and repeat question
             else:
-                print("Sorry, that is not a valid relation.")
+                print("Sorry, that is not a valid role for nuclearity.")
                 dest_role = input(dest_q)
 
         # When a valid entries have been entered, enter their values into to the
