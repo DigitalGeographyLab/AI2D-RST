@@ -9,7 +9,7 @@ Usage:
     python extract_semantic_relations.py -a annotation -o output.pkl
 
 Arguments:
-    -a/--annotation: Path to directory containing AI2D JSON annotation files.
+    -a/--annotation: Path to directory containing the AI2D annotation files in JSON.
     -o/--output: Path to the output file, which contains the pandas DataFrame.
 
 Returns:

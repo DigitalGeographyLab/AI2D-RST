@@ -15,7 +15,7 @@ Usage:
 Arguments:
     -a/--annotation: Path to the pandas DataFrame containing the annotation
                  extracted from the AI2D dataset.
-    -i/--images: Path to the directory with images of the diagrams in AI2D.
+    -i/--images: Path to the directory containing the AI2D diagram images.
     -o/--output: Path to the output file, in which the resulting annotation is
                  stored.
 

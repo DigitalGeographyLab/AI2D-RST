@@ -1,6 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+This script visualizes information about diagram elements stored in the AI2D annotation,
+namely the polygons and rectangles which mark the position of graphical elements, text
+blocks and diagrammatic elements such as arrows and lines.
+
+The script loops through directories containing the diagram images and their annotation,
+displaying the original and the annotation side by side.
+
+Usage:
+    python visualize_diagram_layout.py -a annotation/ -i images/
+    
+Arguments:
+    -a/--annotation: Path to directory containing the AI2D annotation files in JSON.
+    -i/--images: Path to the directory containing the AI2D diagram images.
+
+Returns:
+    None
+"""
+
 # Import packages
 import argparse
 import cv2

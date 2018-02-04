@@ -17,7 +17,7 @@ Arguments:
                      extracted from the AI2D dataset.
     -p/--percentage: An integer indicating the percentage of the annotation to
                      include in the random sample.
-    -o/--output: Path to the output file, which contains the sample taken from
+    -o/--output: Path to the output file, in which to store the sample taken from
                  the input file.
 
 Returns:
