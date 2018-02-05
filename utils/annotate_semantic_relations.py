@@ -171,7 +171,7 @@ rel_dict = {'antithesis', 'background', 'circumstance', 'concession',
             'summary', 'unless', 'volitional-cause', 'volitional-result',
             'contrast', 'joint', 'list', 'restatement', 'sequence',
             'identification', 'class-ascription', 'property-ascription',
-            'possession', 'projection', 'effect', 'none'}
+            'possession', 'projection', 'effect', 'title', 'none'}
 
 # Define a dictionary of roles for diagram elements
 nuc_dict = {'nuc', 'nucleus', 'sat', 'satellite'}
@@ -213,8 +213,9 @@ if not os.path.isfile(output_path):
     annotation_df['origin_role'] = None
     annotation_df['destination_role'] = None
 
-# Begin looping over the rows of the input DataFrame
-for ix, row in annotation_df.iterrows():
+# Begin looping over the rows of the input DataFrame. Enumerate the result to
+# show annotation progress to the user.
+for i, (ix, row) in enumerate(annotation_df.iterrows()):
 
     # Check that no annotation exists for the current row
     if row['rst_relation'] is None:
@@ -256,7 +257,8 @@ for ix, row in annotation_df.iterrows():
         preview = cv2.resize(image, size, interpolation=cv2.INTER_AREA)
 
         # Show the image
-        cv2.imshow("{}".format(image_filename), preview)
+        cv2.imshow("{} - {}/{}".format(image_filename, i+1, len(annotation_df)),
+                   preview)
 
         # Print status to user.
         print("Press any key in the window displaying the image to continue.")
@@ -300,6 +302,8 @@ for ix, row in annotation_df.iterrows():
         if rel == 'none':
             annotation_df.at[ix, 'origin_role'] = 'none'
             annotation_df.at[ix, 'destination_role'] = 'none'
+            # Close the window
+            cv2.destroyAllWindows()
             continue
 
         # Then ask the standard question about nuclei and satellites. Begin by
@@ -320,7 +324,7 @@ for ix, row in annotation_df.iterrows():
                 origin_role = input(origin_q)
 
         # When a valid entry is entered, enter the value to the DataFrame
-        if origin_role in ['nuc, nucleus']:
+        if origin_role in ['nuc', 'nucleus']:
             annotation_df.at[ix, 'origin_role'] = 'nucleus'
         if origin_role in ['sat', 'satellite']:
             annotation_df.at[ix, 'origin_role'] = 'satellite'
@@ -341,13 +345,13 @@ for ix, row in annotation_df.iterrows():
 
         # When a valid entries have been entered, enter their values into to the
         # DataFrame.
-        if origin_role in ['nuc', 'nucleus']:
+        if origin_role in ['n', 'nuc', 'nucleus']:
             annotation_df.at[ix, 'origin_role'] = 'nucleus'
-        if origin_role in ['sat', 'satellite']:
+        if origin_role in ['s', 'sat', 'satellite']:
             annotation_df.at[ix, 'origin_role'] = 'satellite'
-        if dest_role in ['nuc', 'nucleus']:
+        if dest_role in ['n', 'nuc', 'nucleus']:
             annotation_df.at[ix, 'destination_role'] = 'nucleus'
-        if dest_role in ['sat', 'satellite']:
+        if dest_role in ['s', 'sat', 'satellite']:
             annotation_df.at[ix, 'destination_role'] = 'satellite'
 
         # Close the window
