@@ -35,5 +35,5 @@ ann_path = args['annotation']
 # Read the DataFrame
 annotation_df = pd.read_pickle(ann_path)
 
-# Print out the results
-print(annotation_df['rst_relation'].value_counts().sum() / 545)
+# Print out the dataframe content
+print(annotation_df)

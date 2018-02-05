@@ -174,7 +174,7 @@ rel_dict = {'antithesis', 'background', 'circumstance', 'concession',
             'possession', 'projection', 'effect', 'title', 'none'}
 
 # Define a dictionary of roles for diagram elements
-nuc_dict = {'nuc', 'nucleus', 'sat', 'satellite'}
+nuc_dict = {'n', 'nuc', 'nucleus', 's', 'sat', 'satellite'}
 
 # Define standard questions presented to the user
 rel_q = "Which rhetorical relation best describes the relation between " \
@@ -324,9 +324,9 @@ for i, (ix, row) in enumerate(annotation_df.iterrows()):
                 origin_role = input(origin_q)
 
         # When a valid entry is entered, enter the value to the DataFrame
-        if origin_role in ['nuc', 'nucleus']:
+        if origin_role in ['n', 'nuc', 'nucleus']:
             annotation_df.at[ix, 'origin_role'] = 'nucleus'
-        if origin_role in ['sat', 'satellite']:
+        if origin_role in ['s', 'sat', 'satellite']:
             annotation_df.at[ix, 'origin_role'] = 'satellite'
 
         # Next, do the same for the destination element. Clear screen first.
