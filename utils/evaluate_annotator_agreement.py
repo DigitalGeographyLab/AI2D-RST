@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from sklearn.preprocessing import LabelEncoder
-from nltk.metrics import AnnotationTask
-import argparse
-import pandas as pd
-
 """
 This script loads AI2D annotations from different annotators and reports the
 results for various measurements of inter-annotator agreement and reliability.
@@ -17,12 +12,20 @@ Arguments:
     -a1/--annotation_1: Path to the pandas DataFrame containing annotation for
                         annotator #1.
     -a2/--annotation_2: Path to the pandas DataFrame containing annotation for
-                        annotaro #2.
+                        annotator #2.
 
 Returns:
     Prints the measurements for inter-annotator agreement on the standard output
     for rhetorical relations and nuclearity.
 """
+
+# Import packages
+from sklearn.metrics import classification_report
+from sklearn.preprocessing import LabelEncoder
+from nltk.metrics import AnnotationTask
+import argparse
+import numpy as np
+import pandas as pd
 
 
 # Start by defining a function that compares the work of different annotators
@@ -75,11 +78,15 @@ def compare_annotation(list_one, list_two):
     # Calculate agreement
     task = AnnotationTask(data=annotation_data)
 
-    print("Average observed agreement: {:.4f}".format(
-        task.avg_Ao()))
+    print("Number of available categories: {}".format(len(labeldict)))
+    print("Average observed agreement: {:.4f}".format(task.avg_Ao()))
     print("Scott's pi: {:.4f}".format(task.pi()))
     print("Fleiss' kappa: {:.4f}".format(task.kappa()))
-    print("Krippendorff's alpha: {:.4f}".format(task.alpha()))
+    print("Krippendorff's alpha: {:.4f}\n".format(task.alpha()))
+
+    print(classification_report(annotation['annotator_1'],
+                                annotation['annotator_2'],
+                                target_names=le.classes_))
 
 
 # Set up the argument parser
