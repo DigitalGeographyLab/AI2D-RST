@@ -11,6 +11,10 @@ import os
 
 
 class Annotate:
+    """
+    This class holds various functions for processing and parsing AI2D
+    annotation.
+    """
     def __init__(self):
         pass
 
@@ -118,6 +122,9 @@ class Annotate:
 
 
 class Draw:
+    """
+    This class holds various functions for visualizing AI2D annotation.
+    """
     def __init__(self):
         pass
 
