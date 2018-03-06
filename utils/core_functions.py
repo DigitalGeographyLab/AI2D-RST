@@ -39,6 +39,32 @@ class Annotate:
         return annotation
 
     @staticmethod
+    def group_nodes(graph, user_input):
+        """
+        A function for grouping together nodes of a graph, which are included in
+        the accompanying list.
+        
+        Parameters:
+            graph: A networkx graph.
+            user_input: A list of nodes contained in the graph.
+
+        Returns:
+            An updated networkx graph.
+        """
+        # Generate a name for the new node that joins together the elements
+        # listed by the user
+        new_node = '+'.join(user_input).upper()
+
+        # Add the new node to the graph
+        graph.add_node(new_node, kind='group')
+
+        # Add edges from the nodes listed in the user input to the new node
+        for valid_elem in user_input:
+            graph.add_edge(valid_elem.upper(), new_node)
+
+        return graph
+
+    @staticmethod
     def parse_annotation(annotation):
         """
         Parses AI2D annotation stored in a dictionary and prepares the
@@ -120,6 +146,84 @@ class Annotate:
         # Return the element type dictionary
         return element_types
 
+    @staticmethod
+    def request_input(graph, layout):
+
+        # Define available commands
+        commands = ['info', 'comment', 'skip', 'quit', 'done']
+
+        # Define a prompt for user input
+        prompt = "Please enter members of element group or a valid command: "
+
+        # Set a variable indicating that the annotation procedure is ongoing
+        annotating = True
+
+        # Enter a while loop for the annotation procedure
+        while annotating:
+
+            # Draw the graph
+            diagram = Draw.draw_graph(graph)
+
+            # Join the graph and the layout structure horizontally
+            preview = np.hstack((diagram, layout))
+
+            # Show the resulting visualization
+            cv2.imshow("Annotation", preview)
+
+            # Prompt user for input
+            user_input = input(prompt)
+
+            # Check if the input is a command
+            if user_input in commands:
+
+                # Exit the loop upon receiving the command quit by setting the
+                # annotating variable to False.
+                if user_input == 'quit':
+                    annotating = False
+                    exit()
+
+                # If a skip is requested, set annotating to False to move to the
+                # next example.
+                if user_input == 'skip':
+                    # TODO Implement skip mechanism that sets None to DataFrame?
+                    annotating = False
+
+                else:
+                    pass
+                    # TODO Add remaining commands
+
+            # If user input does not include a valid command, assume the input
+            # is a string containing a list of diagram elements.
+            if user_input not in commands:
+
+                # Split the input into a list
+                user_input = user_input.split(', ')
+
+                # Generate a list of valid diagram elements present in the graph
+                valid_elems = [e.lower() for e in graph.nodes]
+
+                # Check for invalid input
+                while not set(user_input).issubset(set(valid_elems)):
+
+                    # Get difference between user input and valid graph
+                    diff = set(user_input).difference(set(valid_elems))
+
+                    # Print error message
+                    print("Sorry, {} is not a valid diagram element. "
+                          "Please try again.".format(diff))
+
+                    # Break from the loop
+                    break
+
+                # If the input is valid
+                if set(user_input).issubset(set(valid_elems)):
+
+                    # Update the graph according to user input
+                    graph = Annotate.group_nodes(graph, user_input)
+
+                # Continue until the annotation process is complete
+                continue
+
 
 class Draw:
     """
@@ -149,15 +253,20 @@ class Draw:
         return tuple(reversed(colour))
 
     @staticmethod
-    def draw_graph(annotation):
+    def draw_graph_from_annotation(annotation, draw_edges=True,
+                                   draw_arrowheads=True, return_graph=False):
         """
         Draws a graph of the parsed diagram elements.
 
         Parameters:
-            annotation: A dictionary containing AI2D annotation.
+            annotation: A dictionary parsed from AI2D JSON files.
+            draw_edges: A boolean defining whether edges are to be drawn.
+            draw_arrowheads: A boolean defining whether arrowheads are drawn.
+            return_graph: A boolean defining whether a networkx graph is 
+                          returned.
 
         Returns:
-            An image showing the drawn graph.
+            An image visualising the graph.
         """
         # Check for correct input type
         assert isinstance(annotation, dict)
@@ -169,56 +278,70 @@ class Draw:
         element_types = Annotate.extract_element_type(diagram_elements,
                                                       annotation)
 
-        # Create a new graph
-        graph = nx.Graph()
+        # Check if arrowheads should be excluded
+        if not draw_arrowheads:
+
+            # Remove arrowheads from the dictionary
+            element_types = {k: v for k, v in element_types.items()
+                             if v != 'arrowHeads'}
 
         # Set up a dictionary to track arrows and arrowheads
         arrowmap = {}
+
+        # Create a new graph
+        graph = nx.Graph()
 
         # Add diagram elements to the graph and record their type (kind)
         for element, kind in element_types.items():
             graph.add_node(element, kind=kind)
 
-        # Loop over individual relations
-        for relation, attributes in relations.items():
+        # Draw edges between nodes if requested
+        if draw_edges:
 
-            # If the relation is 'arrowHeadTail', draw an edge between the arrow
-            # and its head
-            if attributes['category'] == 'arrowHeadTail':
-                graph.add_edge(attributes['origin'], attributes['destination'])
+            # Loop over individual relations
+            for relation, attributes in relations.items():
 
-                # Add arrowhead information to the dict for tracking arrows
-                arrowmap[attributes['origin']] = attributes['destination']
+                # If the relation is 'arrowHeadTail', draw an edge between the
+                # arrow and its head
+                if attributes['category'] == 'arrowHeadTail':
 
-            # Next, check if the relation includes a connector
-            try:
-                if attributes['connector']:
+                    graph.add_edge(attributes['origin'],
+                                   attributes['destination'])
 
-                    # Check if the connector (arrow) has an arrowhead
-                    if attributes['connector'] in arrowmap.keys():
+                    # Add arrowhead information to the dict for tracking arrows
+                    arrowmap[attributes['origin']] = attributes['destination']
 
-                        # First, draw an edge between origin and connector
-                        graph.add_edge(attributes['origin'],
-                                       attributes['connector'])
+                # Next, check if the relation includes a connector
+                try:
+                    if attributes['connector']:
 
-                        # Then draw an edge between arrowhead and destination,
-                        # fetching the arrowhead identifier from the dictionary
-                        graph.add_edge(arrowmap[attributes['connector']],
-                                       attributes['destination'])
+                        # Check if the connector (arrow) has an arrowhead
+                        if attributes['connector'] in arrowmap.keys():
 
-                    else:
-                        # If the connector does not have an arrowhead, draw edge
-                        # from origin to destination via the connector
-                        graph.add_edge(attributes['origin'],
-                                       attributes['connector'])
+                            # First, draw an edge between origin and connector
+                            graph.add_edge(attributes['origin'],
+                                           attributes['connector'])
 
-                        graph.add_edge(attributes['connector'],
-                                       attributes['destination'])
+                            # Then draw an edge between arrowhead and
+                            # destination, fetching the arrowhead identifier
+                            # from the dictionary
+                            graph.add_edge(arrowmap[attributes['connector']],
+                                           attributes['destination'])
 
-            # If connector does not exist, draw a normal relation between the
-            # origin and the destination
-            except KeyError:
-                graph.add_edge(attributes['origin'], attributes['destination'])
+                        else:
+                            # If the connector does not have an arrowhead, draw
+                            # edge from origin to destination via the connector
+                            graph.add_edge(attributes['origin'],
+                                           attributes['connector'])
+
+                            graph.add_edge(attributes['connector'],
+                                           attributes['destination'])
+
+                # If connector does not exist, draw a normal relation between
+                # the origin and the destination
+                except KeyError:
+                    graph.add_edge(attributes['origin'],
+                                   attributes['destination'])
 
         # Generate a label dictionary by taking the node attributes and removing
         # relations
@@ -232,48 +355,9 @@ class Draw:
         # Initialize a spring layout for the graph
         pos = nx.spring_layout(graph)
 
-        # Attempt to draw nodes for text elements
-        try:
-            texts = [k for k, v in element_types.items() if v == 'text']
-            nx.draw_networkx_nodes(graph, pos, nodelist=texts, alpha=1,
-                                   node_color='dodgerblue', ax=ax)
-        except KeyError:
-            pass
-
-        # Attempt to draw nodes for blobs
-        try:
-            blobs = [k for k, v in element_types.items() if v == 'blobs']
-            nx.draw_networkx_nodes(graph, pos, nodelist=blobs, alpha=1,
-                                   node_color='orangered', ax=ax)
-        except KeyError:
-            pass
-
-        # Attempt to draw nodes for arrowheads
-        try:
-            arrowhs = [k for k, v in element_types.items() if v == 'arrowHeads']
-            nx.draw_networkx_nodes(graph, pos, nodelist=arrowhs, alpha=1,
-                                   node_color='darkorange', ax=ax)
-        except KeyError:
-            pass
-
-        # Attempt to draw nodes for arrows
-        try:
-            arrows = [k for k, v in element_types.items() if v == 'arrows']
-            nx.draw_networkx_nodes(graph, pos, nodelist=arrows, alpha=1,
-                                   node_color='peachpuff', ax=ax)
-        except KeyError:
-            pass
-
-        try:
-            constants = [k for k, v in element_types.items() if
-                         v == 'imageConsts']
-            nx.draw_networkx_nodes(graph, pos, nodelist=constants, alpha=1,
-                                   node_color='palegoldenrod', ax=ax)
-        except KeyError:
-            pass
-
-        # Draw edges between nodes
-        nx.draw_networkx_edges(graph, pos, alpha=0.5, ax=ax)
+        # Draw nodes
+        Draw.draw_nodes(graph, pos=pos, ax=ax, node_types=node_types,
+                        draw_edges=True)
 
         # Draw labels
         nx.draw_networkx_labels(graph, pos, font_size=10, labels=label_dict)
@@ -287,8 +371,115 @@ class Draw:
         img = cv2.imread('temp.png')
         os.remove('temp.png')
 
-        # Return image
+        # Return requested objects
+        if return_graph:
+            return img, graph
+        else:
+            return img
+
+    @staticmethod
+    def draw_graph(graph, dpi=100):
+
+        # Set up the matplotlib Figure, its resolution and Axis
+        fig = plt.figure(dpi=dpi)
+        ax = fig.add_subplot(1, 1, 1)
+
+        # Initialize a spring layout for the graph
+        pos = nx.spring_layout(graph)
+
+        # Generate a label dictionary from the node attributes
+        node_types = nx.get_node_attributes(graph, 'kind')
+        label_dict = {k: k for k, v in node_types.items() if v is not 'group'}
+
+        # Draw nodes
+        Draw.draw_nodes(graph, pos=pos, ax=ax, node_types=node_types)
+
+        # Draw labels
+        nx.draw_networkx_labels(graph, pos, font_size=10, labels=label_dict)
+
+        # Remove margins from the graph and axes from the plot
+        fig.tight_layout(pad=0)
+        plt.axis('off')
+
+        # Save figure to file, read the file using OpenCV and remove the file
+        plt.savefig('temp.png')
+        img = cv2.imread('temp.png')
+        os.remove('temp.png')
+
+        # Close matplotlib figure
+        plt.close()
+
         return img
+
+    @staticmethod
+    def draw_nodes(graph, pos, ax, node_types, draw_edges=True):
+        """
+        A generic function for visualising the nodes in a graph.
+
+        Parameters:
+            graph: A networkx graph.
+            pos: Positions for the networkx graph.
+            ax: Matplotlib Figure Axis on which to draw.
+            node_types: A dictionary of node types extracted from the graph.
+            draw_edges: A boolean indicating whether edges should be drawn.
+        
+        Returns:
+             None
+        """
+        # Attempt to draw nodes for text elements
+        try:
+            texts = [k for k, v in node_types.items() if v == 'text']
+            nx.draw_networkx_nodes(graph, pos, nodelist=texts, alpha=1,
+                                   node_color='dodgerblue', ax=ax)
+        except KeyError:
+            pass
+
+        # Attempt to draw nodes for blobs
+        try:
+            blobs = [k for k, v in node_types.items() if v == 'blobs']
+            nx.draw_networkx_nodes(graph, pos, nodelist=blobs, alpha=1,
+                                   node_color='orangered', ax=ax)
+        except KeyError:
+            pass
+
+        # Attempt to draw nodes for arrowheads
+        try:
+            arrowhs = [k for k, v in node_types.items() if v == 'arrowHeads']
+            nx.draw_networkx_nodes(graph, pos, nodelist=arrowhs, alpha=1,
+                                   node_color='darkorange', ax=ax)
+        except KeyError:
+            pass
+
+        # Attempt to draw nodes for arrows
+        try:
+            arrows = [k for k, v in node_types.items() if v == 'arrows']
+            nx.draw_networkx_nodes(graph, pos, nodelist=arrows, alpha=1,
+                                   node_color='peachpuff', ax=ax)
+        except KeyError:
+            pass
+
+        # Attempt to draw nodes for imageConsts
+        try:
+            constants = [k for k, v in node_types.items() if
+                         v == 'imageConsts']
+            nx.draw_networkx_nodes(graph, pos, nodelist=constants, alpha=1,
+                                   node_color='palegoldenrod', ax=ax)
+        except KeyError:
+            pass
+
+        # Attempt to draw nodes for element groups
+        try:
+            groups = [k for k, v in node_types.items() if v == 'group']
+            nx.draw_networkx_nodes(graph, pos, nodelist=groups, alpha=1,
+                                   node_color='navajowhite', ax=ax,
+                                   node_size=50)
+        except KeyError:
+            pass
+
+        # Draw edges if requested
+        if draw_edges:
+            # Draw edges between nodes
+            nx.draw_networkx_edges(graph, pos, alpha=0.5, ax=ax)
 
     @staticmethod
     def draw_layout(path_to_image, annotation):
@@ -404,3 +595,29 @@ class Draw:
         img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
 
         return img
+
+    @staticmethod
+    def draw_and_group(annotation, image_path):
+
+        # Check for correct input types
+        assert isinstance(annotation, dict)
+        assert isinstance(image_path, str)
+
+        # Draw the graph without edges or arrowheads; request the networkx graph
+        # to be returned with the output.
+        diagram, graph = Draw.draw_graph_from_annotation(annotation,
+                                                         draw_edges=False,
+                                                         draw_arrowheads=False,
+                                                         return_graph=True)
+
+        # Visualise layout
+        layout = Draw.draw_layout(image_path, annotation)
+
+        # Begin the annotation by clearing the screen
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+        # Request user input on graph
+        group = Annotate.request_input(graph, layout)
+
+        # Close plot
+        plt.close()

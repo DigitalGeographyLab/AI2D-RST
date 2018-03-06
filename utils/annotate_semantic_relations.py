@@ -199,7 +199,7 @@ ann_path = args['annotation']
 images_path = args['images']
 output_path = args['output']
 
-# Check if the output file exist already, or whether to continue with previous
+# Check if the output file exists already, or whether to continue with previous
 # annotation.
 if os.path.isfile(output_path):
     annotation_df = pd.read_pickle(output_path)

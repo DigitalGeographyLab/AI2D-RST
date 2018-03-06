@@ -46,3 +46,4 @@ cv2.imshow("Preview", preview)
 # If the user presses 'q', then exit, otherwise show next diagram.
 if cv2.waitKey() == ord('q'):
     quit()
+
