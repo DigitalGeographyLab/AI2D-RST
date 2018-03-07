@@ -150,7 +150,7 @@ class Annotate:
     def request_input(graph, layout):
 
         # Define available commands
-        commands = ['info', 'comment', 'skip', 'quit', 'done']
+        commands = ['info', 'comment', 'skip', 'exit', 'done']
 
         # Define a prompt for user input
         prompt = "Please enter members of element group or a valid command: "
@@ -176,21 +176,53 @@ class Annotate:
             # Check if the input is a command
             if user_input in commands:
 
-                # Exit the loop upon receiving the command quit by setting the
-                # annotating variable to False.
-                if user_input == 'quit':
-                    annotating = False
-                    exit()
+                # Quit the program immediately upon command
+                if user_input == 'exit':
+                    exit("Quitting ...")
 
-                # If a skip is requested, set annotating to False to move to the
-                # next example.
+                # If a skip is requested, return None and move to next example
                 if user_input == 'skip':
-                    # TODO Implement skip mechanism that sets None to DataFrame?
-                    annotating = False
+                    return None
 
-                else:
+                # Print information if requested
+                if user_input == 'info':
+
+                    # Clear screen first
+                    os.system('cls' if os.name == 'nt' else 'clear')
+
+                    print("---\n"
+                          "Enter the identifiers of elements you wish to group "
+                          "together.\n"
+                          "Separate the identifiers with a comma.\n"
+                          "\n"
+                          "Example of valid input: b1, a1, t1\n\n"
+                          ""
+                          "This command would group nodes B1, A1 and T1 under "
+                          "a common node.\n"
+                          "---\n"
+                          "Valid commands include:\n"
+                          "---\n"
+                          "info: Print this message.\n"
+                          "comment: Enter a comment about current diagram.\n"
+                          "skip: Skip the current diagram.\n"
+                          "exit: Exit the annotator immediately.\n"
+                          "done: Mark current annotation completed.\n"
+                          "---")
                     pass
-                    # TODO Add remaining commands
+
+                # Store a comment if requested
+                if user_input == 'comment':
+
+                    # Show a prompt for comment
+                    comment = input("Enter comment: ")
+
+                    # Return the comment
+                    return comment
+
+                # If the user marks the annotation as complete, return the graph
+                if user_input == 'done':
+
+                    return graph
 
             # If user input does not include a valid command, assume the input
             # is a string containing a list of diagram elements.
@@ -202,20 +234,22 @@ class Annotate:
                 # Generate a list of valid diagram elements present in the graph
                 valid_elems = [e.lower() for e in graph.nodes]
 
-                # Check for invalid input
+                # Check for invalid input by comparing the user input and the
+                # valid elements as sets.
                 while not set(user_input).issubset(set(valid_elems)):
 
                     # Get difference between user input and valid graph
                     diff = set(user_input).difference(set(valid_elems))
 
-                    # Print error message
+                    # Print error message with difference in sets.
                     print("Sorry, {} is not a valid diagram element. "
                           "Please try again.".format(diff))
+                    # TODO Format output
 
                     # Break from the loop
                     break
 
-                # If the input is valid
+                # Proceed if the user input is a subset of valid elements
                 if set(user_input).issubset(set(valid_elems)):
 
                     # Update the graph according to user input
@@ -256,7 +290,7 @@ class Draw:
     def draw_graph_from_annotation(annotation, draw_edges=True,
                                    draw_arrowheads=True, return_graph=False):
         """
-        Draws a graph of the parsed diagram elements.
+        Draws a graph of diagram elements parsed from AI2D annotation.
 
         Parameters:
             annotation: A dictionary parsed from AI2D JSON files.
@@ -266,7 +300,7 @@ class Draw:
                           returned.
 
         Returns:
-            An image visualising the graph.
+            An image visualising the graph; optionally, also the graph itself.
         """
         # Check for correct input type
         assert isinstance(annotation, dict)
@@ -370,6 +404,9 @@ class Draw:
         plt.savefig('temp.png')
         img = cv2.imread('temp.png')
         os.remove('temp.png')
+
+        # Close the matplotlib plot
+        plt.close()
 
         # Return requested objects
         if return_graph:
@@ -595,29 +632,3 @@ class Draw:
         img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
 
         return img
-
-    @staticmethod
-    def draw_and_group(annotation, image_path):
-
-        # Check for correct input types
-        assert isinstance(annotation, dict)
-        assert isinstance(image_path, str)
-
-        # Draw the graph without edges or arrowheads; request the networkx graph
-        # to be returned with the output.
-        diagram, graph = Draw.draw_graph_from_annotation(annotation,
-                                                         draw_edges=False,
-                                                         draw_arrowheads=False,
-                                                         return_graph=True)
-
-        # Visualise layout
-        layout = Draw.draw_layout(image_path, annotation)
-
-        # Begin the annotation by clearing the screen
-        os.system('cls' if os.name == 'nt' else 'clear')
-
-        # Request user input on graph
-        group = Annotate.request_input(graph, layout)
-
-        # Close plot
-        plt.close()
