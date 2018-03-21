@@ -51,16 +51,30 @@ class Annotate:
         Returns:
             An updated networkx graph.
         """
-        # Generate a name for the new node that joins together the elements
-        # listed by the user
-        new_node = '+'.join(user_input).upper()
+        # Create a dictionary of the kinds of nodes currently in the graph
+        node_dict = Annotate.get_node_dict(graph)
 
-        # Add the new node to the graph
-        graph.add_node(new_node, kind='group')
+        # Check the user input against the node dictionary
+        input_node_types = [node_dict[u.upper()] for u in user_input]
 
-        # Add edges from the nodes listed in the user input to the new node
-        for valid_elem in user_input:
-            graph.add_edge(valid_elem.upper(), new_node)
+        # If the user input contains an imageConsts, do not add an node
+        if 'imageConsts' in input_node_types:
+            for k, v in node_dict.items():
+                if v == 'imageConsts':
+                    for valid_elem in user_input:
+                        graph.add_edge(valid_elem.upper(), k.upper())
+
+        else:
+            # Generate a name for the new node that joins together the elements
+            # provided by the user
+            new_node = '+'.join(user_input).upper()
+
+            # Add the new node to the graph
+            graph.add_node(new_node, kind='group')
+
+            # Add edges from nodes in the user input to the new node
+            for valid_elem in user_input:
+                graph.add_edge(valid_elem.upper(), new_node)
 
         return graph
 
@@ -301,8 +315,8 @@ class Annotate:
                     diff = set(user_input).difference(valid_elems)
 
                     # Print error message with difference in sets.
-                    print("Sorry, {} is not a valid diagram element. "
-                          "Please try again.".format(' '.join(diff)))
+                    print("Sorry, {} is not a valid diagram element or command."
+                          " Please try again.".format(' '.join(diff)))
 
                     # Break from the loop
                     break
