@@ -65,6 +65,48 @@ class Annotate:
         return graph
 
     @staticmethod
+    def get_node_dict(graph, kind=None):
+        """
+        A function for creating a dictionary of nodes and their kind.
+        
+        Parameters:
+            graph: A networkx graph.
+            kind: A string defining what to include in the dictionary. 'node'
+                  returns only nodes and 'group' returns only groups. By
+                  default, the function returns all nodes defined in the graph.
+    
+        Returns:
+            A dictionary with node names as keys and kind as values.
+        """
+
+        # Generate a dictionary with nodes and their kind
+        node_types = nx.get_node_attributes(graph, 'kind')
+
+        # If the requested output consists of node groups, return group dict
+        if kind == 'group':
+
+            # Generate a dictionary of groups
+            group_dict = {k: k for k, v in node_types.items() if
+                          v is 'group'}
+
+            # Return dictionary
+            return group_dict
+
+        # If the requested output consists of nodes, return node dict
+        if kind == 'node':
+
+            # Generate a dictionary of nodes
+            node_dict = {k: k for k, v in node_types.items() if v is not
+                         'group'}
+
+            # Return dictionary
+            return node_dict
+
+        # Otherwise return all node types
+        else:
+            return node_types
+
+    @staticmethod
     def parse_annotation(annotation):
         """
         Parses AI2D annotation stored in a dictionary and prepares the
@@ -128,9 +170,11 @@ class Annotate:
 
         # Loop over the diagram elements
         for e in elements:
+
             try:
                 # Search for matches in the target categories
                 for t in targets:
+
                     # Get the identifiers for each element category
                     ids = [i for i in annotation[t].keys()]
 
@@ -232,25 +276,43 @@ class Annotate:
                 user_input = user_input.split(', ')
 
                 # Generate a list of valid diagram elements present in the graph
-                valid_elems = [e.lower() for e in graph.nodes]
+                valid_nodes = [e.lower() for e in graph.nodes]
+
+                # Generate a dictionary of groups
+                group_dict = Annotate.get_node_dict(graph, kind='group')
+
+                # Count the current groups and enumerate for convenience. This
+                # allows the user to refer to group number instead of complex
+                # identifier.
+                group_dict = {"g{}".format(i): k for i, (k, v) in
+                              enumerate(group_dict.items(), start=1)}
+
+                # Create a list of identifiers based on the dict keys
+                valid_groups = [g.lower() for g in group_dict.keys()]
+
+                # Combine the valid nodes and groups into a set
+                valid_elems = set(valid_nodes + valid_groups)
 
                 # Check for invalid input by comparing the user input and the
                 # valid elements as sets.
-                while not set(user_input).issubset(set(valid_elems)):
+                while not set(user_input).issubset(valid_elems):
 
                     # Get difference between user input and valid graph
-                    diff = set(user_input).difference(set(valid_elems))
+                    diff = set(user_input).difference(valid_elems)
 
                     # Print error message with difference in sets.
                     print("Sorry, {} is not a valid diagram element. "
-                          "Please try again.".format(diff))
-                    # TODO Format output
+                          "Please try again.".format(' '.join(diff)))
 
                     # Break from the loop
                     break
 
                 # Proceed if the user input is a subset of valid elements
-                if set(user_input).issubset(set(valid_elems)):
+                if set(user_input).issubset(valid_elems):
+
+                    # Replace aliases with valid identifiers, if used
+                    user_input = [group_dict[u] if u in valid_groups else u for
+                                  u in user_input]
 
                     # Update the graph according to user input
                     graph = Annotate.group_nodes(graph, user_input)
@@ -424,15 +486,25 @@ class Draw:
         # Initialize a spring layout for the graph
         pos = nx.spring_layout(graph)
 
-        # Generate a label dictionary from the node attributes
+        # Generate a dictionary with nodes and their kind
         node_types = nx.get_node_attributes(graph, 'kind')
-        label_dict = {k: k for k, v in node_types.items() if v is not 'group'}
+
+        # Create label dictionaries for both nodes and groups of nodes
+        node_dict = Annotate.get_node_dict(graph, kind='node')
+        group_dict = Annotate.get_node_dict(graph, kind='group')
+
+        # Enumerate groups and use their numbers as labels for clarity
+        group_dict = {k: "G{}".format(i) for i, (k, v) in
+                      enumerate(group_dict.items(), start=1)}
 
         # Draw nodes
         Draw.draw_nodes(graph, pos=pos, ax=ax, node_types=node_types)
 
-        # Draw labels
-        nx.draw_networkx_labels(graph, pos, font_size=10, labels=label_dict)
+        # Draw labels for nodes
+        nx.draw_networkx_labels(graph, pos, font_size=10, labels=node_dict)
+
+        # Draw labels for groups
+        nx.draw_networkx_labels(graph, pos, font_size=10, labels=group_dict)
 
         # Remove margins from the graph and axes from the plot
         fig.tight_layout(pad=0)
