@@ -32,16 +32,20 @@ output_path = args['output']
 if os.path.isfile(output_path):
     annotation_df = pd.read_pickle(output_path)
 
-# Otherwise, read the annotation from the input DataFrame
+# Otherwise, read the annotation from the input DataFrame and make a copy
 if not os.path.isfile(output_path):
     annotation_df = pd.read_pickle(ann_path).copy()
 
-# Set up an empty column for graphs
-annotation_df['grouped_graph'] = None
+    # Set up an empty column for graphs
+    annotation_df['graph'] = None
 
 # Begin looping over the rows of the input DataFrame. Enumerate the result to
 # show annotation progress to the user.
 for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
+
+    # Skip row if the graph has been populated already
+    if row['graph'] is not None:
+        continue
 
     # Begin the annotation by clearing the screen
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -80,6 +84,9 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
             # Store comment into the 'comment' column
             annotation_df.at[ix, 'comment'] = output
 
+            # Write the DataFrame to disk
+            annotation_df.to_pickle(output_path)
+
             # Re-enter the annotation procedure
             output = Annotate.request_input(graph, layout)
 
@@ -87,7 +94,7 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
         if isinstance(output, nx.Graph):
 
             # Store the graph into the 'grouped_graph' column
-            annotation_df.at[ix, 'grouped_graph'] = output
+            annotation_df.at[ix, 'graph'] = output
 
             # Write the DataFrame to disk
             annotation_df.to_pickle(output_path)
