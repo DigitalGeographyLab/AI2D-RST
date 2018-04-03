@@ -30,10 +30,12 @@ output_path = args['output']
 # Check if the output file exists already, or whether to continue with previous
 # annotation.
 if os.path.isfile(output_path):
+
     annotation_df = pd.read_pickle(output_path)
 
 # Otherwise, read the annotation from the input DataFrame and make a copy
 if not os.path.isfile(output_path):
+
     annotation_df = pd.read_pickle(ann_path).copy()
 
     # Set up an empty column for graphs
@@ -43,37 +45,58 @@ if not os.path.isfile(output_path):
 # show annotation progress to the user.
 for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
 
-    # Skip row if the graph has been populated already
-    if row['graph'] is not None:
-        continue
-
     # Begin the annotation by clearing the screen
     os.system('cls' if os.name == 'nt' else 'clear')
 
     # Fetch the filename of current diagram image
     image_fname = row['image_name']
 
+    # Join with path to image directory with current filename
+    image_path = os.path.join(images_path, row['image_name'])
+
     # Print status
     print("Now processing row {}/{} ({}) ...".format(i, len(annotation_df),
                                                      image_fname))
 
-    # Join with path to image directory with current filename
-    image_path = os.path.join(images_path, row['image_name'])
-
     # Fetch the annotation dictionary from the DataFrame
     annotation = row['annotation']
 
-    # Draw the diagram and graph based on the annotation
-    diagram, graph = Draw.draw_graph_from_annotation(annotation,
-                                                     draw_edges=False,
-                                                     draw_arrowheads=False,
-                                                     return_graph=True)
+    # Check if row 'graph' holds an object
+    if row['graph'] is not None:
 
-    # Visualise the diagram layout based on the annotation
-    layout = Draw.draw_layout(image_path, annotation)
+        # Check if the object is a networkx Graph
+        if isinstance(row['graph'], nx.Graph):
 
-    # Annotate the diagram for element groups
-    output = Annotate.request_input(graph, layout)
+            # Assign to variable
+            graph = row['graph']
+
+            # Check if the graph is frozen, or complete, move on to next row
+            if nx.is_frozen(graph):
+                continue
+
+            # Otherwise render the graph
+            else:
+
+                # Visualise the diagram layout based on the annotation
+                layout = Draw.draw_layout(image_path, annotation)
+
+                # Annotate the diagram for element groups
+                output = Annotate.request_input(graph, layout)
+
+    # If no graph exists, parse annotation
+    else:
+
+        # Draw the diagram and graph based on the annotation
+        diagram, graph = Draw.draw_graph_from_annotation(annotation,
+                                                         draw_edges=False,
+                                                         draw_arrowheads=False,
+                                                         return_graph=True)
+
+        # Visualise the diagram layout based on the annotation
+        layout = Draw.draw_layout(image_path, annotation)
+
+        # Annotate the diagram for element groups
+        output = Annotate.request_input(graph, layout)
 
     # Check the object returned by the request_input function
     if output is not None:
@@ -84,7 +107,7 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
             # Store comment into the 'comment' column
             annotation_df.at[ix, 'comment'] = output
 
-            # Write the DataFrame to disk
+            # Write the DataFrame to disk to save the comment
             annotation_df.to_pickle(output_path)
 
             # Re-enter the annotation procedure

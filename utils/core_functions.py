@@ -277,8 +277,11 @@ class Annotate:
                     # Return the comment
                     return comment
 
-                # If the user marks the annotation as complete, return the graph
+                # If the user marks the annotation as complete, freeze the graph
                 if user_input == 'done':
+
+                    # Freeze and return the graph
+                    graph = nx.freeze(graph)
 
                     return graph
 
