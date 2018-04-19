@@ -607,11 +607,168 @@ class Draw:
             # Draw edges between nodes
             nx.draw_networkx_edges(graph, pos, alpha=0.5, ax=ax)
 
+# TODO Design a new approach based on class, which takes JSON as input
+class Diagram:
+    """
+    This class holds the annotation for a single AI2D diagram.
+    """
+    def __init__(self, json_path, image_path, size=600):
+        """
+        This function initializes the Diagram class.
+        
+        Parameters:
+            json_path: Path to the JSON file containing AI2D annotation.
+            
+        Returns:
+            A Diagram with methods and attributes.
+        """
+        # Mark the annotation initially as not complete
+        self.complete = False
+
+        # Assign paths to JSON annotation and image to variables
+        self.json_path = json_path
+        self.image_path = image_path
+
+        # Load JSON annotation into a dictionary
+        self.annotation = self.load_annotation(json_path)
+
+        # Parse the annotation dictionary for elements and relations
+        self.elements, self.relations = self.parse_annotation(self.annotation)
+
+        # Extract element types
+        self.element_types = self.extract_types(self.elements, self.annotation)
+
+        # Set visualisation size and visualise the layout annotation
+        self.size = size
+        self.layout = self.draw_layout(self.image_path, self.annotation,
+                                       self.size)
+
     @staticmethod
-    def draw_layout(path_to_image, annotation):
+    def load_annotation(json_path):
+        """
+        Loads AI2D annotation from a JSON file and returns the annotation as a
+        dictionary.
+
+        Parameters:
+             json_path: A string containing the filepath to annotation.
+
+        Returns:
+             A dictionary containing AI2D annotation.
+        """
+        # Open the file containing the annotation
+        with open(json_path) as annotation_file:
+
+            # Parse the AI2D annotation from the JSON file into a dictionary
+            annotation = json.load(annotation_file)
+
+        # Return the annotation
+        return annotation
+
+    @staticmethod
+    def parse_annotation(annotation):
+        """
+        Parses AI2D annotation stored in a dictionary and prepares the
+        annotation for drawing a graph.
+
+        Parameters:
+            annotation: A dictionary containing AI2D annotation.
+
+        Returns:
+            A dictionary for drawing a graph of the annotation.
+        """
+        # List types of diagram elements to be added to the graph
+        targets = ['blobs', 'arrows', 'text', 'arrowHeads', 'containers',
+                   'imageConsts']
+
+        # Parse the diagram elements defined in the annotation, cast into list
+        try:
+            diagram_elements = [list(annotation[t].keys()) for t in targets]
+
+            # Filter empty diagram types
+            diagram_elements = list(filter(None, diagram_elements))
+
+            # Flatten the resulting list
+            diagram_elements = [i for sublist in diagram_elements
+                                for i in sublist]
+
+        except KeyError:
+            pass
+
+        # Parse the semantic relations defined in the annotation into a dict
+        try:
+            relations = annotation['relationships']
+
+        except KeyError:
+            pass
+
+        return diagram_elements, relations
+
+    @staticmethod
+    def extract_types(elements, annotation):
+        """
+        Extracts the types of the identified diagram elements.
+
+        Parameters:
+            elements: A list of diagram elements.
+            annotation: A dictionary of AI2D annotation.
+
+        Returns:
+             A dictionary with element types as keys and identifiers as values.
+        """
+        # Check for correct input type
+        assert isinstance(elements, list)
+        assert isinstance(annotation, dict)
+
+        # Define the target categories for various diagram elements
+        targets = ['arrowHeads', 'arrows', 'blobs', 'text', 'containers',
+                   'imageConsts']
+
+        # Create a dictionary for holding element types
+        element_types = {}
+
+        # Loop over the diagram elements
+        for e in elements:
+
+            try:
+                # Search for matches in the target categories
+                for t in targets:
+
+                    # Get the identifiers for each element category
+                    ids = [i for i in annotation[t].keys()]
+
+                    # If the element is found among the identifiers, add the
+                    # type to the dictionary
+                    if e in ids:
+                        element_types[e] = t
+
+            # Skip if the category is not found
+            except KeyError:
+                continue
+
+        # Return the element type dictionary
+        return element_types
+
+    @staticmethod
+    def draw_layout(path_to_image, annotation, size):
 
         # Load the diagram image and make a copy
         img = cv2.imread(path_to_image).copy()
+
+        # Calculate aspect ratio (target width / current width) and new
+        # width of the preview image.
+        (h, w) = img.shape[:2]
+
+        # Size according to the larger dimension (height / width)
+        if h > w:
+            r = size / h
+            dim = (int(w * r), size)
+
+        if w >= h:
+            r = size / w
+            dim = (size, int(h * r))
+
+        # Resize the preview image
+        img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
 
         # Begin by trying to draw the blobs.
         try:
@@ -623,6 +780,9 @@ class Draw:
                 # array
                 points = np.array(annotation['blobs'][b]['polygon'], np.int32)
 
+                # Scale the coordinates according to the ratio; convert to int
+                points = np.round(points * r, decimals=0).astype('int')
+
                 # Reshape the numpy array for drawing
                 points = points.reshape((-1, 1, 2))
 
@@ -633,15 +793,15 @@ class Draw:
 
                 # Draw the polygon. Note that points must be in brackets to
                 # be drawn as lines; otherwise only points will appear.
-                cv2.polylines(img, [points], isClosed=True, thickness=1,
+                cv2.polylines(img, [points], isClosed=True, thickness=2,
                               lineType=cv2.LINE_AA,
                               color=Draw.convert_colour('orangered'))
 
                 # Insert the identifier into the middle of the element
                 cv2.putText(img, blob_id, (x - 10, y + 10),
                             cv2.FONT_HERSHEY_SIMPLEX,
-                            fontScale=0.75, color=(0, 0, 0),
-                            lineType=cv2.LINE_AA, thickness=2)
+                            fontScale=1, lineType=cv2.LINE_AA, thickness=1,
+                            color=Draw.convert_colour('magenta'))
 
         # Skip if there are no blobs to draw
         except KeyError:
@@ -657,22 +817,28 @@ class Draw:
                 # them into tuples for drawing.
                 rect = annotation['text'][t]['rectangle']
 
+                # Scale the coordinates according to the ratio; convert to int
+                rect[0] = [np.round(x * r, decimals=0).astype('int')
+                           for x in rect[0]]
+                rect[1] = [np.round(x * r, decimals=0).astype('int')
+                           for x in rect[1]]
+
                 # Get start and end coordinates for the rectangle
                 start, end = tuple(rect[0]), tuple(rect[1])
 
-                # Get center of rectangle
-                c = (round((start[0] + end[0]) / 2 - 10),
-                     round((start[1] + end[1]) / 2 + 10))
+                # Get center of rectangle; cast into integer
+                c = (round((start[0] + end[0]) / 2 - 10).astype('int'),
+                     round((start[1] + end[1]) / 2 + 10).astype('int'))
 
                 # Draw the rectangle
-                cv2.rectangle(img, start, end, thickness=1,
+                cv2.rectangle(img, start, end, thickness=2,
                               lineType=cv2.LINE_AA,
                               color=Draw.convert_colour('dodgerblue'))
 
                 # Insert the identifier into the middle of the element
                 cv2.putText(img, text_id, c, cv2.FONT_HERSHEY_SIMPLEX,
-                            fontScale=0.75, color=(0, 0, 0),
-                            lineType=cv2.LINE_AA, thickness=2)
+                            fontScale=1, lineType=cv2.LINE_AA, thickness=1,
+                            color=Draw.convert_colour('magenta'))
 
         # Skip if there are no text boxes to draw
         except KeyError:
@@ -687,6 +853,9 @@ class Draw:
                 # Assign the points into a variable
                 points = np.array(annotation['arrows'][a]['polygon'], np.int32)
 
+                # Scale the coordinates according to the ratio; convert to int
+                points = np.round(points * r, decimals=0).astype('int')
+
                 # Reshape the numpy array for drawing
                 points = points.reshape((-1, 1, 2))
 
@@ -697,27 +866,23 @@ class Draw:
 
                 # Draw the polygon. Note that points must be in brackets to
                 # be drawn as lines; otherwise only points will appear.
-                cv2.polylines(img, [points], isClosed=True, thickness=1,
+                cv2.polylines(img, [points], isClosed=True, thickness=2,
                               lineType=cv2.LINE_AA,
                               color=Draw.convert_colour('peachpuff'))
 
                 # Insert the identifier into the middle of the element
                 cv2.putText(img, arrow_id, (x - 10, y + 10),
                             cv2.FONT_HERSHEY_SIMPLEX,
-                            fontScale=0.75, color=(0, 0, 0),
-                            lineType=cv2.LINE_AA, thickness=2)
+                            fontScale=1, color=Draw.convert_colour('magenta'),
+                            lineType=cv2.LINE_AA, thickness=1)
 
         # Skip if there are no arrows to draw
         except KeyError:
             pass
 
-        # Calculate aspect ratio (target width / current width) and new
-        # width of the preview image.
-        (h, w) = img.shape[:2]
-        r = 480 / h
-        dim = (int(w * r), 480)
-
-        # Resize the preview image
-        img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+        # Show the resulting visualization
+        cv2.imshow("Image", img)
+        cv2.waitKey()
 
         return img
+
