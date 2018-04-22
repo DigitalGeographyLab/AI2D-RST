@@ -607,27 +607,30 @@ class Draw:
             # Draw edges between nodes
             nx.draw_networkx_edges(graph, pos, alpha=0.5, ax=ax)
 
-# TODO Design a new approach based on class, which takes JSON as input
+
 class Diagram:
     """
     This class holds the annotation for a single AI2D diagram.
     """
-    def __init__(self, json_path, image_path, size=600):
+    def __init__(self, json_path, image_path, dpi=120):
         """
         This function initializes the Diagram class.
         
         Parameters:
             json_path: Path to the JSON file containing AI2D annotation.
+            image_path: Path to the image file containing the diagram.
+            size: Pixel length of the longest edge of the image. 
             
         Returns:
-            A Diagram with methods and attributes.
+            An AI2D Diagram with various methods and attributes.
         """
         # Mark the annotation initially as not complete
         self.complete = False
 
-        # Assign paths to JSON annotation and image to variables
+        # Assign paths to JSON annotation and image to variables; get resolution
         self.json_path = json_path
         self.image_path = image_path
+        self.dpi = dpi
 
         # Load JSON annotation into a dictionary
         self.annotation = self.load_annotation(json_path)
@@ -638,10 +641,15 @@ class Diagram:
         # Extract element types
         self.element_types = self.extract_types(self.elements, self.annotation)
 
+        # Create initial graph with diagram elements only
+        self.graph = self.draw_graph_from_annotation(self.element_types,
+                                                     self.relations,
+                                                     draw_edges=False,
+                                                     draw_arrowheads=False,
+                                                     dpi=self.dpi)
+
         # Set visualisation size and visualise the layout annotation
-        self.size = size
-        self.layout = self.draw_layout(self.image_path, self.annotation,
-                                       self.size)
+        self.layout = self.draw_layout(self.image_path, self.annotation, 600)
 
     @staticmethod
     def load_annotation(json_path):
@@ -750,6 +758,17 @@ class Diagram:
 
     @staticmethod
     def draw_layout(path_to_image, annotation, size):
+        """
+        Visualizes the AI2D layout annotation on the original input image.
+        
+        Parameters:
+            path_to_image: Path to the original AI2D diagram image.
+            annotation: A dictionary containing AI2D annotation.
+            size: Pixel length of the longest edge of the image.
+        
+        Returns:
+            An image with the AI2D annotation overlaid.
+        """
 
         # Load the diagram image and make a copy
         img = cv2.imread(path_to_image).copy()
@@ -758,7 +777,7 @@ class Diagram:
         # width of the preview image.
         (h, w) = img.shape[:2]
 
-        # Size according to the larger dimension (height / width)
+        # Size according to the largest dimension (height / width)
         if h > w:
             r = size / h
             dim = (int(w * r), size)
@@ -880,9 +899,116 @@ class Diagram:
         except KeyError:
             pass
 
-        # Show the resulting visualization
-        cv2.imshow("Image", img)
-        cv2.waitKey()
-
+        # Return image
         return img
 
+    @staticmethod
+    def draw_graph_from_annotation(element_types, relations,
+                                   draw_edges=False, draw_arrowheads=False,
+                                   dpi=100):
+        """
+        Draws a graph of diagram elements parsed from AI2D annotation.
+
+        Parameters:
+            element_types:
+            relations:
+            draw_edges: A boolean defining whether edges are to be drawn.
+            draw_arrowheads: A boolean defining whether arrowheads are drawn.
+            dpi:
+
+        Returns:
+            An image visualising the graph; optionally, also the graph itself.
+        """
+        # Check if arrowheads should be excluded
+        if not draw_arrowheads:
+
+            # Remove arrowheads from the dictionary
+            element_types = {k: v for k, v in element_types.items()
+                             if v != 'arrowHeads'}
+
+        # Set up a dictionary to track arrows and arrowheads
+        arrowmap = {}
+
+        # Create a new graph
+        graph = nx.Graph()
+
+        # Add diagram elements to the graph and record their type (kind)
+        for element, kind in element_types.items():
+            graph.add_node(element, kind=kind)
+
+        # Draw edges between nodes if requested
+        if draw_edges:
+
+            # Loop over individual relations
+            for relation, attributes in relations.items():
+
+                # If the relation is 'arrowHeadTail', draw an edge between the
+                # arrow and its head
+                if attributes['category'] == 'arrowHeadTail':
+
+                    graph.add_edge(attributes['origin'],
+                                   attributes['destination'])
+
+                    # Add arrowhead information to the dict for tracking arrows
+                    arrowmap[attributes['origin']] = attributes['destination']
+
+                # Next, check if the relation includes a connector
+                try:
+                    if attributes['connector']:
+
+                        # Check if the connector (arrow) has an arrowhead
+                        if attributes['connector'] in arrowmap.keys():
+
+                            # First, draw an edge between origin and connector
+                            graph.add_edge(attributes['origin'],
+                                           attributes['connector'])
+
+                            # Then draw an edge between arrowhead and
+                            # destination, fetching the arrowhead identifier
+                            # from the dictionary
+                            graph.add_edge(arrowmap[attributes['connector']],
+                                           attributes['destination'])
+
+                        else:
+                            # If the connector does not have an arrowhead, draw
+                            # edge from origin to destination via the connector
+                            graph.add_edge(attributes['origin'],
+                                           attributes['connector'])
+
+                            graph.add_edge(attributes['connector'],
+                                           attributes['destination'])
+
+                # If connector does not exist, draw a normal relation between
+                # the origin and the destination
+                except KeyError:
+                    graph.add_edge(attributes['origin'],
+                                   attributes['destination'])
+
+        # Generate a label dictionary by taking the node attributes and removing
+        # relations
+        node_types = nx.get_node_attributes(graph, 'kind')
+        label_dict = {k: k for k, v in node_types.items()}
+
+        # Set up the matplotlib Figure and Axis
+        fig = plt.figure(dpi=dpi)
+        ax = fig.add_subplot(1, 1, 1)
+
+        # Initialize a spring layout for the graph
+        pos = nx.spring_layout(graph)
+
+        # Draw nodes
+        Draw.draw_nodes(graph, pos=pos, ax=ax, node_types=node_types,
+                        draw_edges=True)
+
+        # Draw labels
+        nx.draw_networkx_labels(graph, pos, font_size=10, labels=label_dict)
+
+        # Remove margins from the graph and axes from the plot
+        fig.tight_layout(pad=0)
+        plt.axis('off')
+
+        # Close the matplotlib plot
+        plt.close()
+
+        # Return graph
+        return graph
