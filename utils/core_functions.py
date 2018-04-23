@@ -208,7 +208,7 @@ class Annotate:
     def request_input(graph, layout):
 
         # Define available commands
-        commands = ['info', 'comment', 'skip', 'exit', 'done']
+        commands = ['info', 'comment', 'next', 'exit', 'done']
 
         # Define a prompt for user input
         prompt = "Please enter members of element group or a valid command: "
@@ -239,7 +239,7 @@ class Annotate:
                     exit("Quitting ...")
 
                 # If a skip is requested, return None and move to next example
-                if user_input == 'skip':
+                if user_input == 'next':
                     return None
 
                 # Print information if requested
@@ -256,15 +256,15 @@ class Annotate:
                           "Example of valid input: b1, a1, t1\n\n"
                           ""
                           "This command would group nodes B1, A1 and T1 under "
-                          "a common node.\n"
+                          "a common node. Note the space between element IDs.\n"
                           "---\n"
                           "Valid commands include:\n"
                           "---\n"
                           "info: Print this message.\n"
                           "comment: Enter a comment about current diagram.\n"
-                          "skip: Skip the current diagram.\n"
+                          "next: Move to the next diagram.\n"
                           "exit: Exit the annotator immediately.\n"
-                          "done: Mark current annotation completed.\n"
+                          "done: Mark current diagram complete.\n"
                           "---")
                     pass
 
@@ -642,14 +642,14 @@ class Diagram:
         self.element_types = self.extract_types(self.elements, self.annotation)
 
         # Create initial graph with diagram elements only
-        self.graph = self.draw_graph_from_annotation(self.element_types,
-                                                     self.relations,
-                                                     draw_edges=False,
-                                                     draw_arrowheads=False,
-                                                     dpi=self.dpi)
+        self.graph = self.create_graph(self.element_types, self.relations,
+                                       edges=False, arrowheads=False)
 
-        # Set visualisation size and visualise the layout annotation
-        self.layout = self.draw_layout(self.image_path, self.annotation, 600)
+        # Visualise the layout annotation and get layout size
+        self.layout = self.draw_layout(self.image_path, self.annotation, 480)
+
+        # Set up manual annotation
+        self.annotate_lst = self.annotate_lst(self.graph, self.layout)
 
     @staticmethod
     def load_annotation(json_path):
@@ -757,14 +757,14 @@ class Diagram:
         return element_types
 
     @staticmethod
-    def draw_layout(path_to_image, annotation, size):
+    def draw_layout(path_to_image, annotation, height):
         """
         Visualizes the AI2D layout annotation on the original input image.
         
         Parameters:
             path_to_image: Path to the original AI2D diagram image.
             annotation: A dictionary containing AI2D annotation.
-            size: Pixel length of the longest edge of the image.
+            height: Target height of the image.
         
         Returns:
             An image with the AI2D annotation overlaid.
@@ -777,14 +777,9 @@ class Diagram:
         # width of the preview image.
         (h, w) = img.shape[:2]
 
-        # Size according to the largest dimension (height / width)
-        if h > w:
-            r = size / h
-            dim = (int(w * r), size)
-
-        if w >= h:
-            r = size / w
-            dim = (size, int(h * r))
+        # Calculate ratio based on image height
+        r = height / h
+        dim = (int(w * r), height)
 
         # Resize the preview image
         img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
@@ -903,24 +898,21 @@ class Diagram:
         return img
 
     @staticmethod
-    def draw_graph_from_annotation(element_types, relations,
-                                   draw_edges=False, draw_arrowheads=False,
-                                   dpi=100):
+    def create_graph(element_types, relations, edges=False, arrowheads=False):
         """
         Draws a graph of diagram elements parsed from AI2D annotation.
 
         Parameters:
-            element_types:
-            relations:
-            draw_edges: A boolean defining whether edges are to be drawn.
-            draw_arrowheads: A boolean defining whether arrowheads are drawn.
-            dpi:
+            element_types: List of element types parsed from AI2D annotation.
+            relations: List of relations parsed from AI2D annotation.
+            edges: A boolean defining whether edges are to be drawn.
+            arrowheads: A boolean defining whether arrowheads are drawn.
 
         Returns:
-            An image visualising the graph; optionally, also the graph itself.
+            A networkx graph.
         """
         # Check if arrowheads should be excluded
-        if not draw_arrowheads:
+        if not arrowheads:
 
             # Remove arrowheads from the dictionary
             element_types = {k: v for k, v in element_types.items()
@@ -937,7 +929,7 @@ class Diagram:
             graph.add_node(element, kind=kind)
 
         # Draw edges between nodes if requested
-        if draw_edges:
+        if edges:
 
             # Loop over individual relations
             for relation, attributes in relations.items():
@@ -984,31 +976,152 @@ class Diagram:
                     graph.add_edge(attributes['origin'],
                                    attributes['destination'])
 
-        # Generate a label dictionary by taking the node attributes and removing
-        # relations
-        node_types = nx.get_node_attributes(graph, 'kind')
-        label_dict = {k: k for k, v in node_types.items()}
-
-        # Set up the matplotlib Figure and Axis
-        fig = plt.figure(dpi=dpi)
-        ax = fig.add_subplot(1, 1, 1)
-
-        # Initialize a spring layout for the graph
-        pos = nx.spring_layout(graph)
-
-        # Draw nodes
-        Draw.draw_nodes(graph, pos=pos, ax=ax, node_types=node_types,
-                        draw_edges=True)
-
-        # Draw labels
-        nx.draw_networkx_labels(graph, pos, font_size=10, labels=label_dict)
-
-        # Remove margins from the graph and axes from the plot
-        fig.tight_layout(pad=0)
-        plt.axis('off')
-
-        # Close the matplotlib plot
-        plt.close()
-
         # Return graph
         return graph
+
+    def annotate_lst(self, graph, layout):
+
+        # Define available commands
+        commands = ['info', 'comment', 'next', 'exit', 'done']
+
+        # Define a prompt for user input
+        prompt = "Please enter members of element group or a valid command: "
+
+        # Set a variable indicating that the annotation procedure is ongoing
+        annotating = True
+
+        # Enter a while loop for the annotation procedure
+        while annotating:
+
+            # Draw the graph
+            diagram = Draw.draw_graph(graph, dpi=100)
+
+            # Join the graph and the layout structure horizontally
+            preview = np.hstack((diagram, layout))
+
+            # Show the resulting visualization
+            cv2.imshow("Annotation", preview)
+
+            # Prompt user for input
+            user_input = input(prompt)
+
+            # Check if the input is a command
+            if user_input in commands:
+
+                # Quit the program immediately upon command
+                if user_input == 'exit':
+                    exit("Quitting ...")
+
+                # If next diagram is requested, return None and move along
+                if user_input == 'next':
+
+                    # Destroy any remaining windows
+                    cv2.destroyAllWindows()
+
+                    return None
+
+                # Print information if requested
+                if user_input == 'info':
+
+                    # Clear screen first
+                    os.system('cls' if os.name == 'nt' else 'clear')
+
+                    print("---\n"
+                          "Enter the identifiers of elements you wish to group "
+                          "together.\n"
+                          "Separate the identifiers with a comma.\n"
+                          "\n"
+                          "Example of valid input: b1, a1, t1\n\n"
+                          ""
+                          "This command would group nodes B1, A1 and T1 under "
+                          "a common node. Note the space between element IDs.\n"
+                          "---\n"
+                          "Valid commands include:\n"
+                          "---\n"
+                          "info: Print this message.\n"
+                          "comment: Enter a comment about current diagram.\n"
+                          "next: Move to the next diagram.\n"
+                          "exit: Exit the annotator immediately.\n"
+                          "done: Mark current diagram complete.\n"
+                          "---")
+                    pass
+
+                # Store a comment if requested
+                if user_input == 'comment':
+
+                    # Show a prompt for comment
+                    comment = input("Enter comment: ")
+
+                    # Return the comment
+                    return comment
+
+                # If the user marks the annotation as complete, freeze the graph
+                if user_input == 'done':
+
+                    # Freeze and return the graph
+                    graph = nx.freeze(graph)
+
+                    # Destroy any remaining windows
+                    cv2.destroyAllWindows()
+
+                    # Set status to complete
+                    self.complete = True
+
+                    return graph
+
+            # TODO Implement command for deleting grouping nodes
+
+            # If user input does not include a valid command, assume the input
+            # is a string containing a list of diagram elements.
+            if user_input not in commands:
+
+                # Split the input into a list
+                user_input = user_input.split(',')
+
+                # Strip extra whitespace
+                user_input = [u.strip() for u in user_input]
+
+                # Generate a list of valid diagram elements present in the graph
+                valid_nodes = [e.lower() for e in graph.nodes]
+
+                # Generate a dictionary of groups
+                group_dict = Annotate.get_node_dict(graph, kind='group')
+
+                # Count the current groups and enumerate for convenience. This
+                # allows the user to refer to group number instead of complex
+                # identifier.
+                group_dict = {"g{}".format(i): k for i, (k, v) in
+                              enumerate(group_dict.items(), start=1)}
+
+                # Create a list of identifiers based on the dict keys
+                valid_groups = [g.lower() for g in group_dict.keys()]
+
+                # Combine the valid nodes and groups into a set
+                valid_elems = set(valid_nodes + valid_groups)
+
+                # Check for invalid input by comparing the user input and the
+                # valid elements as sets.
+                while not set(user_input).issubset(valid_elems):
+
+                    # Get difference between user input and valid graph
+                    diff = set(user_input).difference(valid_elems)
+
+                    # Print error message with difference in sets.
+                    print("Sorry, {} is not a valid diagram element or command."
+                          " Please try again.".format(' '.join(diff)))
+
+                    # Break from the loop
+                    break
+
+                # Proceed if the user input is a subset of valid elements
+                if set(user_input).issubset(valid_elems):
+
+                    # Replace aliases with valid identifiers, if used
+                    user_input = [group_dict[u] if u in valid_groups else u for
+                                  u in user_input]
+
+                    # Update the graph according to user input
+                    self.graph = Annotate.group_nodes(graph, user_input)
+
+                # Continue until the annotation process is complete
+                continue
