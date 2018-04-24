@@ -618,6 +618,7 @@ class Diagram:
         
         Parameters:
             json_path: Path to the JSON file containing AI2D annotation.
+                       Alternatively, a dictionary containing parsed annotation.
             image_path: Path to the image file containing the diagram.
             size: Pixel length of the longest edge of the image. 
             
@@ -627,13 +628,18 @@ class Diagram:
         # Mark the annotation initially as not complete
         self.complete = False
 
-        # Assign paths to JSON annotation and image to variables; get resolution
-        self.json_path = json_path
+        # Check input to the Diagram class, begin with the image and resolution
         self.image_path = image_path
         self.dpi = dpi
 
-        # Load JSON annotation into a dictionary
-        self.annotation = self.load_annotation(json_path)
+        # Continue by checking the annotation type. If the input is a dictionary
+        # assign the dictionary to the variable 'annotation'.
+        if type(json_path) == dict:
+            self.annotation = json_path
+
+        else:
+            # Load JSON annotation into a dictionary
+            self.annotation = self.load_annotation(json_path)
 
         # Parse the annotation dictionary for elements and relations
         self.elements, self.relations = self.parse_annotation(self.annotation)
@@ -641,6 +647,7 @@ class Diagram:
         # Extract element types
         self.element_types = self.extract_types(self.elements, self.annotation)
 
+        # TODO This needs to be separated to init_graph and graph ...
         # Create initial graph with diagram elements only
         self.graph = self.create_graph(self.element_types, self.relations,
                                        edges=False, arrowheads=False)
@@ -1034,13 +1041,13 @@ class Diagram:
                           "Example of valid input: b1, a1, t1\n\n"
                           ""
                           "This command would group nodes B1, A1 and T1 under "
-                          "a common node. Note the space between element IDs.\n"
+                          "a common node.\n"
                           "---\n"
                           "Valid commands include:\n"
                           "---\n"
                           "info: Print this message.\n"
                           "comment: Enter a comment about current diagram.\n"
-                          "next: Move to the next diagram.\n"
+                          "next: Move on to the next diagram.\n"
                           "exit: Exit the annotator immediately.\n"
                           "done: Mark current diagram complete.\n"
                           "---")
@@ -1059,7 +1066,7 @@ class Diagram:
                 if user_input == 'done':
 
                     # Freeze and return the graph
-                    graph = nx.freeze(graph)
+                    self.graph = nx.freeze(graph)
 
                     # Destroy any remaining windows
                     cv2.destroyAllWindows()
@@ -1067,7 +1074,7 @@ class Diagram:
                     # Set status to complete
                     self.complete = True
 
-                    return graph
+                    return self
 
             # TODO Implement command for deleting grouping nodes
 
