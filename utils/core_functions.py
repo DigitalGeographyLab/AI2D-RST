@@ -537,90 +537,19 @@ class Draw:
 
         return img
 
-    @staticmethod
-    def draw_nodes(graph, pos, ax, node_types, draw_edges=True):
-        """
-        A generic function for visualising the nodes in a graph.
-
-        Parameters:
-            graph: A networkx graph.
-            pos: Positions for the networkx graph.
-            ax: Matplotlib Figure Axis on which to draw.
-            node_types: A dictionary of node types extracted from the graph.
-            draw_edges: A boolean indicating whether edges should be drawn.
-        
-        Returns:
-             None
-        """
-        # Attempt to draw nodes for text elements
-        try:
-            texts = [k for k, v in node_types.items() if v == 'text']
-            nx.draw_networkx_nodes(graph, pos, nodelist=texts, alpha=1,
-                                   node_color='dodgerblue', ax=ax)
-        except KeyError:
-            pass
-
-        # Attempt to draw nodes for blobs
-        try:
-            blobs = [k for k, v in node_types.items() if v == 'blobs']
-            nx.draw_networkx_nodes(graph, pos, nodelist=blobs, alpha=1,
-                                   node_color='orangered', ax=ax)
-        except KeyError:
-            pass
-
-        # Attempt to draw nodes for arrowheads
-        try:
-            arrowhs = [k for k, v in node_types.items() if v == 'arrowHeads']
-            nx.draw_networkx_nodes(graph, pos, nodelist=arrowhs, alpha=1,
-                                   node_color='darkorange', ax=ax)
-        except KeyError:
-            pass
-
-        # Attempt to draw nodes for arrows
-        try:
-            arrows = [k for k, v in node_types.items() if v == 'arrows']
-            nx.draw_networkx_nodes(graph, pos, nodelist=arrows, alpha=1,
-                                   node_color='peachpuff', ax=ax)
-        except KeyError:
-            pass
-
-        # Attempt to draw nodes for imageConsts
-        try:
-            constants = [k for k, v in node_types.items() if
-                         v == 'imageConsts']
-            nx.draw_networkx_nodes(graph, pos, nodelist=constants, alpha=1,
-                                   node_color='palegoldenrod', ax=ax)
-        except KeyError:
-            pass
-
-        # Attempt to draw nodes for element groups
-        try:
-            groups = [k for k, v in node_types.items() if v == 'group']
-            nx.draw_networkx_nodes(graph, pos, nodelist=groups, alpha=1,
-                                   node_color='navajowhite', ax=ax,
-                                   node_size=50)
-        except KeyError:
-            pass
-
-        # Draw edges if requested
-        if draw_edges:
-            # Draw edges between nodes
-            nx.draw_networkx_edges(graph, pos, alpha=0.5, ax=ax)
-
 
 class Diagram:
     """
     This class holds the annotation for a single AI2D diagram.
     """
-    def __init__(self, json_path, image_path, dpi=120):
+    def __init__(self, json, image):
         """
         This function initializes the Diagram class.
         
         Parameters:
-            json_path: Path to the JSON file containing AI2D annotation.
-                       Alternatively, a dictionary containing parsed annotation.
-            image_path: Path to the image file containing the diagram.
-            size: Pixel length of the longest edge of the image. 
+            json: Path to the JSON file containing AI2D annotation or a
+                       dictionary containing parsed annotation.
+            image: Path to the image file containing the diagram.
             
         Returns:
             An AI2D Diagram with various methods and attributes.
@@ -629,34 +558,26 @@ class Diagram:
         self.complete = False
 
         # Check input to the Diagram class, begin with the image and resolution
-        self.image_path = image_path
-        self.dpi = dpi
+        self.image_path = image
 
         # Continue by checking the annotation type. If the input is a dictionary
         # assign the dictionary to the variable 'annotation'.
-        if type(json_path) == dict:
-            self.annotation = json_path
+        if type(json) == dict:
+            self.annotation = json
 
         else:
             # Load JSON annotation into a dictionary
-            self.annotation = self.load_annotation(json_path)
+            self.annotation = self.load_annotation(json)
 
-        # Parse the annotation dictionary for elements and relations
-        self.elements, self.relations = self.parse_annotation(self.annotation)
-
-        # Extract element types
-        self.element_types = self.extract_types(self.elements, self.annotation)
-
-        # TODO This needs to be separated to init_graph and graph ...
         # Create initial graph with diagram elements only
-        self.graph = self.create_graph(self.element_types, self.relations,
-                                       edges=False, arrowheads=False)
+        self.graph = self.create_graph(self.annotation, edges=False,
+                                       arrowheads=False)
 
-        # Visualise the layout annotation and get layout size
+        # Visualise the layout annotation in an image
         self.layout = self.draw_layout(self.image_path, self.annotation, 480)
 
-        # Set up manual annotation
-        self.annotate_lst = self.annotate_lst(self.graph, self.layout)
+        # Set up placeholders for the layout graph and comments
+        self.comments = []
 
     @staticmethod
     def load_annotation(json_path):
@@ -762,6 +683,76 @@ class Diagram:
 
         # Return the element type dictionary
         return element_types
+
+    @staticmethod
+    def draw_nodes(graph, pos, ax, node_types, draw_edges=True):
+        """
+        A generic function for visualising the nodes in a graph.
+
+        Parameters:
+            graph: A networkx graph.
+            pos: Positions for the networkx graph.
+            ax: Matplotlib Figure Axis on which to draw.
+            node_types: A dictionary of node types extracted from the graph.
+            draw_edges: A boolean indicating whether edges should be drawn.
+
+        Returns:
+             None
+        """
+        # Attempt to draw nodes for text elements
+        try:
+            texts = [k for k, v in node_types.items() if v == 'text']
+            nx.draw_networkx_nodes(graph, pos, nodelist=texts, alpha=1,
+                                   node_color='dodgerblue', ax=ax)
+        except KeyError:
+            pass
+
+        # Attempt to draw nodes for blobs
+        try:
+            blobs = [k for k, v in node_types.items() if v == 'blobs']
+            nx.draw_networkx_nodes(graph, pos, nodelist=blobs, alpha=1,
+                                   node_color='orangered', ax=ax)
+        except KeyError:
+            pass
+
+        # Attempt to draw nodes for arrowheads
+        try:
+            arrowhs = [k for k, v in node_types.items() if v == 'arrowHeads']
+            nx.draw_networkx_nodes(graph, pos, nodelist=arrowhs, alpha=1,
+                                   node_color='darkorange', ax=ax)
+        except KeyError:
+            pass
+
+        # Attempt to draw nodes for arrows
+        try:
+            arrows = [k for k, v in node_types.items() if v == 'arrows']
+            nx.draw_networkx_nodes(graph, pos, nodelist=arrows, alpha=1,
+                                   node_color='peachpuff', ax=ax)
+        except KeyError:
+            pass
+
+        # Attempt to draw nodes for imageConsts
+        try:
+            constants = [k for k, v in node_types.items() if
+                         v == 'imageConsts']
+            nx.draw_networkx_nodes(graph, pos, nodelist=constants, alpha=1,
+                                   node_color='palegoldenrod', ax=ax)
+        except KeyError:
+            pass
+
+        # Attempt to draw nodes for element groups
+        try:
+            groups = [k for k, v in node_types.items() if v == 'group']
+            nx.draw_networkx_nodes(graph, pos, nodelist=groups, alpha=1,
+                                   node_color='navajowhite', ax=ax,
+                                   node_size=50)
+        except KeyError:
+            pass
+
+        # Draw edges if requested
+        if draw_edges:
+            # Draw edges between nodes
+            nx.draw_networkx_edges(graph, pos, alpha=0.5, ax=ax)
 
     @staticmethod
     def draw_layout(path_to_image, annotation, height):
@@ -905,19 +896,104 @@ class Diagram:
         return img
 
     @staticmethod
-    def create_graph(element_types, relations, edges=False, arrowheads=False):
+    def get_node_dict(graph, kind=None):
         """
-        Draws a graph of diagram elements parsed from AI2D annotation.
+        A function for creating a dictionary of nodes and their kind.
 
         Parameters:
-            element_types: List of element types parsed from AI2D annotation.
-            relations: List of relations parsed from AI2D annotation.
+            graph: A networkx graph.
+            kind: A string defining what to include in the dictionary. 'node'
+                  returns only nodes and 'group' returns only groups. By
+                  default, the function returns all nodes defined in the graph.
+
+        Returns:
+            A dictionary with node names as keys and kind as values.
+        """
+
+        # Generate a dictionary with nodes and their kind
+        node_types = nx.get_node_attributes(graph, 'kind')
+
+        # If the requested output consists of node groups, return group dict
+        if kind == 'group':
+            # Generate a dictionary of groups
+            group_dict = {k: k for k, v in node_types.items() if
+                          v == 'group'}
+
+            # Return dictionary
+            return group_dict
+
+        # If the requested output consists of nodes, return node dict
+        if kind == 'node':
+
+            # Generate a dictionary of nodes
+            node_dict = {k: k for k, v in node_types.items() if v !=
+                         'group'}
+
+            # Return dictionary
+            return node_dict
+
+        # Otherwise return all node types
+        else:
+            return node_types
+
+    def group_nodes(self, graph, user_input):
+        """
+        A function for grouping together nodes of a graph, which are included in
+        the accompanying list.
+
+        Parameters:
+            graph: A networkx graph.
+            user_input: A list of nodes contained in the graph.
+
+        Returns:
+            An updated networkx graph.
+        """
+        # Create a dictionary of the kinds of nodes currently in the graph
+        node_dict = self.get_node_dict(graph)
+
+        # Check the user input against the node dictionary
+        input_node_types = [node_dict[u.upper()] for u in user_input]
+
+        # If the user input contains an imageConsts, do not add a node
+        if 'imageConsts' in input_node_types:
+            for k, v in node_dict.items():
+                if v == 'imageConsts':
+                    for valid_elem in user_input:
+                        self.graph.add_edge(valid_elem.upper(), k.upper())
+
+        else:
+            # Generate a name for the new node that joins together the elements
+            # provided by the user
+            new_node = '+'.join(user_input).upper()
+
+            # Add the new node to the graph
+            self.graph.add_node(new_node, kind='group')
+
+            # Add edges from nodes in the user input to the new node
+            for valid_elem in user_input:
+                self.graph.add_edge(valid_elem.upper(), new_node)
+
+    def create_graph(self, annotation, edges=False, arrowheads=False):
+        """
+        Draws an initial graph of diagram elements parsed from AI2D annotation.
+
+        Parameters:
+            annotation: A dictionary containing parsed AI2D annotation.
             edges: A boolean defining whether edges are to be drawn.
             arrowheads: A boolean defining whether arrowheads are drawn.
 
         Returns:
-            A networkx graph.
+            A networkx graph with diagram elements.
         """
+        # Check for correct input type
+        assert isinstance(annotation, dict)
+
+        # Parse the annotation from the dictionary
+        diagram_elements, relations = self.parse_annotation(annotation)
+
+        # Extract element types
+        element_types = self.extract_types(diagram_elements, annotation)
+
         # Check if arrowheads should be excluded
         if not arrowheads:
 
@@ -986,7 +1062,52 @@ class Diagram:
         # Return graph
         return graph
 
-    def annotate_lst(self, graph, layout):
+    def draw_graph(self, dpi=100):
+
+        # Set up the matplotlib Figure, its resolution and Axis
+        fig = plt.figure(dpi=dpi)
+        ax = fig.add_subplot(1, 1, 1)
+
+        # Initialize a spring layout for the graph
+        pos = nx.spring_layout(self.graph)
+
+        # Generate a dictionary with nodes and their kind
+        node_types = nx.get_node_attributes(self.graph, 'kind')
+
+        # Create label dictionaries for both nodes and groups of nodes
+        node_dict = self.get_node_dict(self.graph, kind='node')
+        group_dict = self.get_node_dict(self.graph, kind='group')
+
+        # Enumerate groups and use their numbers as labels for clarity
+        group_dict = {k: "G{}".format(i) for i, (k, v) in
+                      enumerate(group_dict.items(), start=1)}
+
+        # Draw nodes
+        self.draw_nodes(self.graph, pos=pos, ax=ax, node_types=node_types)
+
+        # Draw labels for nodes
+        nx.draw_networkx_labels(self.graph, pos, font_size=10,
+                                labels=node_dict)
+
+        # Draw labels for groups
+        nx.draw_networkx_labels(self.graph, pos, font_size=10,
+                                labels=group_dict)
+
+        # Remove margins from the graph and axes from the plot
+        fig.tight_layout(pad=0)
+        plt.axis('off')
+
+        # Save figure to file, read the file using OpenCV and remove the file
+        plt.savefig('temp.png')
+        img = cv2.imread('temp.png')
+        os.remove('temp.png')
+
+        # Close matplotlib figure
+        plt.close()
+
+        return img
+
+    def request_input(self):
 
         # Define available commands
         commands = ['info', 'comment', 'next', 'exit', 'done']
@@ -1001,10 +1122,10 @@ class Diagram:
         while annotating:
 
             # Draw the graph
-            diagram = Draw.draw_graph(graph, dpi=100)
+            diagram = self.draw_graph(dpi=100)
 
             # Join the graph and the layout structure horizontally
-            preview = np.hstack((diagram, layout))
+            preview = np.hstack((diagram, self.layout))
 
             # Show the resulting visualization
             cv2.imshow("Annotation", preview)
@@ -1019,13 +1140,13 @@ class Diagram:
                 if user_input == 'exit':
                     exit("Quitting ...")
 
-                # If next diagram is requested, return None and move along
+                # If next diagram is requested, store current graph and move on
                 if user_input == 'next':
 
                     # Destroy any remaining windows
                     cv2.destroyAllWindows()
 
-                    return None
+                    return
 
                 # Print information if requested
                 if user_input == 'info':
@@ -1060,21 +1181,18 @@ class Diagram:
                     comment = input("Enter comment: ")
 
                     # Return the comment
-                    return comment
+                    self.comments.append(comment)
 
-                # If the user marks the annotation as complete, freeze the graph
+                # If the user marks the annotation as complete
                 if user_input == 'done':
-
-                    # Freeze and return the graph
-                    self.graph = nx.freeze(graph)
-
-                    # Destroy any remaining windows
-                    cv2.destroyAllWindows()
 
                     # Set status to complete
                     self.complete = True
 
-                    return self
+                    # Destroy any remaining windows
+                    cv2.destroyAllWindows()
+
+                    return
 
             # TODO Implement command for deleting grouping nodes
 
@@ -1089,10 +1207,10 @@ class Diagram:
                 user_input = [u.strip() for u in user_input]
 
                 # Generate a list of valid diagram elements present in the graph
-                valid_nodes = [e.lower() for e in graph.nodes]
+                valid_nodes = [e.lower() for e in self.graph.nodes]
 
                 # Generate a dictionary of groups
-                group_dict = Annotate.get_node_dict(graph, kind='group')
+                group_dict = self.get_node_dict(self.graph, kind='group')
 
                 # Count the current groups and enumerate for convenience. This
                 # allows the user to refer to group number instead of complex
@@ -1128,7 +1246,7 @@ class Diagram:
                                   u in user_input]
 
                     # Update the graph according to user input
-                    self.graph = Annotate.group_nodes(graph, user_input)
+                    self.group_nodes(self.graph, user_input)
 
                 # Continue until the annotation process is complete
                 continue
