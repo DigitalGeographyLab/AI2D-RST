@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Import packages
-from core_functions import Diagram
+from core import Diagram
 import argparse
 import os
 import networkx as nx
