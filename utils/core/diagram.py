@@ -601,16 +601,13 @@ class Diagram:
     def request_input(self):
 
         # Define available commands
-        commands = ['info', 'comment', 'next', 'exit', 'done']
+        commands = ['info', 'comment', 'next', 'exit', 'done', 'cap']
 
         # Define a prompt for user input
         prompt = "Please enter members of element group or a valid command: "
 
-        # Set a variable indicating that the annotation procedure is ongoing
-        annotating = True
-
         # Enter a while loop for the annotation procedure
-        while annotating:
+        while not self.complete:
 
             # Draw the graph
             diagram = self.draw_graph(dpi=100)
@@ -655,13 +652,17 @@ class Diagram:
                           "This command would group nodes B1, A1 and T1 under "
                           "a common node.\n"
                           "---\n"
-                          "Valid commands include:\n"
+                          "Grouping nodes may be deleted using command rm.\n\n"
+                          "Example command: rm g1\n\n"
+                          "This command would delete group G1.\n"
                           "---\n"
+                          "Other valid commands include:\n\n"
                           "info: Print this message.\n"
                           "comment: Enter a comment about current diagram.\n"
+                          "cap: Save current visualisation on disk.\n"
                           "next: Move on to the next diagram.\n"
                           "exit: Exit the annotator immediately.\n"
-                          "done: Mark current diagram complete.\n"
+                          "done: Mark current diagram complete and move on.\n"
                           "---")
                     pass
 
@@ -685,13 +686,55 @@ class Diagram:
 
                     return
 
-            # TODO Implement command for deleting grouping nodes
+                # Save a screenshot if requested
+                if user_input == 'cap':
 
-            # TODO Implement a command for saving the current view into PNG
+                    cv2.imwrite("screen_capture.png", preview)
+
+            # Check if the user has requested to delete a grouping node
+            if 'rm' in user_input:
+
+                # Get list of groups to delete
+                user_input = user_input.lower().split()[1:]
+
+                # Generate a dictionary of groups
+                group_dict = self.get_node_dict(self.graph, kind='group')
+
+                # Count the current groups and enumerate for convenience. This
+                # allows the user to refer to group number instead of complex
+                # identifier.
+                group_dict = {"g{}".format(i): k for i, (k, v) in
+                              enumerate(group_dict.items(), start=1)}
+
+                # Check for invalid input by comparing the user input and the
+                # valid group identifiers as sets.
+                while not set(user_input).issubset(set(group_dict.keys())):
+
+                    # Get difference between user input and valid graph
+                    diff = set(user_input).difference(set(group_dict.keys()))
+
+                    # Print error message with difference in sets.
+                    print("Sorry, {} is not a valid group identifier."
+                          " Please try again.".format(' '.join(diff)))
+
+                    # Break from the loop
+                    break
+
+                # Proceed if the user input is a subset of valid group ids
+                if set(user_input).issubset(group_dict.keys()):
+
+                    # Replace aliases with valid identifiers, if used
+                    user_input = [group_dict[u] if u in group_dict.keys()
+                                  else u for u in user_input]
+
+                    # Update the graph according to user input
+                    self.graph.remove_nodes_from(user_input)
+
+                    continue
 
             # If user input does not include a valid command, assume the input
             # is a string containing a list of diagram elements.
-            if user_input not in commands:
+            elif user_input not in commands:
 
                 # Split the input into a list
                 user_input = user_input.split(',')
