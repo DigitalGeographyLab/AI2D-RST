@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from core_functions import Annotate, Draw
+from core import Diagram
 import argparse
 import cv2
-import json
-import networkx as nx
-import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 
@@ -31,27 +27,28 @@ img_path = args['images']
 # Check the type of input, beginning with files
 if os.path.isfile(ann_path) and os.path.isfile(img_path):
 
-    # Load the annotation
-    ann = Annotate.load_annotation(ann_path)
+    # Initialise diagram
+    diagram = Diagram(ann_path, img_path)
 
-    # Draw the diagram and graph based on the annotation
-    diagram = Draw.draw_graph_from_annotation(ann,
-                                              draw_edges=True,
-                                              draw_arrowheads=True,
-                                              return_graph=False)
+    # Create a diagram with original annotation
+    diagram.graph = diagram.create_graph(diagram.annotation,
+                                         edges=True, arrowheads=True)
 
-    # Draw the layout
-    layout = Draw.draw_layout(img_path, ann)
+    # Visualize the graph
+    graph_viz = diagram.draw_graph(dpi=100)
 
-    # Join the two images horizontally
-    preview = np.hstack((diagram, layout))
+    # Join the graph and layout visualizations
+    preview = np.hstack((graph_viz, diagram.layout))
 
     # Show the visualization
-    cv2.imshow("Preview", preview)
+    cv2.imshow("{}".format(img_path.split('/')[-1]), preview)
 
     # If the user presses 'q', then exit, otherwise show next diagram.
     if cv2.waitKey() == ord('q'):
         quit()
+
+    # Destroy all windows
+    cv2.destroyAllWindows()
 
 # If the input is a dir ...
 if os.path.isdir(ann_path) and os.path.isdir(img_path):
@@ -73,24 +70,26 @@ if os.path.isdir(ann_path) and os.path.isdir(img_path):
                 json_path = os.path.join(ann_root, f)
                 image_path = os.path.join(img_path, image_fn)
 
-                # Load the annotation
-                ann = Annotate.load_annotation(json_path)
+                # Initialise diagram
+                diagram = Diagram(json_path, image_path)
 
-                # Draw the diagram and graph based on the annotation
-                diagram = Draw.draw_graph_from_annotation(ann,
-                                                          draw_edges=True,
-                                                          draw_arrowheads=True,
-                                                          return_graph=False)
+                # Create a diagram with original annotation
+                diagram.graph = diagram.create_graph(diagram.annotation,
+                                                     edges=True,
+                                                     arrowheads=True)
 
-                # Draw the layout
-                layout = Draw.draw_layout(image_path, ann)
+                # Visualize the graph
+                graph_viz = diagram.draw_graph(dpi=100)
 
-                # Join the two images horizontally
-                preview = np.hstack((diagram, layout))
+                # Join the graph and layout visualizations
+                preview = np.hstack((graph_viz, diagram.layout))
 
                 # Show the visualization
-                cv2.imshow("Preview", preview)
+                cv2.imshow("{}".format(image_fn), preview)
 
                 # If user presses 'q', then exit, otherwise show next diagram
                 if cv2.waitKey() == ord('q'):
                     quit()
+
+                # Destroy all windows
+                cv2.destroyAllWindows()

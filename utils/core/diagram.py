@@ -198,7 +198,7 @@ class Diagram:
         try:
             arrows = [k for k, v in node_types.items() if v == 'arrows']
             nx.draw_networkx_nodes(graph, pos, nodelist=arrows, alpha=1,
-                                   node_color='peachpuff', ax=ax)
+                                   node_color='mediumseagreen', ax=ax)
         except KeyError:
             pass
 
@@ -371,7 +371,7 @@ class Diagram:
                 # be drawn as lines; otherwise only points will appear.
                 cv2.polylines(img, [points], isClosed=True, thickness=2,
                               lineType=cv2.LINE_AA,
-                              color=convert_colour('peachpuff'))
+                              color=convert_colour('mediumseagreen'))
 
                 # Insert the identifier into the middle of the element
                 cv2.putText(img, arrow_id, (x - 10, y + 10),
