@@ -28,7 +28,7 @@ class Diagram:
         # Mark the annotation initially as not complete
         self.complete = False
 
-        # Check input to the Diagram class, begin with the image and resolution
+        # Set image path
         self.image_path = image
 
         # Continue by checking the annotation type. If the input is a dictionary
