@@ -1,9 +1,17 @@
 # AI2D-RST
 Repository for the conference article "Enhancing the AI2 Diagrams dataset using Rhetorical Structure Theory", published in the Proceedings of the 11th Language Resources and Evaluation Conference.
 
-## Guide to Annotation
+## Caveat
 
-This section documents common RST relations encountered during the annotation and examples of their annotation. These definitions are intended to illustrate how we applied RST to the AI2D diagrams, particularly during the experiments intended for measuring agreement between our annotations.
+Note that this repository is very much a work in progress, as some of the scripts in the [utils](utils/) directory relate to unpublished work.
+
+## Full paper
+
+Please find the conference paper [here](http://www.helsinki.fi/~thiippal/publications/2018-lrec.pdf).
+
+## Guide to RST annotation for diagrams
+
+This section documents common RST relations encountered during the annotation and presents examples of their application. These definitions are intended to illustrate how we applied RST to the AI2D diagrams, particularly during the experiments intended for measuring the agreement between our annotations.
 
 | Relation              | Description   | Example  |
 | :-------------------- |:------------- | :--------|
@@ -14,5 +22,3 @@ This section documents common RST relations encountered during the annotation an
 | *property-ascription* | A relationship in which one element describes the properties of another element. The element providing the properties is marked *satellite*, whereas the one being described annotated as *nucleus*. | [1031.png](docs/property-1031.png) shows groups of different types of plant leaves. Their properties (shape) are described using written labels. |
 | *title*               | A relationship in which one element acts as a title for the entire diagram or its part. The element providing the title is marked as *satellite*, while the entire diagram is annotated as *nucleus*. | The upper part of [555.png](docs/title-555.png) features a title, which describes the entire diagram. [108.png](docs/sequence-108.png), in turn, features a title right in the middle of the diagram. |
 | *none*                | A relationship used during to flag problematic relations during the annotation process: also used if one of the bounding boxes marking the elements is missing. This relation is not included in the final AI2D-RST corpus. | The copyright information in [564.png](docs/none-564.png) is not a part of the rhetorical structure of the diagram. |
-
-
