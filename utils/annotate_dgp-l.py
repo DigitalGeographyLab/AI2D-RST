@@ -1,10 +1,27 @@
 # -*- coding: utf-8 -*-
 
+"""
+This script allows the user to create a graph describing the logical structure
+of a diagram (DPG-L).
+
+Usage:
+    python annotate_dpg-l.py -a annotation.pkl -i images/ -o output.pkl
+    
+Arguments:
+    -a/--annotation: Path to the pandas DataFrame containing the annotation
+                     extracted from the AI2D dataset.
+    -i/--images: Path to the directory containing the AI2D diagram images.
+    -o/--output: Path to the output file, in which the resulting annotation is
+                 stored.
+
+Returns:
+    A pandas DataFrame containing a Diagram object for each diagram.
+"""
+
 # Import packages
 from core import Diagram
 import argparse
 import os
-import networkx as nx
 import pandas as pd
 
 # Set up the argument parser
