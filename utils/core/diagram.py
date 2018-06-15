@@ -289,10 +289,19 @@ class Diagram:
                 # Reshape the numpy array for drawing
                 points = points.reshape((-1, 1, 2))
 
-                # Compute center of the drawn element
+                # Get moment values
                 m = cv2.moments(points)
-                x = int(m["m10"] / m["m00"])
-                y = int(m["m01"] / m["m00"])
+
+                # Calculate centroid of the polygon; catch errors
+                try:
+                    x = int(m["m10"] / m["m00"])
+                except ZeroDivisionError:
+                    pass
+
+                try:
+                    y = int(m["m01"] / m["m00"])
+                except ZeroDivisionError:
+                    pass
 
                 # Draw the polygon. Note that points must be in brackets to
                 # be drawn as lines; otherwise only points will appear.
