@@ -11,7 +11,7 @@ Please find the conference paper [here](http://www.helsinki.fi/~thiippal/publica
 
 ## Guide to RST annotation for diagrams
 
-This section documents common RST relations encountered during the annotation and presents examples of their application. These definitions are intended to illustrate how we applied RST to the AI2D diagrams, particularly during the experiments intended for measuring the agreement between our annotations.
+This section documents common RST relations encountered during the annotation and presents examples of their application to the AI2D data. These examples are intended to illustrate how we applied RST to the AI2D diagrams, particularly during the experiments measuring agreement between annotators, as reported in the conference paper.
 
 | Relation              | Description   | Example  |
 | :-------------------- |:------------- | :--------|
