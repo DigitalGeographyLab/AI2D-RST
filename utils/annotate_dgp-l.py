@@ -49,10 +49,10 @@ images_path = args['images']
 output_path = args['output']
 
 # Set review / annotation mode
+review = False
+
 if args['review']:
     review = True
-else:
-    review = False
 
 # Check if the output file exists already, or whether to continue with previous
 # annotation.
@@ -95,10 +95,14 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
 
     # If diagram is marked as complete, but the script runs in a review mode,
     # open the diagram for editing.
-    if diagram.complete and review:
+    try:
+        if diagram.complete and review:
 
-        # Set the method tracking completeness to False
-        diagram.complete = False
+            # Set the method tracking completeness to False
+            diagram.complete = False
+
+    except AttributeError:
+        pass
 
     # Check if diagram exists by requesting input
     try:
