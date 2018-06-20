@@ -13,6 +13,8 @@ Arguments:
     -i/--images: Path to the directory containing the AI2D diagram images.
     -o/--output: Path to the output file, in which the resulting annotation is
                  stored.
+    -r/--review: Optional argument that activates review mode. This mode opens
+                 each Diagram object marked as complete for editing.
 
 Returns:
     A pandas DataFrame containing a Diagram object for each diagram.
@@ -28,12 +30,15 @@ import pandas as pd
 ap = argparse.ArgumentParser()
 
 # Define arguments
-ap.add_argument("-a", "--annotation", required=True, help="Path to the pandas "
-                                                          "DataFrame with AI2D "
-                                                          "annotation.")
-ap.add_argument("-i", "--images", required=True, help="Path to the directory "
-                                                      "with AI2D images.")
-ap.add_argument("-o", "--output", required=True, help="Path to the output.")
+ap.add_argument("-a", "--annotation", required=True,
+                help="Path to the pandas DataFrame with AI2D annotation.")
+ap.add_argument("-i", "--images", required=True,
+                help="Path to the directory with AI2D images.")
+ap.add_argument("-o", "--output", required=True,
+                help="Path to the file in which the annotation is stored.")
+ap.add_argument("-r", "--review", required=False, action='store_true',
+                help="Activates review mode, which opens each annotated diagram"
+                     " for inspection.")
 
 # Parse arguments
 args = vars(ap.parse_args())
@@ -42,6 +47,12 @@ args = vars(ap.parse_args())
 ann_path = args['annotation']
 images_path = args['images']
 output_path = args['output']
+
+# Set review / annotation mode
+if args['review']:
+    review = True
+else:
+    review = False
 
 # Check if the output file exists already, or whether to continue with previous
 # annotation.
@@ -81,6 +92,13 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
 
     # Assign diagram to variable
     diagram = row['diagram']
+
+    # If diagram is marked as complete, but the script runs in a review mode,
+    # open the diagram for editing.
+    if diagram.complete and review:
+
+        # Set the method tracking completeness to False
+        diagram.complete = False
 
     # Check if diagram exists by requesting input
     try:
