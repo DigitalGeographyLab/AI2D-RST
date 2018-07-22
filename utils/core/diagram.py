@@ -87,9 +87,10 @@ class Diagram:
         # Load the diagram image and make a copy
         img, r = Diagram.resize_img(path_to_image, height)
 
-        # Begin by trying to draw the blobs.
+        # Begin drawing the blobs.
         try:
             for b in annotation['blobs']:
+
                 # Get blob ID
                 blob_id = annotation['blobs'][b]['id']
 
@@ -106,7 +107,8 @@ class Diagram:
                 # Get moment values
                 m = cv2.moments(points)
 
-                # Calculate centroid of the polygon; catch errors
+                # Calculate centroid of the polygon; catch errors arising from
+                # elements that are positioned in coordinates (0, 0).
                 try:
                     x = int(m["m10"] / m["m00"])
                 except ZeroDivisionError:
@@ -133,10 +135,11 @@ class Diagram:
         except KeyError:
             pass
 
-        # Next, attempt to draw text blocks
+        # Next, draw text blocks
         try:
             for t in annotation['text']:
-                # Get text id
+
+                # Get text ID
                 text_id = annotation['text'][t]['id']
 
                 # Get the start and end points of the rectangle and cast
@@ -170,10 +173,11 @@ class Diagram:
         except KeyError:
             pass
 
-        # Finally, attempt to draw any arrows
+        # Finally, draw any arrows
         try:
             for a in annotation['arrows']:
-                # Get arrow id
+
+                # Get arrow ID
                 arrow_id = annotation['arrows'][a]['id']
 
                 # Assign the points into a variable
@@ -224,58 +228,89 @@ class Diagram:
         Returns:
              None
         """
-        # Attempt to draw nodes for text elements
+        # Draw nodes for text elements
         try:
+            # Retrieve text nodes for the list of nodes
             texts = [k for k, v in node_types.items() if v == 'text']
+
+            # Add the list of nodes to the graph
             nx.draw_networkx_nodes(graph, pos, nodelist=texts, alpha=1,
                                    node_color='dodgerblue', ax=ax)
+
+        # Skip if there are no text nodes to draw
         except KeyError:
             pass
 
-        # Attempt to draw nodes for blobs
+        # Draw nodes for blobs
         try:
+            # Retrieve blob nodes for the list of nodes
             blobs = [k for k, v in node_types.items() if v == 'blobs']
+
+            # Add the list of nodes to the graph
             nx.draw_networkx_nodes(graph, pos, nodelist=blobs, alpha=1,
                                    node_color='orangered', ax=ax)
+
+        # Skip if there are no blob nodes to draw
         except KeyError:
             pass
 
-        # Attempt to draw nodes for arrowheads
+        # Draw nodes for arrowheads
         try:
+            # Retrieve arrowhead nodes for the list of nodes
             arrowhs = [k for k, v in node_types.items() if v == 'arrowHeads']
+
+            # Add the list of arrowheads to the graph
             nx.draw_networkx_nodes(graph, pos, nodelist=arrowhs, alpha=1,
                                    node_color='darkorange', ax=ax)
+
+        # Skip if there are no arrowheads to draw
         except KeyError:
             pass
 
-        # Attempt to draw nodes for arrows
+        # Draw nodes for arrows
         try:
+            # Retrieve arrow nodes for the list of nodes
             arrows = [k for k, v in node_types.items() if v == 'arrows']
+
+            # Add the list of arrows to the graph
             nx.draw_networkx_nodes(graph, pos, nodelist=arrows, alpha=1,
                                    node_color='mediumseagreen', ax=ax)
+
+        # Skip if there are no arrows to draw
         except KeyError:
             pass
 
         # Attempt to draw nodes for imageConsts
         try:
+            # Retrieve image constants (in most cases, only one per diagram)
             constants = [k for k, v in node_types.items() if
                          v == 'imageConsts']
+
+            # Add the image constants to the graph
             nx.draw_networkx_nodes(graph, pos, nodelist=constants, alpha=1,
                                    node_color='palegoldenrod', ax=ax)
+
+        # Skip if there are no image constants to draw
         except KeyError:
             pass
 
-        # Attempt to draw nodes for element groups
+        # Draw nodes for element groups
         try:
+            # Retrieve the group nodes for the list of nodes
             groups = [k for k, v in node_types.items() if v == 'group']
+
+            # Add the group nodes to the graph
             nx.draw_networkx_nodes(graph, pos, nodelist=groups, alpha=1,
                                    node_color='navajowhite', ax=ax,
                                    node_size=50)
+
+        # Skip if there are no group nodes to draw
         except KeyError:
             pass
 
         # Draw edges if requested
         if draw_edges:
+
             # Draw edges between nodes
             nx.draw_networkx_edges(graph, pos, alpha=0.5, ax=ax)
 
@@ -503,6 +538,7 @@ class Diagram:
                 # arrow and its head
                 if attributes['category'] == 'arrowHeadTail':
 
+                    # Add edge to graph
                     graph.add_edge(attributes['origin'],
                                    attributes['destination'])
 
