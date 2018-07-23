@@ -28,6 +28,8 @@ class Diagram:
         # Mark the annotation initially as not complete
         self.complete = False
 
+        # TODO Create separate completion flags for layout / rst
+
         # Set image path
         self.image_path = image
 
@@ -662,13 +664,25 @@ class Diagram:
             for valid_elem in user_input:
                 self.graph.add_edge(valid_elem.upper(), new_node)
 
-    def request_input(self):
+    def annotate_layout(self):
+        """
+        A function for annotating the logical / layout structure (DPG-L) of a
+        diagram.
+        
+        Parameters:
+            None. The function modifies the graph that is created when a Diagram
+            object is initialised.
+        
+        Returns:
+            Updates the graph contained in the Diagram object (self.graph)
+            according to the user input.
+        """
 
         # Define available commands
-        commands = ['info', 'comment', 'next', 'exit', 'done', 'cap']
+        lay_commands = ['info', 'comment', 'next', 'exit', 'done', 'cap']
 
         # Define a prompt for user input
-        prompt = "Please enter members of element group or a valid command: "
+        lay_prompt = "Please enter nodes to group or a valid command: "
 
         # Enter a while loop for the annotation procedure
         while not self.complete:
@@ -683,10 +697,10 @@ class Diagram:
             cv2.imshow("Annotation", preview)
 
             # Prompt user for input
-            user_input = input(prompt)
+            user_input = input(lay_prompt)
 
             # Check if the input is a command
-            if user_input in commands:
+            if user_input in lay_commands:
 
                 # Quit the program immediately upon command
                 if user_input == 'exit':
@@ -800,7 +814,7 @@ class Diagram:
 
             # If user input does not include a valid command, assume the input
             # is a string containing a list of diagram elements.
-            elif user_input not in commands:
+            elif user_input not in lay_commands:
 
                 # Split the input into a list
                 user_input = user_input.split(',')
@@ -852,3 +866,104 @@ class Diagram:
 
                 # Continue until the annotation process is complete
                 continue
+
+    def annotate_rst(self):
+        """
+        A function for annotating the rhetorical structure (DPG-R) of a diagram.
+        
+        Parameters:
+            None.
+        
+        Returns:
+            Updates the RST graph in the Diagram object (self.rst_graph).
+        """
+
+        # Define available commands
+        rst_commands = ['info', 'define', 'next', 'exit', 'done', 'cap', 'new',
+                        'comment']
+
+        # Define a dictionary of RST relations / types and their aliases (keys)
+        relations = {'anti': {'name': 'antithesis', 'kind': 'mono'},
+                     'back': {'name': 'background', 'kind': 'mono'},
+                     'circ': {'name': 'circumstance', 'kind': 'mono'},
+                     'conc': {'name': 'concession', 'kind': 'mono'},
+                     'cond': {'name': 'condition', 'kind': 'mono'},
+                     'elab': {'name': 'elaboration', 'kind': 'mono'},
+                     'enab': {'name': 'enablement', 'kind': 'mono'},
+                     'eval': {'name': 'evaluation', 'kind': 'mono'},
+                     'evid': {'name': 'evidence', 'kind': 'mono'},
+                     'pret': {'name': 'interpretation', 'kind': 'mono'},
+                     'just': {'name': 'justify', 'kind': 'mono'},
+                     'mean': {'name': 'means', 'kind': 'mono'},
+                     'moti': {'name': 'motivation', 'kind': 'mono'},
+                     'nvoc': {'name': 'nonvolitional-cause', 'kind': 'mono'},
+                     'nvor': {'name': 'nonvolitional-result', 'kind': 'mono'},
+                     'otws': {'name': 'otherwise', 'kind': 'mono'},
+                     'prep': {'name': 'preparation', 'kind': 'mono'},
+                     'purp': {'name': 'purpose', 'kind': 'mono'},
+                     'rest': {'name': 'restatement', 'kind': 'multi'},
+                     'solu': {'name': 'solutionhood', 'kind': 'mono'},
+                     'summ': {'name': 'summary', 'kind': 'mono'},
+                     'unls': {'name': 'unless', 'kind': 'mono'},
+                     'volc': {'name': 'volitional-cause', 'kind': 'mono'},
+                     'volr': {'name': 'volitional-result', 'kind': 'mono'},
+                     'cont': {'name': 'contrast', 'kind': 'multi'},
+                     'join': {'name': 'joint', 'kind': 'multi'},
+                     'list': {'name': 'list', 'kind': 'multi'},
+                     'sequ': {'name': 'sequence', 'kind': 'multi'},
+                     'iden': {'name': 'identification', 'kind': 'mono'},
+                     'casc': {'name': 'class-ascription', 'kind': 'mono'},
+                     'pasc': {'name': 'property-ascription', 'kind': 'mono'},
+                     'poss': {'name': 'possession', 'kind': 'mono'},
+                     'proj': {'name': 'projection', 'kind': 'mono'},
+                     'effe': {'name': 'effect', 'kind': 'mono'},
+                     'titl': {'name': 'title', 'kind': 'mono'}
+                     }
+
+        # Define a prompt for user input
+        rst_prompt = "Please enter a valid command: "
+
+        # TODO Check if an RST graph is complete: use a non-method flag for now
+        rst_complete = False
+
+        # Enter a while loop for the annotation procedure
+        while not rst_complete:
+
+            # Draw the graph
+            diagram = self.draw_graph(dpi=100)
+
+            # Join the graph and the layout structure horizontally
+            preview = np.hstack((diagram, self.layout))
+
+            # Show the resulting visualization
+            cv2.imshow("Annotation", preview)
+
+            # Prompt user for input
+            user_input = input(rst_prompt)
+
+            # Check the input
+            if user_input in rst_commands:
+
+                # Quit the program immediately upon command
+                if user_input == 'exit':
+                    exit("Quitting ...")
+
+                # If next diagram is requested, store current graph and move on
+                if user_input == 'next':
+
+                    # Destroy any remaining windows
+                    cv2.destroyAllWindows()
+
+                    return
+
+                # TODO Rest of the commands go here
+
+            if user_input not in rst_commands:
+
+                # Print error message
+                print("Sorry, {} is not a valid command.".format(user_input))
+
+                break
+
+
+        pass

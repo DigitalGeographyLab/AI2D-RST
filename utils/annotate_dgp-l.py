@@ -37,8 +37,8 @@ ap.add_argument("-i", "--images", required=True,
 ap.add_argument("-o", "--output", required=True,
                 help="Path to the file in which the annotation is stored.")
 ap.add_argument("-r", "--review", required=False, action='store_true',
-                help="Activates review mode, which opens each annotated diagram"
-                     " for inspection.")
+                help="Activates review mode, which opens each diagram marked as"
+                     " complete for inspection.")
 
 # Parse arguments
 args = vars(ap.parse_args())
@@ -48,9 +48,10 @@ ann_path = args['annotation']
 images_path = args['images']
 output_path = args['output']
 
-# Set review / annotation mode
+# Set review / annotation mode initially to false
 review = False
 
+# Activate review mode if requested using the -r/--review flag
 if args['review']:
     review = True
 
@@ -94,7 +95,7 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
     diagram = row['diagram']
 
     # If diagram is marked as complete, but the script runs in a review mode,
-    # open the diagram for editing.
+    # open the diagram for revision and editing.
     try:
         if diagram.complete and review:
 
@@ -106,7 +107,7 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
 
     # Check if diagram exists by requesting input
     try:
-        diagram.request_input()
+        diagram.annotate_layout()
 
     # If a non-existent diagram throws an error, create a new diagram
     except AttributeError:
@@ -115,7 +116,7 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
         diagram = Diagram(annotation, image_path)
 
         # Request user input
-        diagram.request_input()
+        diagram.annotate_layout()
 
     # Store the diagram into the column 'diagram'
     annotation_df.at[ix, 'diagram'] = diagram
