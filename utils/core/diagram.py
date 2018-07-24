@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from .interface import commands, prompts, rst_relations
 import cv2
 import json
 import matplotlib
@@ -492,6 +493,52 @@ class Diagram:
         # Return image
         return img, r
 
+    @staticmethod
+    def draw_graph(graph, dpi=100):
+
+        # Set up the matplotlib Figure, its resolution and Axis
+        fig = plt.figure(dpi=dpi)
+        ax = fig.add_subplot(1, 1, 1)
+
+        # Initialize a spring layout for the graph
+        pos = nx.spring_layout(graph)
+
+        # Generate a dictionary with nodes and their kind
+        node_types = nx.get_node_attributes(graph, 'kind')
+
+        # Create label dictionaries for both nodes and groups of nodes
+        node_dict = Diagram.get_node_dict(graph, kind='node')
+        group_dict = Diagram.get_node_dict(graph, kind='group')
+
+        # Enumerate groups and use their numbers as labels for clarity
+        group_dict = {k: "G{}".format(i) for i, (k, v) in
+                      enumerate(group_dict.items(), start=1)}
+
+        # Draw nodes
+        Diagram.draw_nodes(graph, pos=pos, ax=ax, node_types=node_types)
+
+        # Draw labels for nodes
+        nx.draw_networkx_labels(graph, pos, font_size=10,
+                                labels=node_dict)
+
+        # Draw labels for groups
+        nx.draw_networkx_labels(graph, pos, font_size=10,
+                                labels=group_dict)
+
+        # Remove margins from the graph and axes from the plot
+        fig.tight_layout(pad=0)
+        plt.axis('off')
+
+        # Save figure to file, read the file using OpenCV and remove the file
+        plt.savefig('temp.png')
+        img = cv2.imread('temp.png')
+        os.remove('temp.png')
+
+        # Close matplotlib figure
+        plt.close()
+
+        return img
+
     def create_graph(self, annotation, edges=False, arrowheads=False):
         """
         Draws an initial graph of diagram elements parsed from AI2D annotation.
@@ -582,50 +629,81 @@ class Diagram:
         # Return graph
         return graph
 
-    def draw_graph(self, dpi=100):
+    def create_relation(self, graph, relation_name, relation_kind):
+        """
+        A function for drawing an RST relation between diagram elements.
+        
+        Parameters:
+            graph: A NetworkX Graph.
+            relation_name: String indicating the name of the relation.
+            relation_kind: The nuclearity of the relation (mono or multi).
+             
+        Returns:
+             An updated NetworkX Graph.
+        """
+        # Create a dictionary of the nodes currently in the graph
+        node_dict = self.get_node_dict(graph)
 
-        # Set up the matplotlib Figure, its resolution and Axis
-        fig = plt.figure(dpi=dpi)
-        ax = fig.add_subplot(1, 1, 1)
+        # Check whether the relation is mono- or multinuclear
+        if relation_kind == 'mono':
+            pass
 
-        # Initialize a spring layout for the graph
-        pos = nx.spring_layout(self.graph)
+            # Request the identifier of the nucleus
+            nucleus = input(prompts['nucleus_id'])
 
-        # Generate a dictionary with nodes and their kind
-        node_types = nx.get_node_attributes(self.graph, 'kind')
+            # Convert the input into uppercase
+            nucleus = nucleus.upper()
 
-        # Create label dictionaries for both nodes and groups of nodes
-        node_dict = self.get_node_dict(self.graph, kind='node')
-        group_dict = self.get_node_dict(self.graph, kind='group')
+            # Check the number of inputs
+            if len(nucleus.split()) != 1:
 
-        # Enumerate groups and use their numbers as labels for clarity
-        group_dict = {k: "G{}".format(i) for i, (k, v) in
-                      enumerate(group_dict.items(), start=1)}
+                # Print error message and return
+                print("Sorry, a mononuclear relation cannot have more than 1 "
+                      "nucleus. Please try again.")
 
-        # Draw nodes
-        self.draw_nodes(self.graph, pos=pos, ax=ax, node_types=node_types)
+                return
 
-        # Draw labels for nodes
-        nx.draw_networkx_labels(self.graph, pos, font_size=10,
-                                labels=node_dict)
+            # Check the input against the node dictionary
+            if nucleus not in node_dict.keys():
 
-        # Draw labels for groups
-        nx.draw_networkx_labels(self.graph, pos, font_size=10,
-                                labels=group_dict)
+                # Print error message and return
+                print("Sorry, {} is not a valid identifier. Please try "
+                      "again.".format(nucleus))
 
-        # Remove margins from the graph and axes from the plot
-        fig.tight_layout(pad=0)
-        plt.axis('off')
+                return
 
-        # Save figure to file, read the file using OpenCV and remove the file
-        plt.savefig('temp.png')
-        img = cv2.imread('temp.png')
-        os.remove('temp.png')
+            else:
 
-        # Close matplotlib figure
-        plt.close()
+                # The input is valid, continue
+                pass
 
-        return img
+            # Request the identifier(s) of the satellite(s)
+            satellites = input(prompts['satellite_id'])
+
+            # Split the input and convert input to uppercase
+            satellites = satellites.split()
+            satellites = [s.upper() for s in satellites]
+
+            # Check the input against the node dictionary
+            if not set(satellites).issubset(set(node_dict.keys())):
+
+                # Get difference between user input and valid graph
+                diff = set(satellites).difference(node_dict)
+
+                # Print error message with difference in sets and return
+                print("Sorry, {} is not a valid diagram element or command."
+                      " Please try again.".format(' '.join(diff)))
+
+                return
+
+            # TODO Add the relation to the node
+
+            # TODO Draw edges from satellite to relation and relation to nucleus
+
+            # TODO Add nuclearity information to the nodes
+
+        if relation_kind == 'multi':
+            pass
 
     def group_nodes(self, graph, user_input):
         """
@@ -633,13 +711,13 @@ class Diagram:
         the accompanying list.
 
         Parameters:
-            graph: A networkx graph.
+            graph: A NetworkX Graph.
             user_input: A list of nodes contained in the graph.
 
         Returns:
-            An updated networkx graph.
+            An updated NetworkX Graph.
         """
-        # Create a dictionary of the kinds of nodes currently in the graph
+        # Create a dictionary of the nodes currently in the graph
         node_dict = self.get_node_dict(graph)
 
         # Check the user input against the node dictionary
@@ -678,17 +756,11 @@ class Diagram:
             according to the user input.
         """
 
-        # Define available commands
-        lay_commands = ['info', 'comment', 'next', 'exit', 'done', 'cap']
-
-        # Define a prompt for user input
-        lay_prompt = "Please enter nodes to group or a valid command: "
-
         # Enter a while loop for the annotation procedure
         while not self.complete:
 
             # Draw the graph
-            diagram = self.draw_graph(dpi=100)
+            diagram = Diagram.draw_graph(self.graph, dpi=100)
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, self.layout))
@@ -697,10 +769,10 @@ class Diagram:
             cv2.imshow("Annotation", preview)
 
             # Prompt user for input
-            user_input = input(lay_prompt)
+            user_input = input(prompts['layout_default'])
 
             # Check if the input is a command
-            if user_input in lay_commands:
+            if user_input in commands['layout']:
 
                 # Quit the program immediately upon command
                 if user_input == 'exit':
@@ -749,7 +821,7 @@ class Diagram:
                 if user_input == 'comment':
 
                     # Show a prompt for comment
-                    comment = input("Enter comment: ")
+                    comment = input(prompts['comment'])
 
                     # Return the comment
                     self.comments.append(comment)
@@ -814,7 +886,7 @@ class Diagram:
 
             # If user input does not include a valid command, assume the input
             # is a string containing a list of diagram elements.
-            elif user_input not in lay_commands:
+            elif user_input not in commands['layout']:
 
                 # Split the input into a list
                 user_input = user_input.split(',')
@@ -878,59 +950,18 @@ class Diagram:
             Updates the RST graph in the Diagram object (self.rst_graph).
         """
 
-        # Define available commands
-        rst_commands = ['info', 'define', 'next', 'exit', 'done', 'cap', 'new',
-                        'comment']
-
-        # Define a dictionary of RST relations / types and their aliases (keys)
-        relations = {'anti': {'name': 'antithesis', 'kind': 'mono'},
-                     'back': {'name': 'background', 'kind': 'mono'},
-                     'circ': {'name': 'circumstance', 'kind': 'mono'},
-                     'conc': {'name': 'concession', 'kind': 'mono'},
-                     'cond': {'name': 'condition', 'kind': 'mono'},
-                     'elab': {'name': 'elaboration', 'kind': 'mono'},
-                     'enab': {'name': 'enablement', 'kind': 'mono'},
-                     'eval': {'name': 'evaluation', 'kind': 'mono'},
-                     'evid': {'name': 'evidence', 'kind': 'mono'},
-                     'pret': {'name': 'interpretation', 'kind': 'mono'},
-                     'just': {'name': 'justify', 'kind': 'mono'},
-                     'mean': {'name': 'means', 'kind': 'mono'},
-                     'moti': {'name': 'motivation', 'kind': 'mono'},
-                     'nvoc': {'name': 'nonvolitional-cause', 'kind': 'mono'},
-                     'nvor': {'name': 'nonvolitional-result', 'kind': 'mono'},
-                     'otws': {'name': 'otherwise', 'kind': 'mono'},
-                     'prep': {'name': 'preparation', 'kind': 'mono'},
-                     'purp': {'name': 'purpose', 'kind': 'mono'},
-                     'rest': {'name': 'restatement', 'kind': 'multi'},
-                     'solu': {'name': 'solutionhood', 'kind': 'mono'},
-                     'summ': {'name': 'summary', 'kind': 'mono'},
-                     'unls': {'name': 'unless', 'kind': 'mono'},
-                     'volc': {'name': 'volitional-cause', 'kind': 'mono'},
-                     'volr': {'name': 'volitional-result', 'kind': 'mono'},
-                     'cont': {'name': 'contrast', 'kind': 'multi'},
-                     'join': {'name': 'joint', 'kind': 'multi'},
-                     'list': {'name': 'list', 'kind': 'multi'},
-                     'sequ': {'name': 'sequence', 'kind': 'multi'},
-                     'iden': {'name': 'identification', 'kind': 'mono'},
-                     'casc': {'name': 'class-ascription', 'kind': 'mono'},
-                     'pasc': {'name': 'property-ascription', 'kind': 'mono'},
-                     'poss': {'name': 'possession', 'kind': 'mono'},
-                     'proj': {'name': 'projection', 'kind': 'mono'},
-                     'effe': {'name': 'effect', 'kind': 'mono'},
-                     'titl': {'name': 'title', 'kind': 'mono'}
-                     }
-
-        # Define a prompt for user input
-        rst_prompt = "Please enter a valid command: "
-
         # TODO Check if an RST graph is complete: use a non-method flag for now
         rst_complete = False
+
+        # Create graph for RST annotation
+        rst_graph = self.create_graph(self.annotation, edges=False,
+                                      arrowheads=False)
 
         # Enter a while loop for the annotation procedure
         while not rst_complete:
 
             # Draw the graph
-            diagram = self.draw_graph(dpi=100)
+            diagram = Diagram.draw_graph(rst_graph, dpi=100)
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, self.layout))
@@ -939,10 +970,10 @@ class Diagram:
             cv2.imshow("Annotation", preview)
 
             # Prompt user for input
-            user_input = input(rst_prompt)
+            user_input = input(prompts['rst_default'])
 
             # Check the input
-            if user_input in rst_commands:
+            if user_input in commands['rst']:
 
                 # Quit the program immediately upon command
                 if user_input == 'exit':
@@ -958,12 +989,35 @@ class Diagram:
 
                 # TODO Rest of the commands go here
 
-            if user_input not in rst_commands:
+                # If the user input is a new relation, request additional input
+                if user_input == 'new':
+
+                    # Request relation name
+                    relation = input(prompts['rel_prompt'])
+
+                    # Strip extra whitespace and convert the input to lowercase
+                    relation = relation.strip().lower()
+
+                    # Check that the input is a valid relation
+                    if relation in rst_relations.keys():
+
+                        # Check the name and kind of the RST relation
+                        rel_name = rst_relations[relation]['name']
+                        rel_kind = rst_relations[relation]['kind']
+
+                        # Create a rhetorical relation
+                        self.create_relation(rst_graph, rel_name, rel_kind)
+
+                    else:
+                        print("Sorry, {} is not a valid relation."
+                              .format(relation))
+
+            if user_input not in commands['rst']:
 
                 # Print error message
                 print("Sorry, {} is not a valid command.".format(user_input))
 
-                break
+                continue
 
 
         pass
