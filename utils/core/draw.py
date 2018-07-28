@@ -324,6 +324,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True):
 
     # Draw edges if requested
     if draw_edges:
+
         # Draw edges between nodes
         nx.draw_networkx_edges(graph, pos, alpha=0.5, ax=ax)
 

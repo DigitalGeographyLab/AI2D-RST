@@ -68,8 +68,23 @@ class Diagram:
         # Create a dictionary of the nodes currently in the graph
         node_dict = get_node_dict(rst_graph, kind='node')
 
+        # Generate a list of valid diagram elements present in the graph
+        valid_nodes = [e.lower() for e in node_dict.keys()]
+
         # Generate a dictionary of RST relations present in the graph
         rel_dict = get_node_dict(rst_graph, kind='relation')
+
+        # Loop through current relations and rename them for convenience. This
+        # allows the user to refer to the relation identifier instead of the
+        # relation name.
+        rel_dict = {"R{}".format(i): k for i, (k, v) in
+                    enumerate(rel_dict.items(), start=1)}
+
+        # Create a list of relation identifiers based on the dict keys
+        valid_rels = [r.lower() for r in rel_dict.keys()]
+
+        # Combine the valid nodes and relations into a set
+        valid_ids = set(valid_nodes + valid_rels)
 
         # Check whether the relation is mono- or multinuclear
         if relation_kind == 'mono':
@@ -78,20 +93,21 @@ class Diagram:
             # Request the identifier of the nucleus
             nucleus = input(prompts['nucleus_id'])
 
-            # Convert the input into uppercase
-            nucleus = nucleus.upper()
+            # Split the input into a list
+            nucleus = nucleus.split()
+            nucleus = [n.lower() for n in nucleus]
 
             # Check the number of inputs
-            if len(nucleus.split()) != 1:
+            if len(nucleus) != 1:
 
                 # Print error message and return
-                print("Sorry, a mononuclear relation cannot have more than 1 "
+                print("Sorry, a mononuclear relation cannot have more than one "
                       "nucleus. Please try again.")
 
                 return
 
             # Check the input against the node dictionary
-            if nucleus not in node_dict.keys():
+            if not set(nucleus).issubset(valid_ids):
 
                 # Print error message and return
                 print("Sorry, {} is not a valid identifier. Please try "
@@ -107,15 +123,15 @@ class Diagram:
             # Request the identifier(s) of the satellite(s)
             satellites = input(prompts['satellite_id'])
 
-            # Split the input and convert input to uppercase
+            # Split the input and convert input to lowercase
             satellites = satellites.split()
-            satellites = [s.upper() for s in satellites]
+            satellites = [s.lower() for s in satellites]
 
             # Check the input against the node dictionary
-            if not set(satellites).issubset(set(node_dict.keys())):
+            if not set(satellites).issubset(valid_ids):
 
                 # Get difference between user input and valid graph
-                diff = set(satellites).difference(node_dict)
+                diff = set(satellites).difference(valid_ids)
 
                 # Print error message with difference in sets and return
                 print("Sorry, {} is not a valid diagram element or command."
@@ -123,21 +139,26 @@ class Diagram:
 
                 return
 
-            # Add a new node to the graph
             else:
-                # TODO ADD ALIAS (Rx) after relation name, e.g. elaboration (R1)
-                # This requires modifications to the annotate_rst function; see
-                # the example in annotate_layout
-                rst_graph.add_node(relation_name,
+                # Generate a name for the new relation
+                new_node = ''.join(nucleus).upper() + '-' + \
+                           '+'.join(satellites).upper()
+
+                # Add a new node to the graph
+                rst_graph.add_node(new_node,
                                    kind='relation',
                                    nucleus=nucleus,
-                                   satellites=satellites
+                                   satellites=satellites,
+                                   name=relation_name
                                    )
 
-                # TODO Draw edges from satellite to relation and relation to
-                # nucleus
+                # Draw edges from satellite(s) to relation
+                for s in satellites:
+                    rst_graph.add_edge(s.upper(), new_node)
 
-            # TODO Add nuclearity information to the nodes
+                # Draw edges from nucleus to relation
+                for n in nucleus:
+                    rst_graph.add_edge(n.upper(), new_node)
 
         if relation_kind == 'multi':
             pass
