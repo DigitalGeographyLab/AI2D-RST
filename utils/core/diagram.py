@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from .interface import commands, prompts, rst_relations
+from .draw import *
+from .interface import *
+from .parse import *
+
 import cv2
-import json
-import matplotlib
-import matplotlib.pyplot as plt
-import networkx as nx
 import numpy as np
 import os
 
@@ -41,600 +40,25 @@ class Diagram:
 
         else:
             # Load JSON annotation into a dictionary
-            self.annotation = self.load_annotation(json)
+            self.annotation = load_annotation(json)
 
         # Create initial graph with diagram elements only
-        self.graph = self.create_graph(self.annotation, edges=False,
-                                       arrowheads=False)
+        self.graph = create_graph(self.annotation,
+                                  edges=False,
+                                  arrowheads=False)
 
         # Visualise the layout annotation in an image
-        self.layout = self.draw_layout(self.image_path, self.annotation, 480)
+        self.layout = draw_layout(self.image_path, self.annotation, 480)
 
         # Set up placeholders for the layout graph and comments
         self.comments = []
 
-    @staticmethod
-    def draw_layout(path_to_image, annotation, height):
-        """
-        Visualizes the AI2D layout annotation on the original input image.
-
-        Parameters:
-            path_to_image: Path to the original AI2D diagram image.
-            annotation: A dictionary containing AI2D annotation.
-            height: Target height of the image.
-
-        Returns:
-            An image with the AI2D annotation overlaid.
-        """
-
-        # Start by defining a support function for converting colour codes
-        def convert_colour(colour):
-            """
-            Converts a matplotlib colour name to BGR for OpenCV.
-
-            Parameters:
-                colour: A valid matplotlib colour name.
-
-            Returns:
-                A BGR three tuple.
-            """
-            # Convert matplotlib colour name to normalized RGB
-            colour = matplotlib.colors.to_rgb(colour)
-
-            # Multiply by 255 and round
-            colour = tuple(round(255 * x) for x in colour)
-
-            # Reverse the tuple for OpenCV
-            return tuple(reversed(colour))
-
-        # Load the diagram image and make a copy
-        img, r = Diagram.resize_img(path_to_image, height)
-
-        # Begin drawing the blobs.
-        try:
-            for b in annotation['blobs']:
-
-                # Get blob ID
-                blob_id = annotation['blobs'][b]['id']
-
-                # Assign the blob points into a variable and convert into numpy
-                # array
-                points = np.array(annotation['blobs'][b]['polygon'], np.int32)
-
-                # Scale the coordinates according to the ratio; convert to int
-                points = np.round(points * r, decimals=0).astype('int')
-
-                # Reshape the numpy array for drawing
-                points = points.reshape((-1, 1, 2))
-
-                # Get moment values
-                m = cv2.moments(points)
-
-                # Calculate centroid of the polygon; catch errors arising from
-                # elements that are positioned in coordinates (0, 0).
-                try:
-                    x = int(m["m10"] / m["m00"])
-                except ZeroDivisionError:
-                    pass
-
-                try:
-                    y = int(m["m01"] / m["m00"])
-                except ZeroDivisionError:
-                    pass
-
-                # Draw the polygon. Note that points must be in brackets to
-                # be drawn as lines; otherwise only points will appear.
-                cv2.polylines(img, [points], isClosed=True, thickness=2,
-                              lineType=cv2.LINE_AA,
-                              color=convert_colour('orangered'))
-
-                # Insert the identifier into the middle of the element
-                cv2.putText(img, blob_id, (x - 10, y + 10),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            fontScale=1, lineType=cv2.LINE_AA, thickness=1,
-                            color=convert_colour('magenta'))
-
-        # Skip if there are no blobs to draw
-        except KeyError:
-            pass
-
-        # Next, draw text blocks
-        try:
-            for t in annotation['text']:
-
-                # Get text ID
-                text_id = annotation['text'][t]['id']
-
-                # Get the start and end points of the rectangle and cast
-                # them into tuples for drawing.
-                rect = annotation['text'][t]['rectangle']
-
-                # Scale the coordinates according to the ratio; convert to int
-                rect[0] = [np.round(x * r, decimals=0).astype('int')
-                           for x in rect[0]]
-                rect[1] = [np.round(x * r, decimals=0).astype('int')
-                           for x in rect[1]]
-
-                # Get start and end coordinates for the rectangle
-                start, end = tuple(rect[0]), tuple(rect[1])
-
-                # Get center of rectangle; cast into integer
-                c = (round((start[0] + end[0]) / 2 - 10).astype('int'),
-                     round((start[1] + end[1]) / 2 + 10).astype('int'))
-
-                # Draw the rectangle
-                cv2.rectangle(img, start, end, thickness=2,
-                              lineType=cv2.LINE_AA,
-                              color=convert_colour('dodgerblue'))
-
-                # Insert the identifier into the middle of the element
-                cv2.putText(img, text_id, c, cv2.FONT_HERSHEY_SIMPLEX,
-                            fontScale=1, lineType=cv2.LINE_AA, thickness=1,
-                            color=convert_colour('magenta'))
-
-        # Skip if there are no text boxes to draw
-        except KeyError:
-            pass
-
-        # Finally, draw any arrows
-        try:
-            for a in annotation['arrows']:
-
-                # Get arrow ID
-                arrow_id = annotation['arrows'][a]['id']
-
-                # Assign the points into a variable
-                points = np.array(annotation['arrows'][a]['polygon'], np.int32)
-
-                # Scale the coordinates according to the ratio; convert to int
-                points = np.round(points * r, decimals=0).astype('int')
-
-                # Reshape the numpy array for drawing
-                points = points.reshape((-1, 1, 2))
-
-                # Compute center of the drawn element
-                m = cv2.moments(points)
-                x = int(m["m10"] / m["m00"])
-                y = int(m["m01"] / m["m00"])
-
-                # Draw the polygon. Note that points must be in brackets to
-                # be drawn as lines; otherwise only points will appear.
-                cv2.polylines(img, [points], isClosed=True, thickness=2,
-                              lineType=cv2.LINE_AA,
-                              color=convert_colour('mediumseagreen'))
-
-                # Insert the identifier into the middle of the element
-                cv2.putText(img, arrow_id, (x - 10, y + 10),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            fontScale=1, color=convert_colour('magenta'),
-                            lineType=cv2.LINE_AA, thickness=1)
-
-        # Skip if there are no arrows to draw
-        except KeyError:
-            pass
-
-        # Return image
-        return img
-
-    @staticmethod
-    def draw_nodes(graph, pos, ax, node_types, draw_edges=True):
-        """
-        A generic function for visualising the nodes in a graph.
-
-        Parameters:
-            graph: A networkx graph.
-            pos: Positions for the networkx graph.
-            ax: Matplotlib Figure Axis on which to draw.
-            node_types: A dictionary of node types extracted from the graph.
-            draw_edges: A boolean indicating whether edges should be drawn.
-
-        Returns:
-             None
-        """
-        # Draw nodes for text elements
-        try:
-            # Retrieve text nodes for the list of nodes
-            texts = [k for k, v in node_types.items() if v == 'text']
-
-            # Add the list of nodes to the graph
-            nx.draw_networkx_nodes(graph, pos, nodelist=texts, alpha=1,
-                                   node_color='dodgerblue', ax=ax)
-
-        # Skip if there are no text nodes to draw
-        except KeyError:
-            pass
-
-        # Draw nodes for blobs
-        try:
-            # Retrieve blob nodes for the list of nodes
-            blobs = [k for k, v in node_types.items() if v == 'blobs']
-
-            # Add the list of nodes to the graph
-            nx.draw_networkx_nodes(graph, pos, nodelist=blobs, alpha=1,
-                                   node_color='orangered', ax=ax)
-
-        # Skip if there are no blob nodes to draw
-        except KeyError:
-            pass
-
-        # Draw nodes for arrowheads
-        try:
-            # Retrieve arrowhead nodes for the list of nodes
-            arrowhs = [k for k, v in node_types.items() if v == 'arrowHeads']
-
-            # Add the list of arrowheads to the graph
-            nx.draw_networkx_nodes(graph, pos, nodelist=arrowhs, alpha=1,
-                                   node_color='darkorange', ax=ax)
-
-        # Skip if there are no arrowheads to draw
-        except KeyError:
-            pass
-
-        # Draw nodes for arrows
-        try:
-            # Retrieve arrow nodes for the list of nodes
-            arrows = [k for k, v in node_types.items() if v == 'arrows']
-
-            # Add the list of arrows to the graph
-            nx.draw_networkx_nodes(graph, pos, nodelist=arrows, alpha=1,
-                                   node_color='mediumseagreen', ax=ax)
-
-        # Skip if there are no arrows to draw
-        except KeyError:
-            pass
-
-        # Attempt to draw nodes for imageConsts
-        try:
-            # Retrieve image constants (in most cases, only one per diagram)
-            constants = [k for k, v in node_types.items() if
-                         v == 'imageConsts']
-
-            # Add the image constants to the graph
-            nx.draw_networkx_nodes(graph, pos, nodelist=constants, alpha=1,
-                                   node_color='palegoldenrod', ax=ax)
-
-        # Skip if there are no image constants to draw
-        except KeyError:
-            pass
-
-        # Draw nodes for element groups
-        try:
-            # Retrieve the group nodes for the list of nodes
-            groups = [k for k, v in node_types.items() if v == 'group']
-
-            # Add the group nodes to the graph
-            nx.draw_networkx_nodes(graph, pos, nodelist=groups, alpha=1,
-                                   node_color='navajowhite', ax=ax,
-                                   node_size=50)
-
-        # Skip if there are no group nodes to draw
-        except KeyError:
-            pass
-
-        # Draw edges if requested
-        if draw_edges:
-
-            # Draw edges between nodes
-            nx.draw_networkx_edges(graph, pos, alpha=0.5, ax=ax)
-
-    @staticmethod
-    def extract_types(elements, annotation):
-        """
-        Extracts the types of the identified diagram elements.
-
-        Parameters:
-            elements: A list of diagram elements.
-            annotation: A dictionary of AI2D annotation.
-
-        Returns:
-             A dictionary with element types as keys and identifiers as values.
-        """
-        # Check for correct input type
-        assert isinstance(elements, list)
-        assert isinstance(annotation, dict)
-
-        # Define the target categories for various diagram elements
-        targets = ['arrowHeads', 'arrows', 'blobs', 'text', 'containers',
-                   'imageConsts']
-
-        # Create a dictionary for holding element types
-        element_types = {}
-
-        # Loop over the diagram elements
-        for e in elements:
-
-            try:
-                # Search for matches in the target categories
-                for t in targets:
-
-                    # Get the identifiers for each element category
-                    ids = [i for i in annotation[t].keys()]
-
-                    # If the element is found among the identifiers, add the
-                    # type to the dictionary
-                    if e in ids:
-                        element_types[e] = t
-
-            # Skip if the category is not found
-            except KeyError:
-                continue
-
-        # Return the element type dictionary
-        return element_types
-
-    @staticmethod
-    def get_node_dict(graph, kind=None):
-        """
-        A function for creating a dictionary of nodes and their kind.
-
-        Parameters:
-            graph: A networkx graph.
-            kind: A string defining what to include in the dictionary. 'node'
-                  returns only nodes and 'group' returns only groups. By
-                  default, the function returns all nodes defined in the graph.
-
-        Returns:
-            A dictionary with node names as keys and kind as values.
-        """
-
-        # Generate a dictionary with nodes and their kind
-        node_types = nx.get_node_attributes(graph, 'kind')
-
-        # If the requested output consists of node groups, return group dict
-        if kind == 'group':
-            # Generate a dictionary of groups
-            group_dict = {k: k for k, v in node_types.items() if
-                          v == 'group'}
-
-            # Return dictionary
-            return group_dict
-
-        # If the requested output consists of nodes, return node dict
-        if kind == 'node':
-
-            # Generate a dictionary of nodes
-            node_dict = {k: k for k, v in node_types.items() if v !=
-                         'group'}
-
-            # Return dictionary
-            return node_dict
-
-        # Otherwise return all node types
-        else:
-            return node_types
-
-    @staticmethod
-    def load_annotation(json_path):
-        """
-        Loads AI2D annotation from a JSON file and returns the annotation as a
-        dictionary.
-
-        Parameters:
-             json_path: A string containing the filepath to annotation.
-
-        Returns:
-             A dictionary containing AI2D annotation.
-        """
-        # Open the file containing the annotation
-        with open(json_path) as annotation_file:
-
-            # Parse the AI2D annotation from the JSON file into a dictionary
-            annotation = json.load(annotation_file)
-
-        # Return the annotation
-        return annotation
-
-    @staticmethod
-    def parse_annotation(annotation):
-        """
-        Parses AI2D annotation stored in a dictionary and prepares the
-        annotation for drawing a graph.
-
-        Parameters:
-            annotation: A dictionary containing AI2D annotation.
-
-        Returns:
-            A dictionary for drawing a graph of the annotation.
-        """
-        # List types of diagram elements to be added to the graph
-        targets = ['blobs', 'arrows', 'text', 'arrowHeads', 'containers',
-                   'imageConsts']
-
-        # Parse the diagram elements defined in the annotation, cast into list
-        try:
-            diagram_elements = [list(annotation[t].keys()) for t in targets]
-
-            # Filter empty diagram types
-            diagram_elements = list(filter(None, diagram_elements))
-
-            # Flatten the resulting list
-            diagram_elements = [i for sublist in diagram_elements
-                                for i in sublist]
-
-        except KeyError:
-            pass
-
-        # Parse the semantic relations defined in the annotation into a dict
-        try:
-            relations = annotation['relationships']
-
-        except KeyError:
-            pass
-
-        return diagram_elements, relations
-
-    @staticmethod
-    def resize_img(path_to_image, height):
-        """
-        Resizes an image.
-        
-        Parameters:
-            path_to_image: Path to the image to resize.
-            height: Requested height of the resized image.
-        
-        Returns:
-            The resized image and the ratio used for resizing.
-        """
-
-        # Load the diagram image and make a copy
-        img = cv2.imread(path_to_image).copy()
-
-        # Calculate aspect ratio (target width / current width) and new
-        # width of the preview image.
-        (h, w) = img.shape[:2]
-
-        # Calculate ratio based on image height
-        r = height / h
-        dim = (int(w * r), height)
-
-        # Resize the preview image
-        img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
-
-        # Return image
-        return img, r
-
-    @staticmethod
-    def draw_graph(graph, dpi=100):
-
-        # Set up the matplotlib Figure, its resolution and Axis
-        fig = plt.figure(dpi=dpi)
-        ax = fig.add_subplot(1, 1, 1)
-
-        # Initialize a spring layout for the graph
-        pos = nx.spring_layout(graph)
-
-        # Generate a dictionary with nodes and their kind
-        node_types = nx.get_node_attributes(graph, 'kind')
-
-        # Create label dictionaries for both nodes and groups of nodes
-        node_dict = Diagram.get_node_dict(graph, kind='node')
-        group_dict = Diagram.get_node_dict(graph, kind='group')
-
-        # Enumerate groups and use their numbers as labels for clarity
-        group_dict = {k: "G{}".format(i) for i, (k, v) in
-                      enumerate(group_dict.items(), start=1)}
-
-        # Draw nodes
-        Diagram.draw_nodes(graph, pos=pos, ax=ax, node_types=node_types)
-
-        # Draw labels for nodes
-        nx.draw_networkx_labels(graph, pos, font_size=10,
-                                labels=node_dict)
-
-        # Draw labels for groups
-        nx.draw_networkx_labels(graph, pos, font_size=10,
-                                labels=group_dict)
-
-        # Remove margins from the graph and axes from the plot
-        fig.tight_layout(pad=0)
-        plt.axis('off')
-
-        # Save figure to file, read the file using OpenCV and remove the file
-        plt.savefig('temp.png')
-        img = cv2.imread('temp.png')
-        os.remove('temp.png')
-
-        # Close matplotlib figure
-        plt.close()
-
-        return img
-
-    def create_graph(self, annotation, edges=False, arrowheads=False):
-        """
-        Draws an initial graph of diagram elements parsed from AI2D annotation.
-
-        Parameters:
-            annotation: A dictionary containing parsed AI2D annotation.
-            edges: A boolean defining whether edges are to be drawn.
-            arrowheads: A boolean defining whether arrowheads are drawn.
-
-        Returns:
-            A networkx graph with diagram elements.
-        """
-        # Check for correct input type
-        assert isinstance(annotation, dict)
-
-        # Parse the annotation from the dictionary
-        diagram_elements, relations = self.parse_annotation(annotation)
-
-        # Extract element types
-        element_types = self.extract_types(diagram_elements, annotation)
-
-        # Check if arrowheads should be excluded
-        if not arrowheads:
-
-            # Remove arrowheads from the dictionary
-            element_types = {k: v for k, v in element_types.items()
-                             if v != 'arrowHeads'}
-
-        # Set up a dictionary to track arrows and arrowheads
-        arrowmap = {}
-
-        # Create a new graph
-        graph = nx.Graph()
-
-        # Add diagram elements to the graph and record their type (kind)
-        for element, kind in element_types.items():
-            graph.add_node(element, kind=kind)
-
-        # Draw edges between nodes if requested
-        if edges:
-
-            # Loop over individual relations
-            for relation, attributes in relations.items():
-
-                # If the relation is 'arrowHeadTail', draw an edge between the
-                # arrow and its head
-                if attributes['category'] == 'arrowHeadTail':
-
-                    # Add edge to graph
-                    graph.add_edge(attributes['origin'],
-                                   attributes['destination'])
-
-                    # Add arrowhead information to the dict for tracking arrows
-                    arrowmap[attributes['origin']] = attributes['destination']
-
-                # Next, check if the relation includes a connector
-                try:
-                    if attributes['connector']:
-
-                        # Check if the connector (arrow) has an arrowhead
-                        if attributes['connector'] in arrowmap.keys():
-
-                            # First, draw an edge between origin and connector
-                            graph.add_edge(attributes['origin'],
-                                           attributes['connector'])
-
-                            # Then draw an edge between arrowhead and
-                            # destination, fetching the arrowhead identifier
-                            # from the dictionary
-                            graph.add_edge(arrowmap[attributes['connector']],
-                                           attributes['destination'])
-
-                        else:
-                            # If the connector does not have an arrowhead, draw
-                            # edge from origin to destination via the connector
-                            graph.add_edge(attributes['origin'],
-                                           attributes['connector'])
-
-                            graph.add_edge(attributes['connector'],
-                                           attributes['destination'])
-
-                # If connector does not exist, draw a normal relation between
-                # the origin and the destination
-                except KeyError:
-                    graph.add_edge(attributes['origin'],
-                                   attributes['destination'])
-
-        # Return graph
-        return graph
-
-    def create_relation(self, graph, relation_name, relation_kind):
+    def create_relation(self, rst_graph, relation_name, relation_kind):
         """
         A function for drawing an RST relation between diagram elements.
         
         Parameters:
-            graph: A NetworkX Graph.
+            rst_graph: A NetworkX Graph.
             relation_name: String indicating the name of the relation.
             relation_kind: The nuclearity of the relation (mono or multi).
              
@@ -642,7 +66,10 @@ class Diagram:
              An updated NetworkX Graph.
         """
         # Create a dictionary of the nodes currently in the graph
-        node_dict = self.get_node_dict(graph)
+        node_dict = get_node_dict(rst_graph, kind='node')
+
+        # Generate a dictionary of RST relations present in the graph
+        rel_dict = get_node_dict(rst_graph, kind='relation')
 
         # Check whether the relation is mono- or multinuclear
         if relation_kind == 'mono':
@@ -696,9 +123,19 @@ class Diagram:
 
                 return
 
-            # TODO Add the relation to the node
+            # Add a new node to the graph
+            else:
+                # TODO ADD ALIAS (Rx) after relation name, e.g. elaboration (R1)
+                # This requires modifications to the annotate_rst function; see
+                # the example in annotate_layout
+                rst_graph.add_node(relation_name,
+                                   kind='relation',
+                                   nucleus=nucleus,
+                                   satellites=satellites
+                                   )
 
-            # TODO Draw edges from satellite to relation and relation to nucleus
+                # TODO Draw edges from satellite to relation and relation to
+                # nucleus
 
             # TODO Add nuclearity information to the nodes
 
@@ -718,7 +155,7 @@ class Diagram:
             An updated NetworkX Graph.
         """
         # Create a dictionary of the nodes currently in the graph
-        node_dict = self.get_node_dict(graph)
+        node_dict = get_node_dict(graph)
 
         # Check the user input against the node dictionary
         input_node_types = [node_dict[u.upper()] for u in user_input]
@@ -760,7 +197,7 @@ class Diagram:
         while not self.complete:
 
             # Draw the graph
-            diagram = Diagram.draw_graph(self.graph, dpi=100)
+            diagram = draw_graph(self.graph, dpi=100)
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, self.layout))
@@ -793,28 +230,9 @@ class Diagram:
                     # Clear screen first
                     os.system('cls' if os.name == 'nt' else 'clear')
 
-                    print("---\n"
-                          "Enter the identifiers of elements you wish to group "
-                          "together.\n"
-                          "Separate the identifiers with a comma.\n"
-                          "\n"
-                          "Example of valid input: b1, a1, t1\n\n"
-                          ""
-                          "This command would group nodes B1, A1 and T1 under "
-                          "a common node.\n"
-                          "---\n"
-                          "Grouping nodes may be deleted using command rm.\n\n"
-                          "Example command: rm g1\n\n"
-                          "This command would delete group G1.\n"
-                          "---\n"
-                          "Other valid commands include:\n\n"
-                          "info: Print this message.\n"
-                          "comment: Enter a comment about current diagram.\n"
-                          "cap: Save current visualisation on disk.\n"
-                          "next: Move on to the next diagram.\n"
-                          "exit: Exit the annotator immediately.\n"
-                          "done: Mark current diagram complete and move on.\n"
-                          "---")
+                    # Print information on layout commands
+                    print(info['layout'])
+
                     pass
 
                 # Store a comment if requested
@@ -850,7 +268,7 @@ class Diagram:
                 user_input = user_input.lower().split()[1:]
 
                 # Generate a dictionary of groups
-                group_dict = self.get_node_dict(self.graph, kind='group')
+                group_dict = get_node_dict(self.graph, kind='group')
 
                 # Count the current groups and enumerate for convenience. This
                 # allows the user to refer to group number instead of complex
@@ -898,7 +316,7 @@ class Diagram:
                 valid_nodes = [e.lower() for e in self.graph.nodes]
 
                 # Generate a dictionary of groups
-                group_dict = self.get_node_dict(self.graph, kind='group')
+                group_dict = get_node_dict(self.graph, kind='group')
 
                 # Count the current groups and enumerate for convenience. This
                 # allows the user to refer to group number instead of complex
@@ -954,14 +372,16 @@ class Diagram:
         rst_complete = False
 
         # Create graph for RST annotation
-        rst_graph = self.create_graph(self.annotation, edges=False,
-                                      arrowheads=False)
+        rst_graph = create_graph(self.annotation,
+                                 edges=False,
+                                 arrowheads=False
+                                 )
 
         # Enter a while loop for the annotation procedure
         while not rst_complete:
 
             # Draw the graph
-            diagram = Diagram.draw_graph(rst_graph, dpi=100)
+            diagram = draw_graph(rst_graph, dpi=100)
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, self.layout))
@@ -1001,11 +421,11 @@ class Diagram:
                     # Check that the input is a valid relation
                     if relation in rst_relations.keys():
 
-                        # Check the name and kind of the RST relation
+                        # Retrieve the name and kind of the RST relation
                         rel_name = rst_relations[relation]['name']
                         rel_kind = rst_relations[relation]['kind']
 
-                        # Create a rhetorical relation
+                        # Create a rhetorical relation and add to graph
                         self.create_relation(rst_graph, rel_name, rel_kind)
 
                     else:
@@ -1018,6 +438,5 @@ class Diagram:
                 print("Sorry, {} is not a valid command.".format(user_input))
 
                 continue
-
 
         pass

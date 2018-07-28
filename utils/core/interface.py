@@ -3,7 +3,32 @@
 # Define a dictionary of available commands during annotation
 commands = {'rst': ['info', 'define', 'next', 'exit', 'done', 'cap', 'new',
                     'comment', 'rels'],
-            'layout': ['info', 'comment', 'next', 'exit', 'done', 'cap']}
+            'layout': ['info', 'comment', 'next', 'exit', 'done', 'cap']
+            }
+
+info = {'layout': "---\n"
+                  "Enter the identifiers of elements you wish to group "
+                  "together.\n"
+                  "Separate the identifiers with a comma.\n"
+                  "\n"
+                  "Example of valid input: b1, a1, t1\n\n"
+                  ""
+                  "This command would group nodes B1, A1 and T1 under "
+                  "a common node.\n"
+                  "---\n"
+                  "Grouping nodes may be deleted using command rm.\n\n"
+                  "Example command: rm g1\n\n"
+                  "This command would delete group G1.\n"
+                  "---\n"
+                  "Other valid commands include:\n\n"
+                  "info: Print this message.\n"
+                  "comment: Enter a comment about current diagram.\n"
+                  "cap: Save current visualisation on disk.\n"
+                  "next: Move on to the next diagram.\n"
+                  "exit: Exit the annotator immediately.\n"
+                  "done: Mark current diagram complete and move on.\n"
+                  "---"
+        }
 
 # Define a dictionary of various prompts presented to user during annotation
 prompts = {'nucleus_id': "Enter the identifier of nucleus: ",
