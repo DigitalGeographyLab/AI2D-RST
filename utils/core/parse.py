@@ -4,6 +4,95 @@ import networkx as nx
 import json
 
 
+def create_graph(annotation, edges=False, arrowheads=False):
+    """
+    Draws an initial graph of diagram elements parsed from AI2D annotation.
+
+    Parameters:
+        annotation: A dictionary containing parsed AI2D annotation.
+        edges: A boolean defining whether edges are to be drawn.
+        arrowheads: A boolean defining whether arrowheads are drawn.
+
+    Returns:
+        A networkx graph with diagram elements.
+    """
+    # Check for correct input type
+    assert isinstance(annotation, dict)
+
+    # Parse the annotation from the dictionary
+    diagram_elements, relations = parse_annotation(annotation)
+
+    # Extract element types
+    element_types = extract_types(diagram_elements, annotation)
+
+    # Check if arrowheads should be excluded
+    if not arrowheads:
+        # Remove arrowheads from the dictionary
+        element_types = {k: v for k, v in element_types.items()
+                         if v != 'arrowHeads'}
+
+    # Set up a dictionary to track arrows and arrowheads
+    arrowmap = {}
+
+    # Create a new graph
+    graph = nx.Graph()
+
+    # Add diagram elements to the graph and record their type (kind)
+    for element, kind in element_types.items():
+        graph.add_node(element, kind=kind)
+
+    # Draw edges between nodes if requested
+    if edges:
+
+        # Loop over individual relations
+        for relation, attributes in relations.items():
+
+            # If the relation is 'arrowHeadTail', draw an edge between the
+            # arrow and its head
+            if attributes['category'] == 'arrowHeadTail':
+                # Add edge to graph
+                graph.add_edge(attributes['origin'],
+                               attributes['destination'])
+
+                # Add arrowhead information to the dict for tracking arrows
+                arrowmap[attributes['origin']] = attributes['destination']
+
+            # Next, check if the relation includes a connector
+            try:
+                if attributes['connector']:
+
+                    # Check if the connector (arrow) has an arrowhead
+                    if attributes['connector'] in arrowmap.keys():
+
+                        # First, draw an edge between origin and connector
+                        graph.add_edge(attributes['origin'],
+                                       attributes['connector'])
+
+                        # Then draw an edge between arrowhead and
+                        # destination, fetching the arrowhead identifier
+                        # from the dictionary
+                        graph.add_edge(arrowmap[attributes['connector']],
+                                       attributes['destination'])
+
+                    else:
+                        # If the connector does not have an arrowhead, draw
+                        # edge from origin to destination via the connector
+                        graph.add_edge(attributes['origin'],
+                                       attributes['connector'])
+
+                        graph.add_edge(attributes['connector'],
+                                       attributes['destination'])
+
+            # If connector does not exist, draw a normal relation between
+            # the origin and the destination
+            except KeyError:
+                graph.add_edge(attributes['origin'],
+                               attributes['destination'])
+
+    # Return graph
+    return graph
+
+
 def extract_types(elements, annotation):
     """
     Extracts the types of the identified diagram elements.
