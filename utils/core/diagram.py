@@ -11,15 +11,15 @@ import os
 
 class Diagram:
     """
-    This class holds the annotation for a single AI2D diagram.
+    This class holds the annotation for a single AI2D-RST diagram.
     """
     def __init__(self, json, image):
         """
         This function initializes the Diagram class.
         
         Parameters:
-            json: Path to the JSON file containing AI2D annotation or a
-                  dictionary containing parsed annotation.
+            json: Path to the JSON file containing the original AI2D annotation 
+                  or a dictionary containing parsed annotation.
             image: Path to the image file containing the diagram.
             
         Returns:
@@ -55,12 +55,12 @@ class Diagram:
 
     def create_relation(self, rst_graph, relation_name, relation_kind):
         """
-        A function for drawing an RST relation between diagram elements.
+        A function for drawing an RST relation between several diagram elements.
         
         Parameters:
             rst_graph: A NetworkX Graph.
-            relation_name: String indicating the name of the relation.
-            relation_kind: The nuclearity of the relation (mono or multi).
+            relation_name: String indicating the name of the RST relation.
+            relation_kind: The type of RST relation (mono- or multinuclear).
              
         Returns:
              An updated NetworkX Graph.
@@ -74,32 +74,31 @@ class Diagram:
         # Generate a dictionary of RST relations present in the graph
         rel_dict = get_node_dict(rst_graph, kind='relation')
 
-        # Loop through current relations and rename them for convenience. This
-        # allows the user to refer to the relation identifier instead of the
-        # relation name.
+        # Loop through current RST relations and rename them for convenience.
+        # This allows the user to refer to the relation identifier (e.g. r1)
+        # instead of a complex relation id (e.g. B0-T1+B9) during annotation.
         rel_dict = {"r{}".format(i): k for i, (k, v) in
                     enumerate(rel_dict.items(), start=1)}
 
         print("[DEBUG] Relation dictionary: {}".format(rel_dict))
 
-        # Create a list of relation identifiers based on the dict keys
+        # Create a list of valid relation identifiers based on the dict keys
         valid_rels = [r.lower() for r in rel_dict.keys()]
 
-        # Combine the valid nodes and relations into a set
+        # Combine the valid nodes and relations into a single set
         valid_ids = set(valid_nodes + valid_rels)
 
-        # Check whether the relation is mono- or multinuclear
+        # Check whether the RST relation is mono- or multinuclear
         if relation_kind == 'mono':
-            pass
 
-            # Request the identifier of the nucleus
+            # Request the identifier of the nucleus in the RST relation
             nucleus = input(prompts['nucleus_id'])
 
-            # Split the input into a list
+            # Split the user input into a list and convert to lowercase
             nucleus = nucleus.split()
             nucleus = [n.lower() for n in nucleus]
 
-            # Check the number of inputs
+            # Check the total number of inputs in the list
             if len(nucleus) != 1:
 
                 # Print error message and return
@@ -108,10 +107,11 @@ class Diagram:
 
                 return
 
-            # Check the input against the node dictionary
+            # Check the user input against the set of valid identifiers
             if not set(nucleus).issubset(valid_ids):
 
-                # Print error message and return
+                # If the user input is not a subset of valid identifiers, print
+                # error message and return
                 print("Sorry, {} is not a valid identifier. Please try "
                       "again.".format(nucleus))
 
@@ -119,34 +119,36 @@ class Diagram:
 
             else:
 
-                # The input is valid, continue
+                # The input is valid, continue to process satellites
                 pass
 
-            # Request the identifier(s) of the satellite(s)
+            # Request the identifier(s) of the satellite(s) in the RST relation
             satellites = input(prompts['satellite_id'])
 
-            # Split the input and convert input to lowercase
+            # Split the user input into a list and convert to lowercase
             satellites = satellites.split()
             satellites = [s.lower() for s in satellites]
 
-            # Check the input against the node dictionary
+            # Check the user input against the set of valid identifiers
             if not set(satellites).issubset(valid_ids):
 
                 # Get difference between user input and valid graph
                 diff = set(satellites).difference(valid_ids)
 
-                # Print error message with difference in sets and return
+                # If the user input is not a subset of valid identifiers, print
+                # error message and return
                 print("Sorry, {} is not a valid diagram element or command."
                       " Please try again.".format(' '.join(diff)))
 
                 return
 
             else:
-                # Generate a name for the new relation
+
+                # If the input is valid, generate a name for the new relation
                 new_node = ''.join(nucleus).upper() + '-' + \
                            '+'.join(satellites).upper()
 
-                # Add a new node to the graph
+                # Add a new node to the graph with attributes
                 rst_graph.add_node(new_node,
                                    kind='relation',
                                    nucleus=nucleus,
@@ -158,13 +160,13 @@ class Diagram:
                 # Draw edges from satellite(s) to relation
                 for s in satellites:
 
-                    # Check if satellite is another relation
+                    # Check if the satellites include another RST relation
                     if s in rel_dict.keys():
 
                         # Fetch the origin node from the dictionary of relations
                         origin = rel_dict[s]
 
-                        # Add edge from the satellite relation to the new rel
+                        # Add edge from satellite relation to the new relation
                         rst_graph.add_edge(origin, new_node)
 
                     # If the satellite is not a relation, draw edge from node
