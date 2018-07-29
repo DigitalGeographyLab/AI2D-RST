@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .parse import get_node_dict
+from .parse import *
 
 import cv2
 import matplotlib
@@ -10,13 +10,15 @@ import networkx as nx
 import os
 
 
-def draw_graph(graph, dpi=100):
+def draw_graph(graph, dpi=100, mode='layout'):
     """
     Draws an image of a NetworkX Graph for visual inspection.
     
     Parameters:
         graph: A NetworkX Graph.
         dpi: The resolution of the image as dots per inch.
+        mode: String indicating the diagram structure to be drawn, valid options
+              include 'layout' and 'rst'.
         
     Returns:
          An image showing the NetworkX Graph.
@@ -27,29 +29,54 @@ def draw_graph(graph, dpi=100):
     ax = fig.add_subplot(1, 1, 1)
 
     # Initialize a spring layout for the graph
-    pos = nx.spring_layout(graph)
+    pos = nx.spring_layout(graph, iterations=20)
 
     # Generate a dictionary with nodes and their kind
     node_types = nx.get_node_attributes(graph, 'kind')
 
-    # Create label dictionaries for both nodes and groups of nodes
+    # Create a label dictionary for nodes
     node_dict = get_node_dict(graph, kind='node')
-    group_dict = get_node_dict(graph, kind='group')
 
-    # Enumerate groups and use their numbers as labels for clarity
-    group_dict = {k: "G{}".format(i) for i, (k, v) in
-                  enumerate(group_dict.items(), start=1)}
+    # Check the mode, that is, whether the Graph represents the layout/logical
+    # or RST structure
+    if mode == 'layout':
+
+        # Create a label dictionary for grouping nodes
+        group_dict = get_node_dict(graph, kind='group')
+
+        # Enumerate groups and use their numbers as labels for clarity
+        group_dict = {k: "G{}".format(i) for i, (k, v) in
+                      enumerate(group_dict.items(), start=1)}
+
+    if mode == 'rst':
+
+        # Create a label dictionary for RST relations
+        rel_dict = get_node_dict(graph, kind='relation')
+
+        # Enumerate relations and use their numbers as labels for clarity; add
+        # relation name to the label by fetching it from the graph.
+        rel_dict = {k: "R{} ({})".format(i, graph.node[k]['name']) for i, (k, v)
+                    in enumerate(rel_dict.items(), start=1)}
 
     # Draw nodes
-    draw_nodes(graph, pos=pos, ax=ax, node_types=node_types)
+    draw_nodes(graph, pos=pos, ax=ax, node_types=node_types, mode=mode)
 
     # Draw labels for nodes
     nx.draw_networkx_labels(graph, pos, font_size=10,
                             labels=node_dict)
 
-    # Draw labels for groups
-    nx.draw_networkx_labels(graph, pos, font_size=10,
-                            labels=group_dict)
+    # Check the mode
+    if mode == 'layout':
+
+        # Draw labels for groups
+        nx.draw_networkx_labels(graph, pos, font_size=10,
+                                labels=group_dict)
+
+    if mode == 'rst':
+
+        # Draw labels for RST relations
+        nx.draw_networkx_labels(graph, pos, font_size=10,
+                                labels=rel_dict)
 
     # Remove margins from the graph and axes from the plot
     fig.tight_layout(pad=0)
@@ -228,7 +255,7 @@ def draw_layout(path_to_image, annotation, height):
     return img
 
 
-def draw_nodes(graph, pos, ax, node_types, draw_edges=True):
+def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     """
     A generic function for visualising the nodes in a graph.
 
@@ -238,18 +265,26 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True):
         ax: Matplotlib Figure Axis on which to draw.
         node_types: A dictionary of node types extracted from the Graph.
         draw_edges: A boolean indicating whether edges should be drawn.
+        mode: A string indicating the selected drawing mode. Valid options are
+             'layout' (default) and 'rst'.
 
     Returns:
          None
     """
+
     # Draw nodes for text elements
     try:
         # Retrieve text nodes for the list of nodes
         texts = [k for k, v in node_types.items() if v == 'text']
 
         # Add the list of nodes to the graph
-        nx.draw_networkx_nodes(graph, pos, nodelist=texts, alpha=1,
-                               node_color='dodgerblue', ax=ax)
+        nx.draw_networkx_nodes(graph,
+                               pos,
+                               nodelist=texts,
+                               alpha=1,
+                               node_color='dodgerblue',
+                               ax=ax
+                               )
 
     # Skip if there are no text nodes to draw
     except KeyError:
@@ -261,8 +296,13 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True):
         blobs = [k for k, v in node_types.items() if v == 'blobs']
 
         # Add the list of nodes to the graph
-        nx.draw_networkx_nodes(graph, pos, nodelist=blobs, alpha=1,
-                               node_color='orangered', ax=ax)
+        nx.draw_networkx_nodes(graph,
+                               pos,
+                               nodelist=blobs,
+                               alpha=1,
+                               node_color='orangered',
+                               ax=ax
+                               )
 
     # Skip if there are no blob nodes to draw
     except KeyError:
@@ -274,8 +314,13 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True):
         arrowhs = [k for k, v in node_types.items() if v == 'arrowHeads']
 
         # Add the list of arrowheads to the graph
-        nx.draw_networkx_nodes(graph, pos, nodelist=arrowhs, alpha=1,
-                               node_color='darkorange', ax=ax)
+        nx.draw_networkx_nodes(graph,
+                               pos,
+                               nodelist=arrowhs,
+                               alpha=1,
+                               node_color='darkorange',
+                               ax=ax
+                               )
 
     # Skip if there are no arrowheads to draw
     except KeyError:
@@ -287,46 +332,88 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True):
         arrows = [k for k, v in node_types.items() if v == 'arrows']
 
         # Add the list of arrows to the graph
-        nx.draw_networkx_nodes(graph, pos, nodelist=arrows, alpha=1,
-                               node_color='mediumseagreen', ax=ax)
+        nx.draw_networkx_nodes(graph,
+                               pos,
+                               nodelist=arrows,
+                               alpha=1,
+                               node_color='mediumseagreen',
+                               ax=ax
+                               )
 
     # Skip if there are no arrows to draw
     except KeyError:
         pass
 
-    # Attempt to draw nodes for imageConsts
-    try:
-        # Retrieve image constants (in most cases, only one per diagram)
-        constants = [k for k, v in node_types.items() if
-                     v == 'imageConsts']
+    # Check drawing mode
+    if mode == 'layout':
 
-        # Add the image constants to the graph
-        nx.draw_networkx_nodes(graph, pos, nodelist=constants, alpha=1,
-                               node_color='palegoldenrod', ax=ax)
+        # Draw nodes for imageConsts
+        try:
+            # Retrieve image constants (in most cases, only one per diagram)
+            constants = [k for k, v in node_types.items() if
+                         v == 'imageConsts']
 
-    # Skip if there are no image constants to draw
-    except KeyError:
-        pass
+            # Add the image constants to the graph
+            nx.draw_networkx_nodes(graph,
+                                   pos,
+                                   nodelist=constants,
+                                   alpha=1,
+                                   node_color='palegoldenrod',
+                                   ax=ax
+                                   )
 
-    # Draw nodes for element groups
-    try:
-        # Retrieve the group nodes for the list of nodes
-        groups = [k for k, v in node_types.items() if v == 'group']
+        # Skip if there are no image constants to draw
+        except KeyError:
+            pass
 
-        # Add the group nodes to the graph
-        nx.draw_networkx_nodes(graph, pos, nodelist=groups, alpha=1,
-                               node_color='navajowhite', ax=ax,
-                               node_size=50)
+        # Draw nodes for element groups
+        try:
+            # Retrieve the group nodes for the list of nodes
+            groups = [k for k, v in node_types.items() if v == 'group']
 
-    # Skip if there are no group nodes to draw
-    except KeyError:
-        pass
+            # Add the group nodes to the graph
+            nx.draw_networkx_nodes(graph,
+                                   pos,
+                                   nodelist=groups,
+                                   alpha=1,
+                                   node_color='navajowhite',
+                                   ax=ax,
+                                   node_size=50
+                                   )
+
+        # Skip if there are no group nodes to draw
+        except KeyError:
+            pass
+
+    if mode == 'rst':
+
+        # Draw nodes for relations
+        try:
+            relations = [k for k, v in node_types.items() if v == 'relation']
+
+            # Add the relations to the graph
+            nx.draw_networkx_nodes(graph,
+                                   pos,
+                                   nodelist=relations,
+                                   alpha=1,
+                                   node_color='white',
+                                   ax=ax,
+                                   node_size=25
+                                   )
+
+        # Skip if there are no relations to draw
+        except KeyError:
+            pass
 
     # Draw edges if requested
     if draw_edges:
 
         # Draw edges between nodes
-        nx.draw_networkx_edges(graph, pos, alpha=0.5, ax=ax)
+        nx.draw_networkx_edges(graph,
+                               pos,
+                               alpha=0.5,
+                               ax=ax
+                               )
 
 
 def resize_img(path_to_image, height):

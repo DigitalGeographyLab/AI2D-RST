@@ -77,8 +77,10 @@ class Diagram:
         # Loop through current relations and rename them for convenience. This
         # allows the user to refer to the relation identifier instead of the
         # relation name.
-        rel_dict = {"R{}".format(i): k for i, (k, v) in
+        rel_dict = {"r{}".format(i): k for i, (k, v) in
                     enumerate(rel_dict.items(), start=1)}
+
+        print("[DEBUG] Relation dictionary: {}".format(rel_dict))
 
         # Create a list of relation identifiers based on the dict keys
         valid_rels = [r.lower() for r in rel_dict.keys()]
@@ -149,15 +151,32 @@ class Diagram:
                                    kind='relation',
                                    nucleus=nucleus,
                                    satellites=satellites,
-                                   name=relation_name
+                                   name=relation_name,
+                                   id=new_node
                                    )
 
                 # Draw edges from satellite(s) to relation
                 for s in satellites:
-                    rst_graph.add_edge(s.upper(), new_node)
+
+                    # Check if satellite is another relation
+                    if s in rel_dict.keys():
+
+                        # Fetch the origin node from the dictionary of relations
+                        origin = rel_dict[s]
+
+                        # Add edge from the satellite relation to the new rel
+                        rst_graph.add_edge(origin, new_node)
+
+                    # If the satellite is not a relation, draw edge from node
+                    else:
+
+                        # Add edge to graph
+                        rst_graph.add_edge(s.upper(), new_node)
 
                 # Draw edges from nucleus to relation
                 for n in nucleus:
+
+                    # Add edge to graph
                     rst_graph.add_edge(n.upper(), new_node)
 
         if relation_kind == 'multi':
@@ -401,8 +420,8 @@ class Diagram:
         # Enter a while loop for the annotation procedure
         while not rst_complete:
 
-            # Draw the graph
-            diagram = draw_graph(rst_graph, dpi=100)
+            # Draw the graph using RST mode
+            diagram = draw_graph(rst_graph, dpi=100, mode='rst')
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, self.layout))
