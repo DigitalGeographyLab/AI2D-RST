@@ -18,7 +18,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
         graph: A NetworkX Graph.
         dpi: The resolution of the image as dots per inch.
         mode: String indicating the diagram structure to be drawn, valid options
-              include 'layout' and 'rst'.
+              include 'layout' and 'rst'. Default mode is layout.
         
     Returns:
          An image showing the NetworkX Graph.

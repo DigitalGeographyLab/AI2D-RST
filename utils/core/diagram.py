@@ -53,18 +53,21 @@ class Diagram:
         # Set up placeholders for the layout graph and comments
         self.comments = []
 
-    def create_relation(self, rst_graph, relation_name, relation_kind):
+    def create_relation(self, rst_graph, user_input):
         """
         A function for drawing an RST relation between several diagram elements.
         
         Parameters:
             rst_graph: A NetworkX Graph.
-            relation_name: String indicating the name of the RST relation.
-            relation_kind: The type of RST relation (mono- or multinuclear).
+            user_input: A string containing the name of a valid RST relation.
              
         Returns:
              An updated NetworkX Graph.
         """
+        # Retrieve the name and kind of the RST relation
+        relation_name = rst_relations[user_input]['name']
+        relation_kind = rst_relations[user_input]['kind']
+
         # Create a dictionary of the nodes currently in the graph
         node_dict = get_node_dict(rst_graph, kind='node')
 
@@ -416,7 +419,8 @@ class Diagram:
         # Create graph for RST annotation
         rst_graph = create_graph(self.annotation,
                                  edges=False,
-                                 arrowheads=False
+                                 arrowheads=False,
+                                 mode='rst'
                                  )
 
         # Enter a while loop for the annotation procedure
@@ -463,12 +467,8 @@ class Diagram:
                     # Check that the input is a valid relation
                     if relation in rst_relations.keys():
 
-                        # Retrieve the name and kind of the RST relation
-                        rel_name = rst_relations[relation]['name']
-                        rel_kind = rst_relations[relation]['kind']
-
                         # Create a rhetorical relation and add to graph
-                        self.create_relation(rst_graph, rel_name, rel_kind)
+                        self.create_relation(rst_graph, relation)
 
                     else:
                         print("Sorry, {} is not a valid relation."

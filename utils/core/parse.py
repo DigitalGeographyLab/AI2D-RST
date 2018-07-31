@@ -4,7 +4,7 @@ import networkx as nx
 import json
 
 
-def create_graph(annotation, edges=False, arrowheads=False):
+def create_graph(annotation, edges=False, arrowheads=False, mode='layout'):
     """
     Draws an initial graph of diagram elements parsed from AI2D annotation.
 
@@ -12,6 +12,8 @@ def create_graph(annotation, edges=False, arrowheads=False):
         annotation: A dictionary containing parsed AI2D annotation.
         edges: A boolean defining whether edges are to be drawn.
         arrowheads: A boolean defining whether arrowheads are drawn.
+        mode: A string indicating the diagram structure to be drawn, valid 
+              options include 'layout' and 'rst'. Default mode is layout.
 
     Returns:
         A networkx graph with diagram elements.
@@ -20,13 +22,14 @@ def create_graph(annotation, edges=False, arrowheads=False):
     assert isinstance(annotation, dict)
 
     # Parse the annotation from the dictionary
-    diagram_elements, relations = parse_annotation(annotation)
+    diagram_elements, relations = parse_annotation(annotation, mode=mode)
 
     # Extract element types
     element_types = extract_types(diagram_elements, annotation)
 
     # Check if arrowheads should be excluded
     if not arrowheads:
+
         # Remove arrowheads from the dictionary
         element_types = {k: v for k, v in element_types.items()
                          if v != 'arrowHeads'}
@@ -34,11 +37,13 @@ def create_graph(annotation, edges=False, arrowheads=False):
     # Set up a dictionary to track arrows and arrowheads
     arrowmap = {}
 
-    # Create a new graph
+    # Create a new undirected Graph
     graph = nx.Graph()
 
     # Add diagram elements to the graph and record their type (kind)
     for element, kind in element_types.items():
+
+        # Add node to graph
         graph.add_node(element, kind=kind)
 
     # Draw edges between nodes if requested
@@ -50,6 +55,7 @@ def create_graph(annotation, edges=False, arrowheads=False):
             # If the relation is 'arrowHeadTail', draw an edge between the
             # arrow and its head
             if attributes['category'] == 'arrowHeadTail':
+
                 # Add edge to graph
                 graph.add_edge(attributes['origin'],
                                attributes['destination'])
@@ -111,6 +117,8 @@ def extract_types(elements, annotation):
     # Define the target categories for various diagram elements
     targets = ['arrowHeads', 'arrows', 'blobs', 'text', 'containers',
                'imageConsts']
+
+    # TODO Add separate processing modes for layout and RST by modifying targets
 
     # Create a dictionary for holding element types
     element_types = {}
@@ -210,20 +218,35 @@ def load_annotation(json_path):
     return annotation
 
 
-def parse_annotation(annotation):
+def parse_annotation(annotation, mode='layout'):
     """
-    Parses AI2D annotation stored in a dictionary and prepares the
-    annotation for drawing a graph.
+    Parses AI2D annotation stored in a dictionary and prepares the annotation 
+    for drawing a graph.
 
     Parameters:
         annotation: A dictionary containing AI2D annotation.
+        mode: A string indicating the diagram structure to be drawn, valid 
+              options include 'layout' and 'rst'. Default mode is layout.
 
     Returns:
         A dictionary for drawing a graph of the annotation.
     """
-    # List types of diagram elements to be added to the graph
-    targets = ['blobs', 'arrows', 'text', 'arrowHeads', 'containers',
-               'imageConsts']
+    # Define target diagram elements to be added to the graph according to the
+    # selected mode of processing (layout/rst).
+    layout_targets = ['blobs', 'arrows', 'text', 'arrowHeads', 'containers',
+                      'imageConsts']
+    rst_targets = ['blobs', 'arrows', 'text']
+
+    # Check the processing mode
+    if mode == 'layout':
+
+        # Target the list of layout elements
+        targets = layout_targets
+
+    if mode == 'rst':
+
+        # Target the list of RST elements
+        targets = rst_targets
 
     try:
         # Parse the diagram elements defined in the annotation, cast into list
