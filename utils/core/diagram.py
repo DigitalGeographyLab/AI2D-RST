@@ -303,8 +303,11 @@ class Diagram:
                 # Save a screenshot if requested
                 if user_input == 'cap':
 
+                    # Get filename of current image
+                    fname = os.path.basename(self.image_path)
+
                     # Write image on disk
-                    cv2.imwrite("screen_capture.png", preview)
+                    cv2.imwrite("screen_capture_{}.png".format(fname), preview)
 
             # Check if the user has requested to delete a grouping node
             if 'rm' in user_input:
@@ -416,7 +419,7 @@ class Diagram:
         # TODO Check if an RST graph is complete: use a non-method flag for now
         rst_complete = False
 
-        # Create graph for RST annotation
+        # Create a graph for RST annotation
         rst_graph = create_graph(self.annotation,
                                  edges=False,
                                  arrowheads=False,
@@ -452,6 +455,64 @@ class Diagram:
                     cv2.destroyAllWindows()
 
                     return
+
+                # If the user marks the annotation as complete, change status
+                if user_input == 'done':
+
+                    # Set status to complete
+                    rst_complete = True
+
+                    # Destroy any remaining windows
+                    cv2.destroyAllWindows()
+
+                    return
+
+                # If the user requests a list of available RST relations, print
+                # the keys and their definitions.
+                if user_input == 'relations':
+
+                    # Clear screen first
+                    os.system('cls' if os.name == 'nt' else 'clear')
+
+                    # Loop over RST relations
+                    for k, v in rst_relations.items():
+
+                        # Print information on each RST relation
+                        print("{} - abbreviation: {}, type: {}.".format(
+                            v['name'].upper(),
+                            k,
+                            v['kind']))
+
+                    pass
+
+                # Print information if requested
+                if user_input == 'info':
+
+                    # Clear screen first
+                    os.system('cls' if os.name == 'nt' else 'clear')
+
+                    # Print information on layout commands
+                    print(info['rst'])
+
+                    pass
+
+                # Store a comment if requested
+                if user_input == 'comment':
+
+                    # Show a prompt for comment
+                    comment = input(prompts['comment'])
+
+                    # Return the comment
+                    self.comments.append(comment)
+
+                # Save a screenshot if requested
+                if user_input == 'cap':
+
+                    # Get filename of current image
+                    fname = os.path.basename(self.image_path)
+
+                    # Write image on disk
+                    cv2.imwrite("screen_capture_{}.png".format(fname), preview)
 
                 # TODO Rest of the commands go here
 

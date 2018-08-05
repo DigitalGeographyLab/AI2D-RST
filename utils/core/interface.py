@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Define a dictionary of available commands during annotation
-commands = {'rst': ['info', 'define', 'next', 'exit', 'done', 'cap', 'new',
+commands = {'rst': ['info', 'relations', 'next', 'exit', 'done', 'cap', 'new',
                     'comment', 'rels'],
             'layout': ['info', 'comment', 'next', 'exit', 'done', 'cap']
             }
@@ -23,11 +23,21 @@ info = {'layout': "---\n"
                   "Other valid commands include:\n\n"
                   "info: Print this message.\n"
                   "comment: Enter a comment about current diagram.\n"
-                  "cap: Save current visualisation on disk.\n"
+                  "cap: Save the current visualisation on disk.\n"
                   "next: Move on to the next diagram.\n"
                   "exit: Exit the annotator immediately.\n"
-                  "done: Mark current diagram complete and move on.\n"
-                  "---"
+                  "done: Mark the current diagram as complete and move on.\n"
+                  "---",
+        # TODO Document RST commands
+        'rst': "---\n"
+               "Other valid commands include:\n\n"
+               "info: Print this message.\n"
+               "comment: Enter a comment about current diagram.\n"
+               "cap: Save the current visualisation on disk.\n"
+               "next: Move on to the next diagram.\n"
+               "exit: Exit the annotator immediately.\n"
+               "done: Mark the current diagram as complete and move on.\n"
+               "---",
         }
 
 # Define a dictionary of various prompts presented to user during annotation

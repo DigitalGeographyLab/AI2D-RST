@@ -118,8 +118,6 @@ def extract_types(elements, annotation):
     targets = ['arrowHeads', 'arrows', 'blobs', 'text', 'containers',
                'imageConsts']
 
-    # TODO Add separate processing modes for layout and RST by modifying targets
-
     # Create a dictionary for holding element types
     element_types = {}
 
