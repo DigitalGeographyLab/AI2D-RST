@@ -48,6 +48,15 @@ ann_path = args['annotation']
 images_path = args['images']
 output_path = args['output']
 
+# Check annotation and image paths
+if not os.path.isdir(images_path):
+    exit("Sorry, {} is not a valid directory. "
+         "Check the parameter -i/--images!".format(images_path))
+
+if not os.path.isfile(ann_path):
+    exit("Sorry, {} is not a valid file. "
+         "Check the parameter -a/--annotation!".format(ann_path))
+
 # Set review / annotation mode
 review = False
 
