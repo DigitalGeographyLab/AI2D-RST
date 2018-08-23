@@ -79,7 +79,7 @@ class Diagram:
 
         # Loop through current RST relations and rename them for convenience.
         # This allows the user to refer to the relation identifier (e.g. r1)
-        # instead of a complex relation id (e.g. B0-T1+B9) during annotation.
+        # instead of a complex relation ID (e.g. B0-T1+B9) during annotation.
         rel_dict = {"r{}".format(i): k for i, (k, v) in
                     enumerate(rel_dict.items(), start=1)}
 

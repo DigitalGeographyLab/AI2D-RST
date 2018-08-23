@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 # Define a dictionary of available commands during annotation
-commands = {'rst': ['info', 'relations', 'next', 'exit', 'done', 'cap', 'new',
-                    'comment', 'rels'],
+commands = {'rst': ['info', 'next', 'exit', 'done', 'cap', 'new', 'comment',
+                    'rels'],
             'layout': ['info', 'comment', 'next', 'exit', 'done', 'cap']
             }
 
@@ -23,20 +23,29 @@ info = {'layout': "---\n"
                   "Other valid commands include:\n\n"
                   "info: Print this message.\n"
                   "comment: Enter a comment about current diagram.\n"
-                  "cap: Save the current visualisation on disk.\n"
+                  "cap: Save a screen capture of the current visualisation.\n"
                   "next: Move on to the next diagram.\n"
                   "exit: Exit the annotator immediately.\n"
                   "done: Mark the current diagram as complete and move on.\n"
                   "---",
-        # TODO Document RST commands
         'rst': "---\n"
+               "Enter the command 'new' to create a new RST relation.\n"
+               "The tool will then ask you to enter a valid name for the "
+               "relation.\n"
+               "Names are entered by using abbreviations, which can be listed "
+               "using the command 'rels'.\n\n"
+               "The tool will infer the type of relation and ask you to enter "
+               "either a nucleus and satellites or several nuclei.\n"
+               "---\n"
                "Other valid commands include:\n\n"
                "info: Print this message.\n"
                "comment: Enter a comment about current diagram.\n"
-               "cap: Save the current visualisation on disk.\n"
-               "next: Move on to the next diagram.\n"
+               "cap: Save a screen capture of the current visualisation.\n"
+               "next: Move to the next diagram.\n"
                "exit: Exit the annotator immediately.\n"
-               "done: Mark the current diagram as complete and move on.\n"
+               "done: Mark the current diagram as complete and move to the next"
+               " diagram.\n"
+               "rels: Print out a list of available RST relations.\n"
                "---",
         }
 
@@ -86,3 +95,6 @@ rst_relations = {'anti': {'name': 'antithesis', 'kind': 'mono'},
                  'effe': {'name': 'effect', 'kind': 'mono'},
                  'titl': {'name': 'title', 'kind': 'mono'}
                  }
+
+# TODO Document RST relations
+# TODO Move generic commands here?
