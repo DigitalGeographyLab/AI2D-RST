@@ -55,8 +55,16 @@ prompts = {'nucleus_id': "Enter the identifier of nucleus: ",
            'layout_default': "Please enter nodes to group or a valid command: ",
            'comment': "Enter comment: ",
            'rst_default': "Please enter a valid command: ",
-           'rel_prompt': "Please enter relation name: "
+           'rel_prompt': "Please enter relation name: ",
+           'nuclei_id': "Enter the identifiers of the nuclei: "
            }
+
+# Define a dictionary of various error messages that may arise during annotation
+messages = {'nucleus_err': "Sorry, a mononuclear relation cannot have more "
+                           "than one nucleus. Please try again.",
+            'nuclei_err': "Sorry, a multinuclear relation must have more than "
+                          "one nucleus. Please try again."}
+
 
 # Define a dictionary of RST relations / types and their aliases (keys)
 rst_relations = {'anti': {'name': 'antithesis', 'kind': 'mono'},

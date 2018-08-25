@@ -91,7 +91,8 @@ class Diagram:
         # Combine the valid nodes and relations into a single set
         valid_ids = set(valid_nodes + valid_rels)
 
-        # Check whether the RST relation is mono- or multinuclear
+        # Check whether the RST relation is mono- or multinuclear. Start with
+        # mononuclear relations.
         if relation_kind == 'mono':
 
             # Request the identifier of the nucleus in the RST relation
@@ -105,8 +106,7 @@ class Diagram:
             if len(nucleus) != 1:
 
                 # Print error message and return
-                print("Sorry, a mononuclear relation cannot have more than one "
-                      "nucleus. Please try again.")
+                print(messages['nucleus_err'])
 
                 return
 
@@ -184,8 +184,42 @@ class Diagram:
                     # Add edge to graph
                     rst_graph.add_edge(n.upper(), new_node)
 
+        # Continue by checking if the relation is multinuclear
         if relation_kind == 'multi':
-            pass
+
+            # Request the identifiers of the nuclei in the RST relation
+            nuclei = input(prompts['nuclei_id'])
+
+            # Split the user input into a list and convert to lowercase
+            nuclei = nuclei.split()
+            nuclei = [n.lower() for n in nuclei]
+
+            # Check the total number of inputs in the list
+            if len(nuclei) <= 1:
+
+                # Print error message and return
+                print(messages['nuclei_err'])
+
+                return
+
+            # Check the user input against the set of valid identifiers
+            if not set(nuclei).issubset(valid_ids):
+
+                # Get the difference between user input and valid ID sets
+                diff = set(nuclei).difference(valid_ids)
+
+                # Print error message with difference in sets
+                print("Sorry, {} is not a valid diagram element or command. "
+                      "Please try again.".format(' '.join(diff)))
+
+                return
+
+            else:
+
+                # The input is valid, continue to draw the relations
+                pass
+
+            # TODO Repeat the procedure starting from line 150
 
     def group_nodes(self, graph, user_input):
         """
@@ -382,7 +416,7 @@ class Diagram:
                 # valid elements as sets.
                 while not set(user_input).issubset(valid_elems):
 
-                    # Get difference between user input and valid graph
+                    # Get difference between user input and valid element sets
                     diff = set(user_input).difference(valid_elems)
 
                     # Print error message with difference in sets.
