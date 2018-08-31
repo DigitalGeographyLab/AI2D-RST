@@ -10,6 +10,27 @@ import networkx as nx
 import os
 
 
+def convert_colour(colour):
+    """
+    Converts a matplotlib colour name to BGR for OpenCV.
+
+    Parameters:
+        colour: A valid matplotlib colour name.
+
+    Returns:
+        A BGR three tuple.
+    """
+
+    # Convert matplotlib colour name to normalized RGB
+    colour = matplotlib.colors.to_rgb(colour)
+
+    # Multiply by 255 and round
+    colour = tuple(round(255 * x) for x in colour)
+
+    # Reverse the tuple for OpenCV
+    return tuple(reversed(colour))
+
+
 def draw_graph(graph, dpi=100, mode='layout'):
     """
     Draws an image of a NetworkX Graph for visual inspection.
@@ -105,27 +126,6 @@ def draw_layout(path_to_image, annotation, height):
     Returns:
         An image with the AI2D annotation overlaid.
     """
-
-    # Start by defining a support function for converting colour codes
-    def convert_colour(colour):
-        """
-        Converts a matplotlib colour name to BGR for OpenCV.
-
-        Parameters:
-            colour: A valid matplotlib colour name.
-
-        Returns:
-            A BGR three tuple.
-        """
-
-        # Convert matplotlib colour name to normalized RGB
-        colour = matplotlib.colors.to_rgb(colour)
-
-        # Multiply by 255 and round
-        colour = tuple(round(255 * x) for x in colour)
-
-        # Reverse the tuple for OpenCV
-        return tuple(reversed(colour))
 
     # Load the diagram image and make a copy
     img, r = resize_img(path_to_image, height)
