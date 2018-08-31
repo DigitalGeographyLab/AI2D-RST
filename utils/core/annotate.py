@@ -34,8 +34,6 @@ def create_relation(rst_graph, user_input):
     relation_ix = {"r{}".format(i): k for i, (k, v) in
                    enumerate(relation_ix.items(), start=1)}
 
-    print("[DEBUG] Relation dictionary: {}".format(relation_ix))
-
     # Create a list of valid relation identifiers based on the dict keys
     valid_rels = [r.lower() for r in relation_ix.keys()]
 
