@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 """
-This script allows the user to create a graph describing the logical structure
-of a diagram (DPG-L).
+This script allows the user to create a graph describing the rhetorical 
+structure of a diagram (DPG-R).
 
 Usage:
-    python annotate_dpg-l.py -a annotation.pkl -i images/ -o output.pkl
+    python annotate_dpg-r.py -a annotation.pkl -i images/ -o output.pkl
     
 Arguments:
     -a/--annotation: Path to the pandas DataFrame containing the annotation
@@ -48,11 +48,13 @@ ann_path = args['annotation']
 images_path = args['images']
 output_path = args['output']
 
-# Set review / annotation mode initially to false
+# Set review mode to False by default
 review = False
 
 # Activate review mode if requested using the -r/--review flag
 if args['review']:
+
+    # Set review flag to True
     review = True
 
 # Check if the output file exists already, or whether to continue with previous
@@ -107,7 +109,7 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
 
     # Check if diagram exists by requesting input
     try:
-        diagram.annotate_layout()
+        diagram.annotate_rst()
 
     # If a non-existent diagram throws an error, create a new diagram
     except AttributeError:
@@ -116,7 +118,7 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
         diagram = Diagram(annotation, image_path)
 
         # Request user input
-        diagram.annotate_layout()
+        diagram.annotate_rst()
 
     # Store the diagram into the column 'diagram'
     annotation_df.at[ix, 'diagram'] = diagram
