@@ -13,7 +13,8 @@ def create_graph(annotation, edges=False, arrowheads=False, mode='layout'):
         edges: A boolean defining whether edges are to be drawn.
         arrowheads: A boolean defining whether arrowheads are drawn.
         mode: A string indicating the diagram structure to be drawn, valid 
-              options include 'layout' and 'rst'. Default mode is layout.
+              options include 'layout', 'connect' and 'rst'. Default mode is
+              layout.
 
     Returns:
         A networkx graph with diagram elements.
@@ -27,6 +28,9 @@ def create_graph(annotation, edges=False, arrowheads=False, mode='layout'):
     # Extract element types
     element_types = extract_types(diagram_elements, annotation)
 
+    # Create a new MultiDiGraph to hold the annotation
+    graph = nx.MultiDiGraph()
+
     # Check if arrowheads should be excluded
     if not arrowheads:
 
@@ -36,9 +40,6 @@ def create_graph(annotation, edges=False, arrowheads=False, mode='layout'):
 
     # Set up a dictionary to track arrows and arrowheads
     arrowmap = {}
-
-    # Create a new undirected Graph
-    graph = nx.Graph()
 
     # Add diagram elements to the graph and record their type (kind)
     for element, kind in element_types.items():
@@ -224,22 +225,29 @@ def parse_annotation(annotation, mode='layout'):
     Parameters:
         annotation: A dictionary containing AI2D annotation.
         mode: A string indicating the diagram structure to be drawn, valid 
-              options include 'layout' and 'rst'. Default mode is layout.
+              options include 'layout', 'connect' and 'rst'. Default mode is
+              layout.
 
     Returns:
         A dictionary for drawing a graph of the annotation.
     """
     # Define target diagram elements to be added to the graph according to the
-    # selected mode of processing (layout/rst).
-    layout_targets = ['blobs', 'arrows', 'text', 'arrowHeads', 'containers',
-                      'imageConsts']
+    # selected mode of processing (grouping/connectivity/rst).
+    grouping_targets = ['blobs', 'arrows', 'text', 'arrowHeads', 'containers',
+                        'imageConsts']
+    conn_targets = ['blobs', 'arrows', 'text', 'containers', 'imageConsts']
     rst_targets = ['blobs', 'arrows', 'text']
 
     # Check the processing mode
     if mode == 'layout':
 
         # Target the list of layout elements
-        targets = layout_targets
+        targets = grouping_targets
+
+    if mode == 'connect':
+
+        # Target the list of connectivity elements
+        targets = conn_targets
 
     if mode == 'rst':
 

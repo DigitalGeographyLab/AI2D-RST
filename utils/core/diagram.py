@@ -26,10 +26,11 @@ class Diagram:
         Returns:
             An AI2D Diagram object with various methods and attributes.
         """
-        # Mark the annotation initially as not complete
+        # Mark all annotation layers initially as incomplete
         self.complete = False
-        self.rst_complete = False
-        self.layout_complete = False
+        self.group_complete = False  # grouping (hierarchy + macro)
+        self.conn_complete = False  # connectivity
+        self.rst_complete = False  # rst
 
         # Set image path
         self.image_path = image
@@ -43,12 +44,22 @@ class Diagram:
             # Load JSON annotation into a dictionary
             self.annotation = load_annotation(json)
 
-        # Create initial graph with diagram elements only
+        # Create a graph for layout annotation (hierarchy and macro grouping)
         self.layout_graph = create_graph(self.annotation,
                                          edges=False,
                                          arrowheads=False,
                                          mode='layout'
                                          )
+
+        # Create a graph for connectivity
+        self.connect_graph = create_graph(self.annotation,
+                                          edges=False,
+                                          arrowheads=False,
+                                          mode='connect')
+
+        # TODO RST annotation must use the layout graph as its basis
+        # This means that the create_graph must take two kinds of inputs:
+        # parsed annotation and graphs - or maybe this can be done by drawing?
 
         # Create a graph for RST annotation
         self.rst_graph = create_graph(self.annotation,
@@ -56,9 +67,6 @@ class Diagram:
                                       arrowheads=False,
                                       mode='rst'
                                       )
-
-        # Visualise the layout annotation in an image
-        self.layout = draw_layout(self.image_path, self.annotation, 480)
 
         # Set up placeholders for the layout graph and comments
         self.comments = []
@@ -77,14 +85,29 @@ class Diagram:
             according to the user input.
         """
 
-        # Enter a while loop for the annotation procedure
-        while not self.layout_complete:
+        # Visualize the layout segmentation
+        segmentation = draw_layout(self.image_path, self.annotation, 480)
 
-            # Draw the graph
-            diagram = draw_graph(self.layout_graph, dpi=100)
+        # Draw the graph
+        diagram = draw_graph(self.layout_graph, dpi=100, mode='layout')
+
+        # Set the flag for tracking updates to the graph
+        update = False
+
+        # Enter a while loop for the annotation procedure
+        while not self.group_complete:
+
+            # Check if the graph needs to be updated
+            if update:
+
+                # Re-draw the graph
+                diagram = draw_graph(self.layout_graph, dpi=100, mode='layout')
+
+                # Mark update complete
+                update = False
 
             # Join the graph and the layout structure horizontally
-            preview = np.hstack((diagram, self.layout))
+            preview = np.hstack((diagram, segmentation))
 
             # Show the resulting visualization
             cv2.imshow("Annotation", preview)
@@ -132,7 +155,7 @@ class Diagram:
                 if user_input == 'done':
 
                     # Set status to complete
-                    self.layout_complete = True
+                    self.group_complete = True
 
                     # Destroy any remaining windows
                     cv2.destroyAllWindows()
@@ -186,6 +209,9 @@ class Diagram:
 
                     # Update the graph according to user input
                     self.layout_graph.remove_nodes_from(user_input)
+
+                    # Flag the graph for re-drawing
+                    update = True
 
                     continue
 
@@ -241,6 +267,9 @@ class Diagram:
                     # Update the graph according to user input
                     group_nodes(self.layout_graph, user_input)
 
+                    # Flag the graph for re-drawing
+                    update = True
+
                 # Continue until the annotation process is complete
                 continue
 
@@ -255,17 +284,29 @@ class Diagram:
             Updates the RST graph in the Diagram object (self.rst_graph).
         """
 
-        # Check if an RST graph is complete: use a non-method flag for now
-        self.rst_complete = False
+        # Visualize the layout segmentation
+        segmentation = draw_layout(self.image_path, self.annotation, 480)
+
+        # Draw the graph using RST mode
+        diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')
+
+        # Set the flag for tracking updates to the graph
+        update = False
 
         # Enter a while loop for the annotation procedure
         while not self.rst_complete:
 
-            # Draw the graph using RST mode
-            diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')
+            # Check if the graph needs to be updated
+            if update:
+
+                # Re-draw the graph
+                diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')
+
+                # Mark update complete
+                update = False
 
             # Join the graph and the layout structure horizontally
-            preview = np.hstack((diagram, self.layout))
+            preview = np.hstack((diagram, segmentation))
 
             # Show the resulting visualization
             cv2.imshow("Annotation", preview)
@@ -371,6 +412,9 @@ class Diagram:
 
                         # Create a rhetorical relation and add to graph
                         create_relation(self.rst_graph, relation)
+
+                        # Flag the graph for re-drawing
+                        update = True
 
                     else:
                         print("Sorry, {} is not a valid relation."

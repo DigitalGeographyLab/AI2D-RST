@@ -50,7 +50,8 @@ def draw_graph(graph, dpi=100, mode='layout'):
     ax = fig.add_subplot(1, 1, 1)
 
     # Initialize a spring layout for the graph
-    pos = nx.spring_layout(graph, iterations=20)
+    # pos = nx.spring_layout(graph, iterations=5)
+    pos = nx.nx_pydot.graphviz_layout(graph, prog='neato')
 
     # Generate a dictionary with nodes and their kind
     node_types = nx.get_node_attributes(graph, 'kind')

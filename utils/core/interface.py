@@ -106,3 +106,6 @@ rst_relations = {'anti': {'name': 'antithesis', 'kind': 'mono'},
 
 # TODO Document RST relations
 # TODO Move generic commands here?
+
+# TODO Add command 'status' which gives the annotation status of diagram
+# TODO Add commands that allow switching between annotation types
