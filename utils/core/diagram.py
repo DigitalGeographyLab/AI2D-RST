@@ -14,13 +14,13 @@ class Diagram:
     """
     This class holds the annotation for a single AI2D-RST diagram.
     """
-    def __init__(self, json, image):
+    def __init__(self, ai2d_ann, image):
         """
         This function initializes the Diagram class.
         
         Parameters:
-            json: Path to the JSON file containing the original AI2D annotation 
-                  or a dictionary containing parsed annotation.
+            ai2d_ann: Path to the JSON file containing the original AI2D
+                      annotation or a dictionary containing parsed annotation.
             image: Path to the image file containing the diagram.
             
         Returns:
@@ -37,12 +37,12 @@ class Diagram:
 
         # Continue by checking the annotation type. If the input is a dictionary
         # assign the dictionary to the variable 'annotation'.
-        if type(json) == dict:
-            self.annotation = json
+        if type(ai2d_ann) == dict:
+            self.annotation = ai2d_ann
 
         else:
             # Load JSON annotation into a dictionary
-            self.annotation = load_annotation(json)
+            self.annotation = load_annotation(ai2d_ann)
 
         # Create a graph for layout annotation (hierarchy and macro grouping)
         self.layout_graph = create_graph(self.annotation,
@@ -171,6 +171,55 @@ class Diagram:
                     # Write image on disk
                     cv2.imwrite("screen_capture_{}.png".format(fname), preview)
 
+            # Check if the user has requested to describe a macro grouping
+            if 'macro' in user_input:
+
+                # Get the list of nodes to describe
+                user_input = user_input.lower().split()[1:]
+
+                # Generate a list of valid diagram elements present in the graph
+                valid_nodes = [e.lower() for e in self.layout_graph.nodes]
+
+                # Generate a dictionary of groups
+                group_dict = get_node_dict(self.layout_graph, kind='group')
+
+                # Count the current groups and enumerate for convenience. This
+                # allows the user to refer to group number instead of complex
+                # identifier.
+                group_dict = {"g{}".format(i): k for i, (k, v) in
+                              enumerate(group_dict.items(), start=1)}
+
+                # Create a list of identifiers based on the dict keys
+                valid_groups = [g.lower() for g in group_dict.keys()]
+
+                # Combine the valid nodes and groups into a set
+                valid_elems = set(valid_nodes + valid_groups)
+
+                # Check for invalid input by comparing the user input and the
+                # valid elements as sets.
+                if not set(user_input).issubset(valid_elems):
+
+                    # Get difference between user input and valid element sets
+                    diff = set(user_input).difference(valid_elems)
+
+                    # Print error message with difference in sets.
+                    print("Sorry, {} is not a valid diagram element or command."
+                          " Please try again.".format(' '.join(diff)))
+
+                    continue
+
+                # Proceed if the user input is a subset of valid elements
+                if set(user_input).issubset(valid_elems):
+
+                    # Replace aliases with valid identifiers, if used
+                    user_input = [group_dict[u] if u in valid_groups else u for
+                                  u in user_input]
+
+                    # Assign macro groups to nodes
+                    macro_group(self.layout_graph, user_input)
+
+                    continue
+
             # Check if the user has requested to delete a grouping node
             if 'rm' in user_input:
 
@@ -220,7 +269,7 @@ class Diagram:
             elif user_input not in commands['layout']:
 
                 # Split the input into a list
-                user_input = user_input.split(',')
+                user_input = user_input.split()
 
                 # Strip extra whitespace
                 user_input = [u.strip() for u in user_input]
@@ -245,7 +294,7 @@ class Diagram:
 
                 # Check for invalid input by comparing the user input and the
                 # valid elements as sets.
-                while not set(user_input).issubset(valid_elems):
+                if not set(user_input).issubset(valid_elems):
 
                     # Get difference between user input and valid element sets
                     diff = set(user_input).difference(valid_elems)
@@ -254,8 +303,7 @@ class Diagram:
                     print("Sorry, {} is not a valid diagram element or command."
                           " Please try again.".format(' '.join(diff)))
 
-                    # Break from the loop
-                    break
+                    continue
 
                 # Proceed if the user input is a subset of valid elements
                 if set(user_input).issubset(valid_elems):

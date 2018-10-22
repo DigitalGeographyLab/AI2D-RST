@@ -200,15 +200,15 @@ def group_nodes(graph, user_input):
 
     Parameters:
         graph: A NetworkX Graph.
-        user_input: A list of nodes contained in the graph.
+        user_input: A list of valid nodes in the graph.
 
     Returns:
         An updated NetworkX Graph.
     """
-    # Create a dictionary of the nodes currently in the graph
+    # Create a dictionary of nodes in the graph
     node_dict = get_node_dict(graph)
 
-    # Check the user input against the node dictionary
+    # Check user input against the node dictionary for input types
     input_node_types = [node_dict[u.upper()] for u in user_input]
 
     # If the user input contains an imageConsts, do not add a node
@@ -229,3 +229,51 @@ def group_nodes(graph, user_input):
         # Add edges from nodes in the user input to the new node
         for valid_elem in user_input:
             graph.add_edge(valid_elem.upper(), new_node)
+
+
+def macro_group(graph, user_input):
+    """
+    A function for assigning macro grouping information to nodes in the graph.
+
+    Parameters:
+        graph: A NetworkX Graph.
+        user_input: A list of valid nodes in the graph.
+
+    Returns:
+        An updated NetworkX graph.
+    """
+    # Request macro grouping type:
+    macro_group_type = input(prompts['macro_group'])
+
+    # Flatten a dictionary of valid macro groups and their abbreviations
+    valid_macro_groups = list(macro_groups.keys()) + list(macro_groups.values())
+
+    # Check for valid macro group type
+    if macro_group_type not in valid_macro_groups:
+
+        # Print error message
+        print("Sorry, {} is not a valid macro group."
+              " Please try again.".format(macro_group_type))
+
+        return
+
+    # If the input is valid, add macro grouping information to the nodes
+    if macro_group_type in valid_macro_groups:
+
+        # Check if formatting is needed in case the input is an abbreviation
+        if macro_group_type in list(macro_groups.keys()):
+
+            # Update the macro group name to the full name
+            macro_group_type = macro_groups[macro_group_type]
+
+        # Generate a matching list of grouping information
+        group_list = [macro_group_type for x in range(0, len(user_input))]
+
+        # Convert user input to uppercase
+        user_input = [x.upper() for x in user_input]
+
+        # Create a dictionary from user input; convert to uppercase
+        macro_grouping = dict(zip(user_input, group_list))
+
+        # Add macro grouping information to the graph nodes
+        nx.set_node_attributes(graph, macro_grouping, 'macro_group')

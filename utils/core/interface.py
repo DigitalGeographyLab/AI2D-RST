@@ -7,18 +7,19 @@ commands = {'rst': ['info', 'next', 'exit', 'done', 'cap', 'new', 'comment',
             }
 
 info = {'layout': "---\n"
-                  "Enter the identifiers of elements you wish to group "
+                  "Enter the identifiers of diagram elements you wish to group "
                   "together.\n"
-                  "Separate the identifiers with a comma.\n"
+                  "Separate the identifiers with a space.\n"
                   "\n"
-                  "Example of valid input: b1, a1, t1\n\n"
+                  "Example of valid input: b1 a1 t1\n\n"
                   ""
                   "This command would group nodes B1, A1 and T1 under "
-                  "a common node.\n"
+                  "a grouping node.\n"
                   "---\n"
                   "Grouping nodes may be deleted using command rm.\n\n"
                   "Example command: rm g1\n\n"
-                  "This command would delete group G1.\n"
+                  "This command deletes group G1. Multiple groups can be\n"
+                  "deleted by entering multiple identifiers, e.g. rm g1 g2 g3\n"
                   "---\n"
                   "Other valid commands include:\n\n"
                   "info: Print this message.\n"
@@ -56,7 +57,8 @@ prompts = {'nucleus_id': "Enter the identifier of nucleus: ",
            'comment': "Enter comment: ",
            'rst_default': "Please enter a valid command: ",
            'rel_prompt': "Please enter relation name: ",
-           'nuclei_id': "Enter the identifiers of the nuclei: "
+           'nuclei_id': "Enter the identifiers of the nuclei: ",
+           'macro_group': "Please enter macro group type: "
            }
 
 # Define a dictionary of various error messages that may arise during annotation
@@ -103,6 +105,19 @@ rst_relations = {'anti': {'name': 'antithesis', 'kind': 'mono'},
                  'effe': {'name': 'effect', 'kind': 'mono'},
                  'titl': {'name': 'title', 'kind': 'mono'}
                  }
+
+macro_groups = {'table': 'table',
+                'hor': 'horizontal',
+                'ver': 'vertical',
+                'net': 'network',
+                'cycle': 'cycle',
+                'slice': 'slice',
+                'cut': 'cut-out',
+                'exp': 'exploded',
+                'photo': 'photograph',
+                'ill': 'illustration',
+                'diag': 'diagrammatic'
+                }
 
 # TODO Document RST relations
 # TODO Move generic commands here?
