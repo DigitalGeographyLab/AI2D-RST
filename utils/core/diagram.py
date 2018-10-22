@@ -161,11 +161,21 @@ class Diagram:
                 # Save a screenshot if requested
                 if user_input == 'cap':
 
-                    # Get filename of current image
-                    fname = os.path.basename(self.image_path)
+                    # Get filename of current image (without extension)
+                    fname = os.path.basename(self.image_path).split('.')[0]
+
+                    # Join filename to get a string
+                    fname = ''.join(fname)
+
+                    # Render high-resolution versions of graph and segmentation
+                    layout_hires = draw_layout(self.image_path, self.annotation,
+                                               720)
+                    diag_hires = draw_graph(self.layout_graph, dpi=200,
+                                            mode='layout')
 
                     # Write image on disk
-                    cv2.imwrite("screen_capture_{}.png".format(fname), preview)
+                    cv2.imwrite("layout_{}.png".format(fname), layout_hires)
+                    cv2.imwrite("grouping_{}.png".format(fname), diag_hires)
 
                 # Print the names of macro groups if requested
                 if user_input == 'macrogroups':
