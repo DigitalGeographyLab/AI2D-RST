@@ -50,7 +50,6 @@ def draw_graph(graph, dpi=100, mode='layout'):
     ax = fig.add_subplot(1, 1, 1)
 
     # Initialize a spring layout for the graph
-    # pos = nx.spring_layout(graph, iterations=5)
     pos = nx.nx_pydot.graphviz_layout(graph, prog='neato')
 
     # Generate a dictionary with nodes and their kind
@@ -187,16 +186,11 @@ def draw_layout(path_to_image, annotation, height):
 
             # Get the start and end points of the rectangle and cast
             # them into tuples for drawing.
-            rect = annotation['text'][t]['rectangle']
+            rect = np.array(annotation['text'][t]['rectangle'], np.int32)
 
-            # Scale the coordinates according to the ratio; convert to int
-            rect[0] = [np.round(x * r, decimals=0).astype('int')
-                       for x in rect[0]]
-            rect[1] = [np.round(x * r, decimals=0).astype('int')
-                       for x in rect[1]]
-
-            # Get start and end coordinates for the rectangle
-            start, end = tuple(rect[0]), tuple(rect[1])
+            # Get start and end coordinates, convert to int and cast into tuple
+            start = tuple(np.round(rect[0] * r, decimals=0).astype('int'))
+            end = tuple(np.round(rect[1] * r, decimals=0).astype('int'))
 
             # Get center of rectangle; cast into integer
             c = (round((start[0] + end[0]) / 2 - 10).astype('int'),

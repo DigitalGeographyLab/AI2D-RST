@@ -41,7 +41,7 @@ class Diagram:
             self.annotation = ai2d_ann
 
         else:
-            # Load JSON annotation into a dictionary
+            # Read the JSON annotation into a dictionary
             self.annotation = load_annotation(ai2d_ann)
 
         # Create a graph for layout annotation (hierarchy and macro grouping)
@@ -51,24 +51,11 @@ class Diagram:
                                          mode='layout'
                                          )
 
-        # Create a graph for connectivity
-        self.connect_graph = create_graph(self.annotation,
-                                          edges=False,
-                                          arrowheads=False,
-                                          mode='connect')
+        # Set up placeholders for connectivity and RST layers
+        self.conn_graph = None
+        self.rst_graph = None
 
-        # TODO RST annotation must use the layout graph as its basis
-        # This means that the create_graph must take two kinds of inputs:
-        # parsed annotation and graphs - or maybe this can be done by drawing?
-
-        # Create a graph for RST annotation
-        self.rst_graph = create_graph(self.annotation,
-                                      edges=False,
-                                      arrowheads=False,
-                                      mode='rst'
-                                      )
-
-        # Set up placeholders for the layout graph and comments
+        # Set up a placeholder for comments
         self.comments = []
 
     def annotate_layout(self):
@@ -354,6 +341,50 @@ class Diagram:
 
                 # Continue until the annotation process is complete
                 continue
+
+    def annotate_connectivity(self):
+
+        # Visualize the layout segmentation
+        segmentation = draw_layout(self.image_path, self.annotation, 480)
+
+        # Retrieve a list of valid nodes
+        nodes = list(self.layout_graph.nodes(data=True))
+
+        # Create a graph
+        self.conn_graph = create_graph(nodes,
+                                       edges=False,
+                                       arrowheads=False,
+                                       mode='connect'
+                                       )
+
+        # Draw the graph
+        diagram = draw_graph(self.conn_graph, dpi=100, mode='layout')
+
+        # Set the flag for tracking updates to the graph
+        update = False
+
+        # Enter a while loop for the annotation procedure
+        while not self.conn_complete:
+
+            # Check if the graph needs to be updated
+            if update:
+
+                # Re-draw the graph
+                diagram = draw_graph(self.conn_graph, dpi=100, mode='layout')
+
+                # Mark update complete
+                update = False
+
+            # Join the graph and the layout structure horizontally
+            preview = np.hstack((diagram, segmentation))
+
+            # Show the resulting visualization
+            cv2.imshow("Annotation", preview)
+
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
+            self.conn_complete = True
 
     def annotate_rst(self):
         """
