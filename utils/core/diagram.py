@@ -74,7 +74,7 @@ class Diagram:
     def annotate_layout(self):
         """
         A function for annotating the logical / layout structure (DPG-L) of a
-        diagram.
+        diagram. This covers both hierarchy and macro groups.
         
         Parameters:
             None. The function modifies the graph that is created when a Diagram
@@ -153,6 +153,15 @@ class Diagram:
 
                 # If the user marks the annotation as complete
                 if user_input == 'done':
+
+                    # Find nodes without edges (isolates)
+                    isolates = list(nx.isolates(self.layout_graph))
+
+                    # Remove isolates
+                    self.layout_graph.remove_nodes_from(isolates)
+
+                    # Freeze the layout graph
+                    nx.freeze(self.layout_graph)
 
                     # Set status to complete
                     self.group_complete = True
