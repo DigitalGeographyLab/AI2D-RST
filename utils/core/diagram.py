@@ -171,8 +171,21 @@ class Diagram:
                     # Write image on disk
                     cv2.imwrite("screen_capture_{}.png".format(fname), preview)
 
+                # Print the names of macro groups if requested
+                if user_input == 'macrogroups':
+
+                    # Print header
+                    print("\nAvailable macro groups and their aliases\n---")
+
+                    # Print the available macro groups and their aliases
+                    for k, v in macro_groups.items():
+                        print("{} (alias: {})".format(v, k))
+
+                    # Print closing line
+                    print("---\n")
+
             # Check if the user has requested to describe a macro grouping
-            if 'macro' in user_input:
+            if 'macro' == user_input.split()[0]:
 
                 # Get the list of nodes to describe
                 user_input = user_input.lower().split()[1:]
@@ -299,7 +312,7 @@ class Diagram:
                     # Get difference between user input and valid element sets
                     diff = set(user_input).difference(valid_elems)
 
-                    # Print error message with difference in sets.
+                    # Print error message with difference in sets
                     print("Sorry, {} is not a valid diagram element or command."
                           " Please try again.".format(' '.join(diff)))
 
@@ -308,15 +321,27 @@ class Diagram:
                 # Proceed if the user input is a subset of valid elements
                 if set(user_input).issubset(valid_elems):
 
-                    # Replace aliases with valid identifiers, if used
-                    user_input = [group_dict[u] if u in valid_groups else u for
-                                  u in user_input]
+                    # Check input length
+                    if len(user_input) == 1:
 
-                    # Update the graph according to user input
-                    group_nodes(self.layout_graph, user_input)
+                        # Print error message
+                        print("Sorry, you must enter more than one identifier "
+                              "to form a group.")
 
-                    # Flag the graph for re-drawing
-                    update = True
+                        continue
+
+                    # Proceed if aufficient number of valid elements is provided
+                    elif len(user_input) > 1:
+
+                        # Replace aliases with valid identifiers, if used
+                        user_input = [group_dict[u] if u in valid_groups else
+                                      u for u in user_input]
+
+                        # Update the graph according to user input
+                        group_nodes(self.layout_graph, user_input)
+
+                        # Flag the graph for re-drawing
+                        update = True
 
                 # Continue until the annotation process is complete
                 continue

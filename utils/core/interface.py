@@ -3,7 +3,8 @@
 # Define a dictionary of available commands during annotation
 commands = {'rst': ['info', 'next', 'exit', 'done', 'cap', 'new', 'comment',
                     'rels'],
-            'layout': ['info', 'comment', 'next', 'exit', 'done', 'cap']
+            'layout': ['info', 'comment', 'next', 'exit', 'done', 'cap',
+                       'macrogroups']
             }
 
 info = {'layout': "---\n"
@@ -28,6 +29,7 @@ info = {'layout': "---\n"
                   "next: Move on to the next diagram.\n"
                   "exit: Exit the annotator immediately.\n"
                   "done: Mark the current diagram as complete and move on.\n"
+                  "macrogroups: List the available macro groups.\n"
                   "---",
         'rst': "---\n"
                "Enter the command 'new' to create a new RST relation.\n"
