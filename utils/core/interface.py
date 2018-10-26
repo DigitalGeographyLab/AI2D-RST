@@ -4,13 +4,14 @@
 commands = {'rst': ['info', 'next', 'exit', 'done', 'cap', 'new', 'comment',
                     'rels'],
             'layout': ['info', 'comment', 'next', 'exit', 'done', 'cap',
-                       'macrogroups']
+                       'macrogroups', 'export'],
+            'connectivity': ['info', 'comment', 'next', 'exit', 'done', 'cap']
             }
 
 info = {'layout': "---\n"
                   "Enter the identifiers of diagram elements you wish to group "
                   "together.\n"
-                  "Separate the identifiers with a space.\n"
+                  "Separate the identifiers with a comma.\n"
                   "\n"
                   "Example of valid input: b1 a1 t1\n\n"
                   ""
@@ -50,6 +51,19 @@ info = {'layout': "---\n"
                " diagram.\n"
                "rels: Print out a list of available RST relations.\n"
                "---",
+        'connectivity': "---\n"
+                        # TODO Populate
+                       "---\n"
+                       "Other valid commands include:\n\n"
+                       "info: Print this message.\n"
+                       "comment: Enter a comment about current diagram.\n"
+                       "cap: Save a screen capture of the current "
+                        "visualisation.\n"
+                       "next: Move to the next diagram.\n"
+                       "exit: Exit the annotator immediately.\n"
+                       "done: Mark the current diagram as complete and move to "
+                        "the next diagram.\n"
+                       "---"
         }
 
 # Define a dictionary of various prompts presented to user during annotation
@@ -60,7 +74,8 @@ prompts = {'nucleus_id': "Enter the identifier of nucleus: ",
            'rst_default': "Please enter a valid command: ",
            'rel_prompt': "Please enter relation name: ",
            'nuclei_id': "Enter the identifiers of the nuclei: ",
-           'macro_group': "Please enter macro group type: "
+           'macro_group': "Please enter macro group type: ",
+           'conn_default': "Please enter a connection or a valid command: "
            }
 
 # Define a dictionary of various error messages that may arise during annotation

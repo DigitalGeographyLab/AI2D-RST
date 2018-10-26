@@ -29,7 +29,7 @@ class Diagram:
         # Mark all annotation layers initially as incomplete
         self.complete = False
         self.group_complete = False  # grouping (hierarchy + macro)
-        self.conn_complete = False  # connectivity
+        self.connectivity_complete = False  # connectivity
         self.rst_complete = False  # rst
 
         # Set image path
@@ -52,7 +52,7 @@ class Diagram:
                                          )
 
         # Set up placeholders for connectivity and RST layers
-        self.conn_graph = None
+        self.connectivity_graph = None
         self.rst_graph = None
 
         # Set up a placeholder for comments
@@ -68,8 +68,8 @@ class Diagram:
             object is initialised.
         
         Returns:
-            Updates the graph contained in the Diagram object (self.graph)
-            according to the user input.
+            Updates the graph contained in the Diagram object
+            (self.layout_graph) according to the user input.
         """
 
         # Visualize the layout segmentation
@@ -176,6 +176,19 @@ class Diagram:
                     # Write image on disk
                     cv2.imwrite("layout_{}.png".format(fname), layout_hires)
                     cv2.imwrite("grouping_{}.png".format(fname), diag_hires)
+
+                # Export a graphviz DOT graph if requested
+                if user_input == 'export':
+
+                    # Get filename of current image (without extension)
+                    fname = os.path.basename(self.image_path).split('.')[0]
+
+                    # Join filename to get a string
+                    fname = ''.join(fname)
+
+                    # Write DOT graph to disk
+                    nx.nx_pydot.write_dot(self.layout_graph,
+                                          '{}_layout.dot'.format(fname))
 
                 # Print the names of macro groups if requested
                 if user_input == 'macrogroups':
@@ -288,7 +301,7 @@ class Diagram:
             elif user_input not in commands['layout']:
 
                 # Split the input into a list
-                user_input = user_input.split()
+                user_input = user_input.split(',')
 
                 # Strip extra whitespace
                 user_input = [u.strip() for u in user_input]
@@ -353,34 +366,49 @@ class Diagram:
                 continue
 
     def annotate_connectivity(self):
+        """
+        A function for annotating a diagram for its connectivity.
+
+        Parameters:
+            None. The function populates the connectivity graph using the layout
+            graph.
+
+        Returns:
+            Updated the graph contained in the Diagram object
+            (self.connectivity_graph) according to the user input.
+        """
 
         # Visualize the layout segmentation
         segmentation = draw_layout(self.image_path, self.annotation, 480)
 
-        # Retrieve a list of valid nodes
+        # Retrieve a list of valid nodes from the layout graph
         nodes = list(self.layout_graph.nodes(data=True))
 
-        # Create a graph
-        self.conn_graph = create_graph(nodes,
-                                       edges=False,
-                                       arrowheads=False,
-                                       mode='connect'
-                                       )
+        # Remove groups from the list of nodes
+        nodes = [n for n in nodes if n[1]['kind'] != 'group']
 
-        # Draw the graph
-        diagram = draw_graph(self.conn_graph, dpi=100, mode='layout')
+        # Populate the connectivity graph using the layout graph
+        self.connectivity_graph = create_graph(nodes,
+                                               edges=False,
+                                               arrowheads=False,
+                                               mode='connect'
+                                               )
+
+        # Draw the graph using the layout mode
+        diagram = draw_graph(self.connectivity_graph, dpi=100, mode='layout')
 
         # Set the flag for tracking updates to the graph
         update = False
 
         # Enter a while loop for the annotation procedure
-        while not self.conn_complete:
+        while not self.connectivity_complete:
 
             # Check if the graph needs to be updated
             if update:
 
-                # Re-draw the graph
-                diagram = draw_graph(self.conn_graph, dpi=100, mode='layout')
+                # Re-draw the graph using the layout mode
+                diagram = draw_graph(self.connectivity_graph, dpi=100,
+                                     mode='layout')
 
                 # Mark update complete
                 update = False
@@ -391,10 +419,154 @@ class Diagram:
             # Show the resulting visualization
             cv2.imshow("Annotation", preview)
 
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            # Prompt user for input
+            user_input = input(prompts['conn_default'])
 
-            self.conn_complete = True
+            # Check if the user input is a command
+            if user_input in commands['connectivity']:
+
+                # Quit the program immediately upon command
+                if user_input == 'exit':
+
+                    exit("Quitting ...")
+
+                # If next diagram is requested, store current graph and move on
+                if user_input == 'next':
+
+                    # Destroy any remaining windows
+                    cv2.destroyAllWindows()
+
+                    return
+
+                # Print information if requested
+                if user_input == 'info':
+
+                    # Clear screen first
+                    os.system('cls' if os.name == 'nt' else 'clear')
+
+                    # Print information on layout commands
+                    print(info['connectivity'])
+
+                    pass
+
+                # Store a comment if requested
+                if user_input == 'comment':
+
+                    # Show a prompt for comment
+                    comment = input(prompts['comment'])
+
+                    # Return the comment
+                    self.comments.append(comment)
+
+                # If the user marks the annotation as complete
+                if user_input == 'done':
+
+                    # Find nodes without edges (isolates)
+                    isolates = list(nx.isolates(self.connectivity_graph))
+
+                    # Remove isolates
+                    self.connectivity_graph.remove_nodes_from(isolates)
+
+                    # Freeze the layout graph
+                    nx.freeze(self.connectivity_graph)
+
+                    # Set status to complete
+                    self.connectivity_complete = True
+
+                    # Destroy any remaining windows
+                    cv2.destroyAllWindows()
+
+                    return
+
+                # Save a screenshot if requested
+                if user_input == 'cap':
+
+                    # Get filename of current image (without extension)
+                    fname = os.path.basename(self.image_path).split('.')[0]
+
+                    # Join filename to get a string
+                    fname = ''.join(fname)
+
+                    # Render high-resolution versions of graph and segmentation
+                    layout_hires = draw_layout(self.image_path, self.annotation,
+                                               720)
+                    conn_hires = draw_graph(self.connectivity_graph, dpi=200,
+                                            mode='layout')
+
+                    # Write image on disk
+                    cv2.imwrite("layout_{}.png".format(fname), layout_hires)
+                    cv2.imwrite("connectivity_{}.png".format(fname), conn_hires)
+
+                # Export a graphviz DOT graph if requested
+                if user_input == 'export':
+
+                    # Get filename of current image (without extension)
+                    fname = os.path.basename(self.image_path).split('.')[0]
+
+                    # Join filename to get a string
+                    fname = ''.join(fname)
+
+                    # Write DOT graph to disk
+                    nx.nx_pydot.write_dot(self.connectivity_graph,
+                                          '{}_connectivity.dot'.format(fname))
+
+            # If user input does not include a valid command, assume the input
+            # is a string defining a connectivity relation.
+            elif user_input not in commands['connectivity']:
+
+                # Set a flag for tracking connections
+                connection_found = False
+
+                # Define connection type aliases and their names
+                connection_types = {'-': 'undirectional',
+                                    '>': 'directional',
+                                    '<>': 'bidirectional'}
+
+                # Split the input into a list
+                user_input = user_input.split(' ')
+
+                # Strip extra whitespace
+                user_input = [u.strip() for u in user_input]
+
+                # Loop over connection types and check them against the input
+                for alias in connection_types.keys():
+
+                    # If a match is found, record its index in user input
+                    if alias in user_input:
+
+                        # Get connection index and type; assign to variable
+                        connection_ix = user_input.index(alias)
+                        connection_type = connection_types[alias]
+
+                        # Use connection index to get source and target sets
+                        source = user_input[:connection_ix]
+                        target = user_input[connection_ix + 1:]
+
+                        # Strip possible extra commas from sources and targets
+                        source = [x.strip(',') for x in source]
+                        target = [x.strip(',') for x in target]
+
+                        # Set connection tracking flag to True
+                        connection_found = True
+
+                        # Break from loop
+                        break
+
+                # If a valid connection type cannot be found, break from loop
+                if not connection_found:
+
+                    # Print error message
+                    print("Sorry, cannot found a valid connection type in the "
+                          "input.")
+
+                    # Break from loop
+                    break
+
+                # If a valid connection type is found, create a new connection
+                if connection_found:
+
+                    pass
+                    # TODO Write a custom function to draw edges
 
     def annotate_rst(self):
         """
