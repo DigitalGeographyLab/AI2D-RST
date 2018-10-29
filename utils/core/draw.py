@@ -39,7 +39,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
         graph: A NetworkX Graph.
         dpi: The resolution of the image as dots per inch.
         mode: String indicating the diagram structure to be drawn, valid options
-              include 'layout' and 'rst'. Default mode is layout.
+              include 'layout', 'connect' and 'rst'. Default mode is layout.
         
     Returns:
          An image showing the NetworkX Graph.
@@ -58,8 +58,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
     # Create a label dictionary for nodes
     node_dict = get_node_dict(graph, kind='node')
 
-    # Check the mode, that is, whether the Graph represents the layout/logical
-    # or RST structure
+    # Check the mode, that is, which aspect of diagram structure is annotated
     if mode == 'layout':
 
         # Create a label dictionary for grouping nodes
@@ -79,14 +78,13 @@ def draw_graph(graph, dpi=100, mode='layout'):
         rel_dict = {k: "R{} ({})".format(i, graph.node[k]['name']) for i, (k, v)
                     in enumerate(rel_dict.items(), start=1)}
 
-    # Draw nodes
+    # Draw nodes present in the graph
     draw_nodes(graph, pos=pos, ax=ax, node_types=node_types, mode=mode)
 
-    # Draw labels for nodes
-    nx.draw_networkx_labels(graph, pos, font_size=10,
-                            labels=node_dict)
+    # Draw labels for each node in the graph
+    nx.draw_networkx_labels(graph, pos, font_size=10, labels=node_dict)
 
-    # Check the mode
+    # Check the annotation mode before drawing labels for groups or relations
     if mode == 'layout':
 
         # Draw labels for groups
@@ -261,7 +259,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         node_types: A dictionary of node types extracted from the Graph.
         draw_edges: A boolean indicating whether edges should be drawn.
         mode: A string indicating the selected drawing mode. Valid options are
-             'layout' (default) and 'rst'.
+             'layout' (default), 'connect' and 'rst'.
 
     Returns:
          None
@@ -339,8 +337,8 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     except KeyError:
         pass
 
-    # Check drawing mode
-    if mode == 'layout':
+    # Check drawing mode, start with layout
+    if mode == 'layout' or mode == 'connect':
 
         # Draw nodes for imageConsts
         try:
@@ -380,6 +378,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         except KeyError:
             pass
 
+    # Check drawing mode, continue with RST
     if mode == 'rst':
 
         # Draw nodes for relations
@@ -400,8 +399,54 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         except KeyError:
             pass
 
-    # Draw edges if requested
-    if draw_edges:
+    # Check drawing mode, finish with connectivity
+    if mode == 'connect' and draw_edges:
+
+        # Get edge list
+        edge_list = graph.edges(data=True)
+
+        # Draw undirectional edges
+        try:
+
+            # Filter the edges, retaining only undirectional edges
+            undirectional = [(u, v, d) for (u, v, d) in edge_list
+                             if d['kind'] == 'undirectional']
+
+            # Draw edges without arrows
+            nx.draw_networkx_edges(graph,
+                                   pos,
+                                   undirectional,
+                                   alpha=0.5,
+                                   arrows=False,
+                                   ax=ax
+                                   )
+
+        # Skip if no undirectional arrows are found
+        except KeyError:
+            pass
+
+        # Draw other edges
+        try:
+
+            # Filter the edges, retaining only directional/bidirectional edges
+            directional = [(u, v, d) for (u, v, d) in edge_list
+                           if d['kind'] != 'undirectional']
+
+            # Draw edges with arrows
+            nx.draw_networkx_edges(graph,
+                                   pos,
+                                   directional,
+                                   alpha=0.5,
+                                   arrows=True,
+                                   ax=ax
+                                   )
+
+        # Skip if no directional/bidirectional edges are found
+        except KeyError:
+            pass
+
+    # Otherwise, draw standard edges if requested
+    if draw_edges and mode != 'connect':
 
         # Draw edges between nodes
         nx.draw_networkx_edges(graph,

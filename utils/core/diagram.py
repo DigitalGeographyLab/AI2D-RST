@@ -108,7 +108,7 @@ class Diagram:
                 # Quit the program immediately upon command
                 if user_input == 'exit':
 
-                    exit("Quitting ...")
+                    exit("[INFO] Quitting ...")
 
                 # If next diagram is requested, store current graph and move on
                 if user_input == 'next':
@@ -153,6 +153,9 @@ class Diagram:
                     # Set status to complete
                     self.group_complete = True
 
+                    # Print status message
+                    print("[INFO] Marking grouping as complete.")
+
                     # Destroy any remaining windows
                     cv2.destroyAllWindows()
 
@@ -177,6 +180,11 @@ class Diagram:
                     cv2.imwrite("layout_{}.png".format(fname), layout_hires)
                     cv2.imwrite("grouping_{}.png".format(fname), diag_hires)
 
+                    # Print status message
+                    print("[INFO] Saved screenshots to disk for {}.png".format(
+                        fname
+                    ))
+
                 # Export a graphviz DOT graph if requested
                 if user_input == 'export':
 
@@ -189,6 +197,11 @@ class Diagram:
                     # Write DOT graph to disk
                     nx.nx_pydot.write_dot(self.layout_graph,
                                           '{}_layout.dot'.format(fname))
+
+                    # Print status message
+                    print("[INFO] Saved a DOT graph on disk for {}.png".format(
+                        fname
+                    ))
 
                 # Print the names of macro groups if requested
                 if user_input == 'macrogroups':
@@ -395,7 +408,7 @@ class Diagram:
                                                )
 
         # Draw the graph using the layout mode
-        diagram = draw_graph(self.connectivity_graph, dpi=100, mode='layout')
+        diagram = draw_graph(self.connectivity_graph, dpi=100, mode='connect')
 
         # Set the flag for tracking updates to the graph
         update = False
@@ -408,7 +421,7 @@ class Diagram:
 
                 # Re-draw the graph using the layout mode
                 diagram = draw_graph(self.connectivity_graph, dpi=100,
-                                     mode='layout')
+                                     mode='connect')
 
                 # Mark update complete
                 update = False
@@ -428,7 +441,7 @@ class Diagram:
                 # Quit the program immediately upon command
                 if user_input == 'exit':
 
-                    exit("Quitting ...")
+                    exit("[INFO] Quitting ...")
 
                 # If next diagram is requested, store current graph and move on
                 if user_input == 'next':
@@ -473,6 +486,9 @@ class Diagram:
                     # Set status to complete
                     self.connectivity_complete = True
 
+                    # Print status message
+                    print("[INFO] Marking connectivity as complete.")
+
                     # Destroy any remaining windows
                     cv2.destroyAllWindows()
 
@@ -497,6 +513,11 @@ class Diagram:
                     cv2.imwrite("layout_{}.png".format(fname), layout_hires)
                     cv2.imwrite("connectivity_{}.png".format(fname), conn_hires)
 
+                    # Print status message
+                    print("[INFO] Saved screenshots to disk for {}.png".format(
+                        fname
+                    ))
+
                 # Export a graphviz DOT graph if requested
                 if user_input == 'export':
 
@@ -509,6 +530,11 @@ class Diagram:
                     # Write DOT graph to disk
                     nx.nx_pydot.write_dot(self.connectivity_graph,
                                           '{}_connectivity.dot'.format(fname))
+
+                    # Print status message
+                    print("[INFO] Saved a DOT graph on disk for {}.png".format(
+                        fname
+                    ))
 
             # If user input does not include a valid command, assume the input
             # is a string defining a connectivity relation.
@@ -546,27 +572,71 @@ class Diagram:
                         source = [x.strip(',') for x in source]
                         target = [x.strip(',') for x in target]
 
-                        # Set connection tracking flag to True
-                        connection_found = True
+                        # Check user input against nodes in graph; cast to set
+                        valid_elems = set([e.lower() for e in
+                                           self.connectivity_graph.nodes])
 
-                        # Break from loop
-                        break
+                        # Combine input for source and target nodes; cast to set
+                        combined_input = set(source + target)
 
-                # If a valid connection type cannot be found, break from loop
-                if not connection_found:
+                        # Check for invalid input by comparing the user input
+                        # with the set of valid elements.
+                        if not combined_input.issubset(valid_elems):
 
-                    # Print error message
-                    print("Sorry, cannot found a valid connection type in the "
-                          "input.")
+                            # Get the difference in sets
+                            diff = combined_input.difference(valid_elems)
 
-                    # Break from loop
-                    break
+                            # Print error message with difference in sets
+                            print("Sorry, {} is not a valid diagram element. "
+                                  "Please try again."
+                                  .format(' '.join(diff)))
+
+                            break
+
+                        if combined_input.issubset(valid_elems):
+
+                            # Set connection tracking flag to True
+                            connection_found = True
+
+                            continue
 
                 # If a valid connection type is found, create a new connection
                 if connection_found:
 
-                    pass
-                    # TODO Write a custom function to draw edges
+                    # Initialize a list for edge tuples
+                    edge_bunch = []
+
+                    # Loop over sources
+                    for s in source:
+
+                        # Loop over targets
+                        for t in target:
+
+                            # Convert identifiers to uppercase and add an edge
+                            # tuple to the list of edges
+                            edge_bunch.append((s.upper(), t.upper()))
+
+                    # If the connection type is bidirectional, add arrows also
+                    # from target to source.
+                    if connection_type == 'bidirectional':
+
+                        # Loop over targets
+                        for t in target:
+
+                            # Loop over sources
+                            for s in source:
+
+                                # Convert identifiers to uppercase as above and
+                                # add an edge tupleto the list of edges
+                                edge_bunch.append((t.upper(), s.upper()))
+
+                    # When edges have been added for all connections, add edges
+                    # from the edge list
+                    self.connectivity_graph.add_edges_from(edge_bunch,
+                                                           kind=connection_type)
+
+                    # Flag the graph for re-drawing
+                    update = True
 
     def annotate_rst(self):
         """

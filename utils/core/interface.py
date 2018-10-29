@@ -5,7 +5,8 @@ commands = {'rst': ['info', 'next', 'exit', 'done', 'cap', 'new', 'comment',
                     'rels'],
             'layout': ['info', 'comment', 'next', 'exit', 'done', 'cap',
                        'macrogroups', 'export'],
-            'connectivity': ['info', 'comment', 'next', 'exit', 'done', 'cap']
+            'connectivity': ['info', 'comment', 'next', 'exit', 'done', 'cap',
+                             'export']
             }
 
 info = {'layout': "---\n"
@@ -69,13 +70,15 @@ info = {'layout': "---\n"
 # Define a dictionary of various prompts presented to user during annotation
 prompts = {'nucleus_id': "Enter the identifier of nucleus: ",
            'satellite_id': "Enter the identifier(s) of satellite(s): ",
-           'layout_default': "Please enter nodes to group or a valid command: ",
+           'layout_default': "[GROUPING] Please enter nodes to group or a valid"
+                             " command: ",
            'comment': "Enter comment: ",
-           'rst_default': "Please enter a valid command: ",
+           'rst_default': "[RST] Please enter a valid command: ",
            'rel_prompt': "Please enter relation name: ",
            'nuclei_id': "Enter the identifiers of the nuclei: ",
            'macro_group': "Please enter macro group type: ",
-           'conn_default': "Please enter a connection or a valid command: "
+           'conn_default': "[CONNECTIVITY] Please enter a connection or a valid"
+                           " command: "
            }
 
 # Define a dictionary of various error messages that may arise during annotation
