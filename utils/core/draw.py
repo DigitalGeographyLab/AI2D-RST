@@ -128,7 +128,75 @@ def draw_layout(path_to_image, annotation, height):
     # Load the diagram image and make a copy
     img, r = resize_img(path_to_image, height)
 
-    # Begin drawing the blobs.
+    # Draw text blocks
+    try:
+        for t in annotation['text']:
+            # Get text ID
+            text_id = annotation['text'][t]['id']
+
+            # Get the start and end points of the rectangle and cast
+            # them into tuples for drawing.
+            rect = np.array(annotation['text'][t]['rectangle'], np.int32)
+
+            # Get start and end coordinates, convert to int and cast into tuple
+            start = tuple(np.round(rect[0] * r, decimals=0).astype('int'))
+            end = tuple(np.round(rect[1] * r, decimals=0).astype('int'))
+
+            # Get center of rectangle; cast into integer
+            c = (round((start[0] + end[0]) / 2 - 10).astype('int'),
+                 round((start[1] + end[1]) / 2 + 10).astype('int'))
+
+            # Draw the rectangle
+            cv2.rectangle(img, start, end, thickness=2,
+                          lineType=cv2.LINE_AA,
+                          color=convert_colour('dodgerblue'))
+
+            # Insert the identifier into the middle of the element
+            cv2.putText(img, text_id, c, cv2.FONT_HERSHEY_SIMPLEX,
+                        fontScale=1, lineType=cv2.LINE_AA, thickness=2,
+                        color=convert_colour('red'))
+
+    # Skip if there are no text boxes to draw
+    except KeyError:
+        pass
+
+    # Draw arrows
+    try:
+        for a in annotation['arrows']:
+            # Get arrow ID
+            arrow_id = annotation['arrows'][a]['id']
+
+            # Assign the points into a variable
+            points = np.array(annotation['arrows'][a]['polygon'], np.int32)
+
+            # Scale the coordinates according to the ratio; convert to int
+            points = np.round(points * r, decimals=0).astype('int')
+
+            # Reshape the numpy array for drawing
+            points = points.reshape((-1, 1, 2))
+
+            # Compute center of the drawn element
+            m = cv2.moments(points)
+            x = int(m["m10"] / m["m00"])
+            y = int(m["m01"] / m["m00"])
+
+            # Draw the polygon. Note that points must be in brackets to
+            # be drawn as lines; otherwise only points will appear.
+            cv2.polylines(img, [points], isClosed=True, thickness=2,
+                          lineType=cv2.LINE_AA,
+                          color=convert_colour('mediumseagreen'))
+
+            # Insert the identifier into the middle of the element
+            cv2.putText(img, arrow_id, (x - 10, y + 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        fontScale=1, color=convert_colour('red'),
+                        lineType=cv2.LINE_AA, thickness=2)
+
+    # Skip if there are no arrows to draw
+    except KeyError:
+        pass
+
+    # Draw blobs
     try:
         for b in annotation['blobs']:
 
@@ -169,78 +237,10 @@ def draw_layout(path_to_image, annotation, height):
             # Insert the identifier into the middle of the element
             cv2.putText(img, blob_id, (x - 10, y + 10),
                         cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=1, lineType=cv2.LINE_AA, thickness=1,
-                        color=convert_colour('magenta'))
+                        fontScale=1, lineType=cv2.LINE_AA, thickness=2,
+                        color=convert_colour('red'))
 
     # Skip if there are no blobs to draw
-    except KeyError:
-        pass
-
-    # Next, draw text blocks
-    try:
-        for t in annotation['text']:
-            # Get text ID
-            text_id = annotation['text'][t]['id']
-
-            # Get the start and end points of the rectangle and cast
-            # them into tuples for drawing.
-            rect = np.array(annotation['text'][t]['rectangle'], np.int32)
-
-            # Get start and end coordinates, convert to int and cast into tuple
-            start = tuple(np.round(rect[0] * r, decimals=0).astype('int'))
-            end = tuple(np.round(rect[1] * r, decimals=0).astype('int'))
-
-            # Get center of rectangle; cast into integer
-            c = (round((start[0] + end[0]) / 2 - 10).astype('int'),
-                 round((start[1] + end[1]) / 2 + 10).astype('int'))
-
-            # Draw the rectangle
-            cv2.rectangle(img, start, end, thickness=2,
-                          lineType=cv2.LINE_AA,
-                          color=convert_colour('dodgerblue'))
-
-            # Insert the identifier into the middle of the element
-            cv2.putText(img, text_id, c, cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=1, lineType=cv2.LINE_AA, thickness=1,
-                        color=convert_colour('magenta'))
-
-    # Skip if there are no text boxes to draw
-    except KeyError:
-        pass
-
-    # Finally, draw any arrows
-    try:
-        for a in annotation['arrows']:
-            # Get arrow ID
-            arrow_id = annotation['arrows'][a]['id']
-
-            # Assign the points into a variable
-            points = np.array(annotation['arrows'][a]['polygon'], np.int32)
-
-            # Scale the coordinates according to the ratio; convert to int
-            points = np.round(points * r, decimals=0).astype('int')
-
-            # Reshape the numpy array for drawing
-            points = points.reshape((-1, 1, 2))
-
-            # Compute center of the drawn element
-            m = cv2.moments(points)
-            x = int(m["m10"] / m["m00"])
-            y = int(m["m01"] / m["m00"])
-
-            # Draw the polygon. Note that points must be in brackets to
-            # be drawn as lines; otherwise only points will appear.
-            cv2.polylines(img, [points], isClosed=True, thickness=2,
-                          lineType=cv2.LINE_AA,
-                          color=convert_colour('mediumseagreen'))
-
-            # Insert the identifier into the middle of the element
-            cv2.putText(img, arrow_id, (x - 10, y + 10),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=1, color=convert_colour('magenta'),
-                        lineType=cv2.LINE_AA, thickness=1)
-
-    # Skip if there are no arrows to draw
     except KeyError:
         pass
 
