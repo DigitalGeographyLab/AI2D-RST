@@ -4,9 +4,9 @@
 commands = {'rst': ['info', 'next', 'exit', 'done', 'cap', 'new', 'comment',
                     'rels'],
             'layout': ['info', 'comment', 'next', 'exit', 'done', 'cap',
-                       'macrogroups', 'export'],
+                       'macrogroups', 'export', 'isolate'],
             'connectivity': ['info', 'comment', 'next', 'exit', 'done', 'cap',
-                             'export']
+                             'export', 'isolate']
             }
 
 info = {'layout': "---\n"
@@ -25,13 +25,15 @@ info = {'layout': "---\n"
                   "deleted by entering multiple identifiers, e.g. rm g1 g2 g3\n"
                   "---\n"
                   "Other valid commands include:\n\n"
-                  "info: Print this message.\n"
-                  "comment: Enter a comment about current diagram.\n"
                   "cap: Save a screen capture of the current visualisation.\n"
-                  "next: Move on to the next diagram.\n"
+                  "comment: Enter a comment about current diagram.\n"
                   "exit: Exit the annotator immediately.\n"
+                  "export: Export a DOT graph of the current graph. \n"
                   "done: Mark the current diagram as complete and move on.\n"
+                  "info: Print this message.\n"
+                  "isolate: Remove isolates from the graph.\n"
                   "macrogroups: List the available macro groups.\n"
+                  "next: Move on to the next diagram.\n"
                   "---",
         'rst': "---\n"
                "Enter the command 'new' to create a new RST relation.\n"
@@ -54,17 +56,19 @@ info = {'layout': "---\n"
                "---",
         'connectivity': "---\n"
                         # TODO Populate
-                       "---\n"
-                       "Other valid commands include:\n\n"
-                       "info: Print this message.\n"
-                       "comment: Enter a comment about current diagram.\n"
-                       "cap: Save a screen capture of the current "
+                        "---\n"
+                        "Other valid commands include:\n\n"
+                        "cap: Save a screen capture of the current "
                         "visualisation.\n"
-                       "next: Move to the next diagram.\n"
-                       "exit: Exit the annotator immediately.\n"
-                       "done: Mark the current diagram as complete and move to "
-                        "the next diagram.\n"
-                       "---"
+                        "comment: Enter a comment about current diagram.\n"
+                        "exit: Exit the annotator immediately.\n"
+                        "export: Export a DOT graph of the current graph. \n"
+                        "done: Mark the current diagram as complete and move to"
+                        " the next diagram.\n"
+                        "info: Print this message.\n"
+                        "isolate: Remove isolates from the graph.\n"
+                        "next: Move to the next diagram.\n"
+                        "---"
         }
 
 # Define a dictionary of various prompts presented to user during annotation

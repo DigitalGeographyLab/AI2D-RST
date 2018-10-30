@@ -233,7 +233,7 @@ def group_nodes(graph, user_input):
 
 def macro_group(graph, user_input):
     """
-    A function for assigning macro grouping information to nodes in the graph.
+    A function for assigning macro-grouping information to nodes in the graph.
 
     Parameters:
         graph: A NetworkX Graph.
@@ -277,3 +277,5 @@ def macro_group(graph, user_input):
 
         # Add macro grouping information to the graph nodes
         nx.set_node_attributes(graph, macro_grouping, 'macro_group')
+
+        # TODO Add information on tables

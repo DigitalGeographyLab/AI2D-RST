@@ -61,11 +61,10 @@ class Diagram:
     def annotate_layout(self):
         """
         A function for annotating the logical / layout structure (DPG-L) of a
-        diagram. This covers both hierarchy and macro groups.
+        diagram. This function covers both content hierarchy and macro-grouping.
         
         Parameters:
-            None. The function modifies the graph that is created when a Diagram
-            object is initialised.
+            None.
         
         Returns:
             Updates the graph contained in the Diagram object
@@ -101,6 +100,11 @@ class Diagram:
 
             # Prompt user for input
             user_input = input(prompts['layout_default'])
+
+            # Escape accidental / purposeful carrier returns without input
+            if len(user_input.split()) == 0:
+
+                continue
 
             # Check if the input is a command
             if user_input in commands['layout']:
@@ -203,6 +207,21 @@ class Diagram:
                         fname
                     ))
 
+                # Remove isolates if requested
+                if user_input == 'isolate':
+
+                    # Find nodes without edges (isolates)
+                    isolates = list(nx.isolates(self.layout_graph))
+
+                    # Remove isolates
+                    self.layout_graph.remove_nodes_from(isolates)
+
+                    # Print status message
+                    print("[INFO] Removing isolates as requested.")
+
+                    # Flag the graph for re-drawing
+                    update = True
+
                 # Print the names of macro groups if requested
                 if user_input == 'macrogroups':
 
@@ -216,11 +235,19 @@ class Diagram:
                     # Print closing line
                     print("---\n")
 
-            # Check if the user has requested to describe a macro grouping
+            # Check if the user has requested to describe a macro-grouping
             if 'macro' == user_input.split()[0]:
 
-                # Get the list of nodes to describe
-                user_input = user_input.lower().split()[1:]
+                # Check the length of the input
+                if len(user_input.split()) < 2:
+
+                    continue
+
+                # Get the list of nodes provided by the user
+                user_input = user_input.lower().split(',')[1:]
+
+                # Strip extra whitespace
+                user_input = [u.strip() for u in user_input]
 
                 # Generate a list of valid diagram elements present in the graph
                 valid_nodes = [e.lower() for e in self.layout_graph.nodes]
@@ -435,6 +462,11 @@ class Diagram:
             # Prompt user for input
             user_input = input(prompts['conn_default'])
 
+            # Escape accidental / purposeful carrier returns without input
+            if len(user_input.split()) == 0:
+
+                continue
+
             # Check if the user input is a command
             if user_input in commands['connectivity']:
 
@@ -535,6 +567,21 @@ class Diagram:
                     print("[INFO] Saved a DOT graph on disk for {}.png".format(
                         fname
                     ))
+
+                # Remove isolates if requested
+                if user_input == 'isolate':
+
+                    # Find nodes without edges (isolates)
+                    isolates = list(nx.isolates(self.connectivity_graph))
+
+                    # Remove isolates
+                    self.connectivity_graph.remove_nodes_from(isolates)
+
+                    # Print status message
+                    print("[INFO] Removing isolates as requested.")
+
+                    # Flag the graph for re-drawing
+                    update = True
 
             # If user input does not include a valid command, assume the input
             # is a string defining a connectivity relation.
@@ -678,6 +725,11 @@ class Diagram:
 
             # Prompt user for input
             user_input = input(prompts['rst_default'])
+
+            # Escape accidental / purposeful carrier returns without input
+            if len(user_input.split()) == 0:
+
+                continue
 
             # Check the input
             if user_input in commands['rst']:
