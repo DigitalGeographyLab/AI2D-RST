@@ -39,7 +39,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
         graph: A NetworkX Graph.
         dpi: The resolution of the image as dots per inch.
         mode: String indicating the diagram structure to be drawn, valid options
-              include 'layout' and 'rst'. Default mode is layout.
+              include 'layout', 'connect' and 'rst'. Default mode is layout.
         
     Returns:
          An image showing the NetworkX Graph.
@@ -50,7 +50,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
     ax = fig.add_subplot(1, 1, 1)
 
     # Initialize a spring layout for the graph
-    pos = nx.spring_layout(graph, iterations=20)
+    pos = nx.nx_pydot.graphviz_layout(graph, prog='neato')
 
     # Generate a dictionary with nodes and their kind
     node_types = nx.get_node_attributes(graph, 'kind')
@@ -58,8 +58,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
     # Create a label dictionary for nodes
     node_dict = get_node_dict(graph, kind='node')
 
-    # Check the mode, that is, whether the Graph represents the layout/logical
-    # or RST structure
+    # Check the mode, that is, which aspect of diagram structure is annotated
     if mode == 'layout':
 
         # Create a label dictionary for grouping nodes
@@ -79,14 +78,13 @@ def draw_graph(graph, dpi=100, mode='layout'):
         rel_dict = {k: "R{} ({})".format(i, graph.node[k]['name']) for i, (k, v)
                     in enumerate(rel_dict.items(), start=1)}
 
-    # Draw nodes
+    # Draw nodes present in the graph
     draw_nodes(graph, pos=pos, ax=ax, node_types=node_types, mode=mode)
 
-    # Draw labels for nodes
-    nx.draw_networkx_labels(graph, pos, font_size=10,
-                            labels=node_dict)
+    # Draw labels for each node in the graph
+    nx.draw_networkx_labels(graph, pos, font_size=10, labels=node_dict)
 
-    # Check the mode
+    # Check the annotation mode before drawing labels for groups or relations
     if mode == 'layout':
 
         # Draw labels for groups
@@ -130,7 +128,75 @@ def draw_layout(path_to_image, annotation, height):
     # Load the diagram image and make a copy
     img, r = resize_img(path_to_image, height)
 
-    # Begin drawing the blobs.
+    # Draw text blocks
+    try:
+        for t in annotation['text']:
+            # Get text ID
+            text_id = annotation['text'][t]['id']
+
+            # Get the start and end points of the rectangle and cast
+            # them into tuples for drawing.
+            rect = np.array(annotation['text'][t]['rectangle'], np.int32)
+
+            # Get start and end coordinates, convert to int and cast into tuple
+            start = tuple(np.round(rect[0] * r, decimals=0).astype('int'))
+            end = tuple(np.round(rect[1] * r, decimals=0).astype('int'))
+
+            # Get center of rectangle; cast into integer
+            c = (round((start[0] + end[0]) / 2 - 10).astype('int'),
+                 round((start[1] + end[1]) / 2 + 10).astype('int'))
+
+            # Draw the rectangle
+            cv2.rectangle(img, start, end, thickness=2,
+                          lineType=cv2.LINE_AA,
+                          color=convert_colour('dodgerblue'))
+
+            # Insert the identifier into the middle of the element
+            cv2.putText(img, text_id, c, cv2.FONT_HERSHEY_SIMPLEX,
+                        fontScale=1, lineType=cv2.LINE_AA, thickness=2,
+                        color=convert_colour('red'))
+
+    # Skip if there are no text boxes to draw
+    except KeyError:
+        pass
+
+    # Draw arrows
+    try:
+        for a in annotation['arrows']:
+            # Get arrow ID
+            arrow_id = annotation['arrows'][a]['id']
+
+            # Assign the points into a variable
+            points = np.array(annotation['arrows'][a]['polygon'], np.int32)
+
+            # Scale the coordinates according to the ratio; convert to int
+            points = np.round(points * r, decimals=0).astype('int')
+
+            # Reshape the numpy array for drawing
+            points = points.reshape((-1, 1, 2))
+
+            # Compute center of the drawn element
+            m = cv2.moments(points)
+            x = int(m["m10"] / m["m00"])
+            y = int(m["m01"] / m["m00"])
+
+            # Draw the polygon. Note that points must be in brackets to
+            # be drawn as lines; otherwise only points will appear.
+            cv2.polylines(img, [points], isClosed=True, thickness=2,
+                          lineType=cv2.LINE_AA,
+                          color=convert_colour('mediumseagreen'))
+
+            # Insert the identifier into the middle of the element
+            cv2.putText(img, arrow_id, (x - 10, y + 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        fontScale=1, color=convert_colour('red'),
+                        lineType=cv2.LINE_AA, thickness=2)
+
+    # Skip if there are no arrows to draw
+    except KeyError:
+        pass
+
+    # Draw blobs
     try:
         for b in annotation['blobs']:
 
@@ -171,83 +237,10 @@ def draw_layout(path_to_image, annotation, height):
             # Insert the identifier into the middle of the element
             cv2.putText(img, blob_id, (x - 10, y + 10),
                         cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=1, lineType=cv2.LINE_AA, thickness=1,
-                        color=convert_colour('magenta'))
+                        fontScale=1, lineType=cv2.LINE_AA, thickness=2,
+                        color=convert_colour('red'))
 
     # Skip if there are no blobs to draw
-    except KeyError:
-        pass
-
-    # Next, draw text blocks
-    try:
-        for t in annotation['text']:
-            # Get text ID
-            text_id = annotation['text'][t]['id']
-
-            # Get the start and end points of the rectangle and cast
-            # them into tuples for drawing.
-            rect = annotation['text'][t]['rectangle']
-
-            # Scale the coordinates according to the ratio; convert to int
-            rect[0] = [np.round(x * r, decimals=0).astype('int')
-                       for x in rect[0]]
-            rect[1] = [np.round(x * r, decimals=0).astype('int')
-                       for x in rect[1]]
-
-            # Get start and end coordinates for the rectangle
-            start, end = tuple(rect[0]), tuple(rect[1])
-
-            # Get center of rectangle; cast into integer
-            c = (round((start[0] + end[0]) / 2 - 10).astype('int'),
-                 round((start[1] + end[1]) / 2 + 10).astype('int'))
-
-            # Draw the rectangle
-            cv2.rectangle(img, start, end, thickness=2,
-                          lineType=cv2.LINE_AA,
-                          color=convert_colour('dodgerblue'))
-
-            # Insert the identifier into the middle of the element
-            cv2.putText(img, text_id, c, cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=1, lineType=cv2.LINE_AA, thickness=1,
-                        color=convert_colour('magenta'))
-
-    # Skip if there are no text boxes to draw
-    except KeyError:
-        pass
-
-    # Finally, draw any arrows
-    try:
-        for a in annotation['arrows']:
-            # Get arrow ID
-            arrow_id = annotation['arrows'][a]['id']
-
-            # Assign the points into a variable
-            points = np.array(annotation['arrows'][a]['polygon'], np.int32)
-
-            # Scale the coordinates according to the ratio; convert to int
-            points = np.round(points * r, decimals=0).astype('int')
-
-            # Reshape the numpy array for drawing
-            points = points.reshape((-1, 1, 2))
-
-            # Compute center of the drawn element
-            m = cv2.moments(points)
-            x = int(m["m10"] / m["m00"])
-            y = int(m["m01"] / m["m00"])
-
-            # Draw the polygon. Note that points must be in brackets to
-            # be drawn as lines; otherwise only points will appear.
-            cv2.polylines(img, [points], isClosed=True, thickness=2,
-                          lineType=cv2.LINE_AA,
-                          color=convert_colour('mediumseagreen'))
-
-            # Insert the identifier into the middle of the element
-            cv2.putText(img, arrow_id, (x - 10, y + 10),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=1, color=convert_colour('magenta'),
-                        lineType=cv2.LINE_AA, thickness=1)
-
-    # Skip if there are no arrows to draw
     except KeyError:
         pass
 
@@ -266,7 +259,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         node_types: A dictionary of node types extracted from the Graph.
         draw_edges: A boolean indicating whether edges should be drawn.
         mode: A string indicating the selected drawing mode. Valid options are
-             'layout' (default) and 'rst'.
+             'layout' (default), 'connect' and 'rst'.
 
     Returns:
          None
@@ -344,8 +337,8 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     except KeyError:
         pass
 
-    # Check drawing mode
-    if mode == 'layout':
+    # Check drawing mode, start with layout
+    if mode == 'layout' or mode == 'connect':
 
         # Draw nodes for imageConsts
         try:
@@ -385,6 +378,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         except KeyError:
             pass
 
+    # Check drawing mode, continue with RST
     if mode == 'rst':
 
         # Draw nodes for relations
@@ -405,8 +399,54 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         except KeyError:
             pass
 
-    # Draw edges if requested
-    if draw_edges:
+    # Check drawing mode, finish with connectivity
+    if mode == 'connect' and draw_edges:
+
+        # Get edge list
+        edge_list = graph.edges(data=True)
+
+        # Draw undirectional edges
+        try:
+
+            # Filter the edges, retaining only undirectional edges
+            undirectional = [(u, v, d) for (u, v, d) in edge_list
+                             if d['kind'] == 'undirectional']
+
+            # Draw edges without arrows
+            nx.draw_networkx_edges(graph,
+                                   pos,
+                                   undirectional,
+                                   alpha=0.5,
+                                   arrows=False,
+                                   ax=ax
+                                   )
+
+        # Skip if no undirectional arrows are found
+        except KeyError:
+            pass
+
+        # Draw other edges
+        try:
+
+            # Filter the edges, retaining only directional/bidirectional edges
+            directional = [(u, v, d) for (u, v, d) in edge_list
+                           if d['kind'] != 'undirectional']
+
+            # Draw edges with arrows
+            nx.draw_networkx_edges(graph,
+                                   pos,
+                                   directional,
+                                   alpha=0.5,
+                                   arrows=True,
+                                   ax=ax
+                                   )
+
+        # Skip if no directional/bidirectional edges are found
+        except KeyError:
+            pass
+
+    # Otherwise, draw standard edges if requested
+    if draw_edges and mode != 'connect':
 
         # Draw edges between nodes
         nx.draw_networkx_edges(graph,
