@@ -77,8 +77,12 @@ class Diagram:
         # Draw the graph
         diagram = draw_graph(self.layout_graph, dpi=100, mode='layout')
 
-        # Set the flag for tracking updates to the graph
+        # Set up a flag for tracking updates to the graph
         update = False
+
+        # Set up flags for tracking whether annotation should be hidden or shown
+        show = False
+        hide = False
 
         # Enter a while loop for the annotation procedure
         while not self.group_complete:
@@ -91,6 +95,17 @@ class Diagram:
 
                 # Mark update complete
                 update = False
+
+            # Check if segmentation annotation is hidden and should be re-drawn
+            if hide and show:
+
+                # Visualize the layout segmentation
+                segmentation = draw_layout(self.image_path, self.annotation,
+                                           480)
+
+                # Return to normal mode by setting both hide and show to False
+                hide = False
+                show = False
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, segmentation))
@@ -121,6 +136,30 @@ class Diagram:
                     cv2.destroyAllWindows()
 
                     return
+
+                # Hide/show layout segmentation if requested
+                if user_input == 'hide':
+
+                    # If hide is False, re-draw the layout without annotation
+                    if not hide:
+
+                        # Re-draw the layout
+                        segmentation = draw_layout(self.image_path,
+                                                   self.annotation,
+                                                   480, hide=True)
+
+                        # Flag the annotation as hidden
+                        hide = True
+
+                        continue
+
+                    # If the layout is already hidden, re-draw the annotation
+                    if hide:
+
+                        # Set show to True
+                        show = True
+
+                        continue
 
                 # Print information if requested
                 if user_input == 'info':
@@ -440,6 +479,10 @@ class Diagram:
         # Set the flag for tracking updates to the graph
         update = False
 
+        # Set up flags for tracking whether annotation should be hidden or shown
+        show = False
+        hide = False
+
         # Enter a while loop for the annotation procedure
         while not self.connectivity_complete:
 
@@ -452,6 +495,17 @@ class Diagram:
 
                 # Mark update complete
                 update = False
+
+            # Check if segmentation annotation is hidden and should be re-drawn
+            if hide and show:
+
+                # Visualize the layout segmentation
+                segmentation = draw_layout(self.image_path, self.annotation,
+                                           480)
+
+                # Return to normal mode by setting both hide and show to False
+                hide = False
+                show = False
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, segmentation))
@@ -482,6 +536,30 @@ class Diagram:
                     cv2.destroyAllWindows()
 
                     return
+
+                # Hide/show layout segmentation if requested
+                if user_input == 'hide':
+
+                    # If hide is False, re-draw the layout without annotation
+                    if not hide:
+
+                        # Re-draw the layout
+                        segmentation = draw_layout(self.image_path,
+                                                   self.annotation,
+                                                   480, hide=True)
+
+                        # Flag the annotation as hidden
+                        hide = True
+
+                        continue
+
+                    # If the layout is already hidden, re-draw the annotation
+                    if hide:
+
+                        # Set show to True
+                        show = True
+
+                        continue
 
                 # Print information if requested
                 if user_input == 'info':

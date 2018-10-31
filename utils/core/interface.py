@@ -4,9 +4,9 @@
 commands = {'rst': ['info', 'next', 'exit', 'done', 'cap', 'new', 'comment',
                     'rels'],
             'layout': ['info', 'comment', 'next', 'exit', 'done', 'cap',
-                       'macrogroups', 'export', 'isolate'],
+                       'macrogroups', 'export', 'isolate', 'hide'],
             'connectivity': ['info', 'comment', 'next', 'exit', 'done', 'cap',
-                             'export', 'isolate']
+                             'export', 'isolate', 'hide']
             }
 
 info = {'layout': "---\n"
@@ -28,8 +28,9 @@ info = {'layout': "---\n"
                   "cap: Save a screen capture of the current visualisation.\n"
                   "comment: Enter a comment about current diagram.\n"
                   "exit: Exit the annotator immediately.\n"
-                  "export: Export a DOT graph of the current graph. \n"
+                  "export: Export the current graph into DOT format. \n"
                   "done: Mark the current diagram as complete and move on.\n"
+                  "hide: Hide the annotation.\n"
                   "info: Print this message.\n"
                   "isolate: Remove isolates from the graph.\n"
                   "macrogroups: List the available macro groups.\n"
@@ -62,7 +63,7 @@ info = {'layout': "---\n"
                         "visualisation.\n"
                         "comment: Enter a comment about current diagram.\n"
                         "exit: Exit the annotator immediately.\n"
-                        "export: Export a DOT graph of the current graph. \n"
+                        "export: Export the current graph into DOT format. \n"
                         "done: Mark the current diagram as complete and move to"
                         " the next diagram.\n"
                         "info: Print this message.\n"

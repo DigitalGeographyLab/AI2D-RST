@@ -3,33 +3,11 @@
 from .parse import *
 
 import cv2
-import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
 import networkx as nx
 import os
-
-
-def convert_colour(colour):
-    """
-    Converts a matplotlib colour name to BGR for OpenCV.
-
-    Parameters:
-        colour: A valid matplotlib colour name.
-
-    Returns:
-        A BGR three tuple.
-    """
-
-    # Convert matplotlib colour name to normalized RGB
-    colour = matplotlib.colors.to_rgb(colour)
-
-    # Multiply by 255 and round
-    colour = tuple(round(255 * x) for x in colour)
-
-    # Reverse the tuple for OpenCV
-    return tuple(reversed(colour))
 
 
 def draw_graph(graph, dpi=100, mode='layout'):
@@ -113,7 +91,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
     return img
 
 
-def draw_layout(path_to_image, annotation, height):
+def draw_layout(path_to_image, annotation, height, hide=False):
     """
     Visualizes the AI2D layout annotation on the original input image.
 
@@ -121,6 +99,7 @@ def draw_layout(path_to_image, annotation, height):
         path_to_image: Path to the original AI2D diagram image.
         annotation: A dictionary containing AI2D annotation.
         height: Target height of the image.
+        hide: A Boolean indicating whether to draw annotation or not.
 
     Returns:
         An image with the AI2D annotation overlaid.
@@ -139,10 +118,18 @@ def draw_layout(path_to_image, annotation, height):
     # Add the image to the axis
     ax.imshow(img)
 
-    print(img.shape, r)
-
     # Hide grid and axes
     plt.axis('off')
+
+    # Check if the annotation should be hidden
+    if hide:
+
+        # Save figure to file, read the file using OpenCV and remove the file
+        plt.savefig('temp.png')
+        img = cv2.imread('temp.png')
+        os.remove('temp.png')
+
+        return img
 
     # Draw blobs
     try:
