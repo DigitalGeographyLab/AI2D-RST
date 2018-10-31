@@ -466,7 +466,7 @@ class Diagram:
         # Remove groups from the list of nodes
         nodes = [n for n in nodes if n[1]['kind'] != 'group']
 
-        # Populate the connectivity graph using the layout graph
+        # Populate the connectivity graph according to the list of nodes
         self.connectivity_graph = create_graph(nodes,
                                                edges=False,
                                                arrowheads=False,
@@ -776,6 +776,18 @@ class Diagram:
 
         # Visualize the layout segmentation
         segmentation = draw_layout(self.image_path, self.annotation, 480)
+
+        # Retrieve a list of valid nodes from the layout graph
+        nodes = list(self.layout_graph.nodes(data=True))
+
+        # Remove groups from the list of nodes
+        nodes = [n for n in nodes if n[1]['kind'] != 'group']
+
+        # Populate the RST graph according to the list of nodes
+        self.rst_graph = create_graph(nodes,
+                                      edges=False,
+                                      arrowheads=False,
+                                      mode='rst')
 
         # Draw the graph using RST mode
         diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')

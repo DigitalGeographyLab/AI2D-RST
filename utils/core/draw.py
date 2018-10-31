@@ -28,7 +28,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
     fig = plt.figure(dpi=dpi)
     ax = fig.add_subplot(1, 1, 1)
 
-    # Initialize a spring layout for the graph
+    # Initialize a neato layout for the graph
     pos = nx.nx_pydot.graphviz_layout(graph, prog='neato')
 
     # Generate a dictionary with nodes and their kind
@@ -54,8 +54,8 @@ def draw_graph(graph, dpi=100, mode='layout'):
 
         # Enumerate relations and use their numbers as labels for clarity; add
         # relation name to the label by fetching it from the graph.
-        rel_dict = {k: "R{} ({})".format(i, graph.node[k]['name']) for i, (k, v)
-                    in enumerate(rel_dict.items(), start=1)}
+        rel_dict = {k: "R{} ({})".format(i, graph.node[k]['rel_name'])
+                    for i, (k, v) in enumerate(rel_dict.items(), start=1)}
 
     # Draw nodes present in the graph
     draw_nodes(graph, pos=pos, ax=ax, node_types=node_types, mode=mode)

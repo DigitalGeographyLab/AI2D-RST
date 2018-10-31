@@ -53,6 +53,7 @@ def create_relation(rst_graph, user_input):
 
         # Check the total number of inputs in the list
         if len(nucleus) != 1:
+
             # Print error message and return
             print(messages['nucleus_err'])
 
@@ -104,7 +105,7 @@ def create_relation(rst_graph, user_input):
                                kind='relation',
                                nucleus=nucleus,
                                satellites=satellites,
-                               name=relation_name,
+                               rel_name=relation_name,
                                id=new_relation
                                )
 
@@ -128,6 +129,7 @@ def create_relation(rst_graph, user_input):
 
             # Draw edges from nucleus to relation
             for n in nucleus:
+
                 # Add edge to graph
                 rst_graph.add_edge(n.upper(), new_relation)
 
@@ -143,6 +145,7 @@ def create_relation(rst_graph, user_input):
 
         # Check the total number of inputs in the list
         if len(nuclei) <= 1:
+
             # Print error message and return
             print(messages['nuclei_err'])
 
