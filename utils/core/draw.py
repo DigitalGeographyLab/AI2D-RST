@@ -3,32 +3,11 @@
 from .parse import *
 
 import cv2
-import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import numpy as np
 import networkx as nx
 import os
-
-
-def convert_colour(colour):
-    """
-    Converts a matplotlib colour name to BGR for OpenCV.
-
-    Parameters:
-        colour: A valid matplotlib colour name.
-
-    Returns:
-        A BGR three tuple.
-    """
-
-    # Convert matplotlib colour name to normalized RGB
-    colour = matplotlib.colors.to_rgb(colour)
-
-    # Multiply by 255 and round
-    colour = tuple(round(255 * x) for x in colour)
-
-    # Reverse the tuple for OpenCV
-    return tuple(reversed(colour))
 
 
 def draw_graph(graph, dpi=100, mode='layout'):
@@ -49,7 +28,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
     fig = plt.figure(dpi=dpi)
     ax = fig.add_subplot(1, 1, 1)
 
-    # Initialize a spring layout for the graph
+    # Initialize a neato layout for the graph
     pos = nx.nx_pydot.graphviz_layout(graph, prog='neato')
 
     # Generate a dictionary with nodes and their kind
@@ -75,8 +54,8 @@ def draw_graph(graph, dpi=100, mode='layout'):
 
         # Enumerate relations and use their numbers as labels for clarity; add
         # relation name to the label by fetching it from the graph.
-        rel_dict = {k: "R{} ({})".format(i, graph.node[k]['name']) for i, (k, v)
-                    in enumerate(rel_dict.items(), start=1)}
+        rel_dict = {k: "R{} ({})".format(i, graph.node[k]['rel_name'])
+                    for i, (k, v) in enumerate(rel_dict.items(), start=1)}
 
     # Draw nodes present in the graph
     draw_nodes(graph, pos=pos, ax=ax, node_types=node_types, mode=mode)
@@ -112,7 +91,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
     return img
 
 
-def draw_layout(path_to_image, annotation, height):
+def draw_layout(path_to_image, annotation, height, hide=False):
     """
     Visualizes the AI2D layout annotation on the original input image.
 
@@ -120,6 +99,7 @@ def draw_layout(path_to_image, annotation, height):
         path_to_image: Path to the original AI2D diagram image.
         annotation: A dictionary containing AI2D annotation.
         height: Target height of the image.
+        hide: A Boolean indicating whether to draw annotation or not.
 
     Returns:
         An image with the AI2D annotation overlaid.
@@ -128,73 +108,28 @@ def draw_layout(path_to_image, annotation, height):
     # Load the diagram image and make a copy
     img, r = resize_img(path_to_image, height)
 
-    # Draw text blocks
-    try:
-        for t in annotation['text']:
-            # Get text ID
-            text_id = annotation['text'][t]['id']
+    # Change from BGR to RGB colourspace
+    img = img[:, :, ::-1]
 
-            # Get the start and end points of the rectangle and cast
-            # them into tuples for drawing.
-            rect = np.array(annotation['text'][t]['rectangle'], np.int32)
+    # Create a matplotlib Figure
+    fig, ax = plt.subplots(1)
+    plt.tight_layout(pad=0)
 
-            # Get start and end coordinates, convert to int and cast into tuple
-            start = tuple(np.round(rect[0] * r, decimals=0).astype('int'))
-            end = tuple(np.round(rect[1] * r, decimals=0).astype('int'))
+    # Add the image to the axis
+    ax.imshow(img)
 
-            # Get center of rectangle; cast into integer
-            c = (round((start[0] + end[0]) / 2 - 10).astype('int'),
-                 round((start[1] + end[1]) / 2 + 10).astype('int'))
+    # Hide grid and axes
+    plt.axis('off')
 
-            # Draw the rectangle
-            cv2.rectangle(img, start, end, thickness=2,
-                          lineType=cv2.LINE_AA,
-                          color=convert_colour('dodgerblue'))
+    # Check if the annotation should be hidden
+    if hide:
 
-            # Insert the identifier into the middle of the element
-            cv2.putText(img, text_id, c, cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=1, lineType=cv2.LINE_AA, thickness=2,
-                        color=convert_colour('red'))
+        # Save figure to file, read the file using OpenCV and remove the file
+        plt.savefig('temp.png')
+        img = cv2.imread('temp.png')
+        os.remove('temp.png')
 
-    # Skip if there are no text boxes to draw
-    except KeyError:
-        pass
-
-    # Draw arrows
-    try:
-        for a in annotation['arrows']:
-            # Get arrow ID
-            arrow_id = annotation['arrows'][a]['id']
-
-            # Assign the points into a variable
-            points = np.array(annotation['arrows'][a]['polygon'], np.int32)
-
-            # Scale the coordinates according to the ratio; convert to int
-            points = np.round(points * r, decimals=0).astype('int')
-
-            # Reshape the numpy array for drawing
-            points = points.reshape((-1, 1, 2))
-
-            # Compute center of the drawn element
-            m = cv2.moments(points)
-            x = int(m["m10"] / m["m00"])
-            y = int(m["m01"] / m["m00"])
-
-            # Draw the polygon. Note that points must be in brackets to
-            # be drawn as lines; otherwise only points will appear.
-            cv2.polylines(img, [points], isClosed=True, thickness=2,
-                          lineType=cv2.LINE_AA,
-                          color=convert_colour('mediumseagreen'))
-
-            # Insert the identifier into the middle of the element
-            cv2.putText(img, arrow_id, (x - 10, y + 10),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=1, color=convert_colour('red'),
-                        lineType=cv2.LINE_AA, thickness=2)
-
-    # Skip if there are no arrows to draw
-    except KeyError:
-        pass
+        return img
 
     # Draw blobs
     try:
@@ -210,41 +145,135 @@ def draw_layout(path_to_image, annotation, height):
             # Scale the coordinates according to the ratio; convert to int
             points = np.round(points * r, decimals=0).astype('int')
 
-            # Reshape the numpy array for drawing
-            points = points.reshape((-1, 1, 2))
+            # Creat arrow polygon
+            blob = patches.Polygon(points,
+                                   closed=True,
+                                   fill=False,
+                                   alpha=1,
+                                   color='orangered')
 
-            # Get moment values
-            m = cv2.moments(points)
+            # Add arrow to the image
+            ax.add_patch(blob)
 
-            # Calculate centroid of the polygon; catch errors arising from
-            # elements that are positioned in coordinates (0, 0).
-            try:
-                x = int(m["m10"] / m["m00"])
-            except ZeroDivisionError:
-                pass
+            # Add artist for patch
+            ax.add_artist(blob)
 
-            try:
-                y = int(m["m01"] / m["m00"])
-            except ZeroDivisionError:
-                pass
+            # Get centroid
+            cx, cy = np.round(points.mean(axis=0), decimals=0).astype('int')[:2]
 
-            # Draw the polygon. Note that points must be in brackets to
-            # be drawn as lines; otherwise only points will appear.
-            cv2.polylines(img, [points], isClosed=True, thickness=2,
-                          lineType=cv2.LINE_AA,
-                          color=convert_colour('orangered'))
+            # Annotate the blob
+            ann = ax.annotate(blob_id, (cx, cy), color='white',
+                              fontsize=10, ha='center', va='center')
 
-            # Insert the identifier into the middle of the element
-            cv2.putText(img, blob_id, (x - 10, y + 10),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=1, lineType=cv2.LINE_AA, thickness=2,
-                        color=convert_colour('red'))
+            # Add a box around the annotation
+            ann.set_bbox(dict(alpha=1, color='orangered', pad=0))
 
     # Skip if there are no blobs to draw
     except KeyError:
         pass
 
-    # Return image
+    # Draw arrows
+    try:
+        for a in annotation['arrows']:
+
+            # Get arrow ID
+            arrow_id = annotation['arrows'][a]['id']
+
+            # Assign the points into a variable
+            points = np.array(annotation['arrows'][a]['polygon'], np.int32)
+
+            # Scale the coordinates according to the ratio; convert to int
+            points = np.round(points * r, decimals=0).astype('int')
+
+            # Create an arrow polygon
+            arrow = patches.Polygon(points,
+                                    closed=True,
+                                    fill=False,
+                                    alpha=1,
+                                    color='mediumseagreen')
+
+            # Add arrow to the image
+            ax.add_patch(arrow)
+
+            # Add artist for patch
+            ax.add_artist(arrow)
+
+            # Get centroid
+            cx, cy = np.round(points.mean(axis=0), decimals=0).astype('int')[:2]
+
+            # Annotate the arrow
+            ann = ax.annotate(arrow_id, (cx, cy), color='white', fontsize=10,
+                              ha='center', va='center')
+
+            # Add a box around the annotation
+            ann.set_bbox(dict(alpha=1, color='mediumseagreen', pad=0))
+
+    # Skip if there are no arrows to draw
+    except KeyError:
+        pass
+
+    # Draw text blocks
+    try:
+        for t in annotation['text']:
+
+            # Get text ID
+            text_id = annotation['text'][t]['id']
+
+            # Get the start and end points of the rectangle and cast
+            # them into tuples for drawing.
+            rect = np.array(annotation['text'][t]['rectangle'], np.int32)
+
+            # Get start and end coordinates, convert to int and cast into tuple
+            startx, starty = np.round(rect[0] * r, decimals=0).astype('int')
+            endx, endy = np.round(rect[1] * r, decimals=0).astype('int')
+
+            # Calculate bounding box width and height
+            width = endx - startx
+            height = endy - starty
+
+            # Define a rectangle and add to batch
+            rectangle = patches.Rectangle((startx, starty),
+                                          width, height,
+                                          fill=False,
+                                          alpha=1,
+                                          color='dodgerblue',
+                                          edgecolor=None)
+
+            # Add patch to the image
+            ax.add_patch(rectangle)
+
+            # Add artist object for rectangle
+            ax.add_artist(rectangle)
+
+            # Get starting coordinates
+            x, y = rectangle.get_xy()
+
+            # Get coordinates for the centre; adjust positioning
+            cx = (x + rectangle.get_width() / 2.0)
+            cy = (y + rectangle.get_height() / 2.0)
+
+            # Add annotation to the text box
+            ann = ax.annotate(text_id, (cx, cy), color='white',
+                              fontsize=10, ha='center', va='center')
+
+            # Add a box around the annotation
+            ann.set_bbox(dict(alpha=1, color='dodgerblue', pad=0))
+
+    # Skip if there are no text boxes to draw
+    except KeyError:
+        pass
+
+    # Save figure to file, read the file using OpenCV and remove the file
+    plt.savefig('temp.png')
+    img = cv2.imread('temp.png')
+    os.remove('temp.png')
+
+    # TODO Remove OpenCV dependency and DPI to savefig
+
+    # Close the plot
+    plt.close()
+
+    # Return the annotated image
     return img
 
 

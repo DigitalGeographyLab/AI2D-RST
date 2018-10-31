@@ -77,8 +77,12 @@ class Diagram:
         # Draw the graph
         diagram = draw_graph(self.layout_graph, dpi=100, mode='layout')
 
-        # Set the flag for tracking updates to the graph
+        # Set up a flag for tracking updates to the graph
         update = False
+
+        # Set up flags for tracking whether annotation should be hidden or shown
+        show = False
+        hide = False
 
         # Enter a while loop for the annotation procedure
         while not self.group_complete:
@@ -91,6 +95,17 @@ class Diagram:
 
                 # Mark update complete
                 update = False
+
+            # Check if segmentation annotation is hidden and should be re-drawn
+            if hide and show:
+
+                # Visualize the layout segmentation
+                segmentation = draw_layout(self.image_path, self.annotation,
+                                           480)
+
+                # Return to normal mode by setting both hide and show to False
+                hide = False
+                show = False
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, segmentation))
@@ -121,6 +136,30 @@ class Diagram:
                     cv2.destroyAllWindows()
 
                     return
+
+                # Hide/show layout segmentation if requested
+                if user_input == 'hide':
+
+                    # If hide is False, re-draw the layout without annotation
+                    if not hide:
+
+                        # Re-draw the layout
+                        segmentation = draw_layout(self.image_path,
+                                                   self.annotation,
+                                                   480, hide=True)
+
+                        # Flag the annotation as hidden
+                        hide = True
+
+                        continue
+
+                    # If the layout is already hidden, re-draw the annotation
+                    if hide:
+
+                        # Set show to True
+                        show = True
+
+                        continue
 
                 # Print information if requested
                 if user_input == 'info':
@@ -427,7 +466,7 @@ class Diagram:
         # Remove groups from the list of nodes
         nodes = [n for n in nodes if n[1]['kind'] != 'group']
 
-        # Populate the connectivity graph using the layout graph
+        # Populate the connectivity graph according to the list of nodes
         self.connectivity_graph = create_graph(nodes,
                                                edges=False,
                                                arrowheads=False,
@@ -439,6 +478,10 @@ class Diagram:
 
         # Set the flag for tracking updates to the graph
         update = False
+
+        # Set up flags for tracking whether annotation should be hidden or shown
+        show = False
+        hide = False
 
         # Enter a while loop for the annotation procedure
         while not self.connectivity_complete:
@@ -452,6 +495,17 @@ class Diagram:
 
                 # Mark update complete
                 update = False
+
+            # Check if segmentation annotation is hidden and should be re-drawn
+            if hide and show:
+
+                # Visualize the layout segmentation
+                segmentation = draw_layout(self.image_path, self.annotation,
+                                           480)
+
+                # Return to normal mode by setting both hide and show to False
+                hide = False
+                show = False
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, segmentation))
@@ -482,6 +536,30 @@ class Diagram:
                     cv2.destroyAllWindows()
 
                     return
+
+                # Hide/show layout segmentation if requested
+                if user_input == 'hide':
+
+                    # If hide is False, re-draw the layout without annotation
+                    if not hide:
+
+                        # Re-draw the layout
+                        segmentation = draw_layout(self.image_path,
+                                                   self.annotation,
+                                                   480, hide=True)
+
+                        # Flag the annotation as hidden
+                        hide = True
+
+                        continue
+
+                    # If the layout is already hidden, re-draw the annotation
+                    if hide:
+
+                        # Set show to True
+                        show = True
+
+                        continue
 
                 # Print information if requested
                 if user_input == 'info':
@@ -698,6 +776,18 @@ class Diagram:
 
         # Visualize the layout segmentation
         segmentation = draw_layout(self.image_path, self.annotation, 480)
+
+        # Retrieve a list of valid nodes from the layout graph
+        nodes = list(self.layout_graph.nodes(data=True))
+
+        # Remove groups from the list of nodes
+        nodes = [n for n in nodes if n[1]['kind'] != 'group']
+
+        # Populate the RST graph according to the list of nodes
+        self.rst_graph = create_graph(nodes,
+                                      edges=False,
+                                      arrowheads=False,
+                                      mode='rst')
 
         # Draw the graph using RST mode
         diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')
