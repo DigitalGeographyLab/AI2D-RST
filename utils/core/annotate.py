@@ -119,19 +119,22 @@ def create_relation(rst_graph, user_input):
                     satellite_rel = relation_ix[s]
 
                     # Add edge from satellite relation to the new relation
-                    rst_graph.add_edge(satellite_rel, new_relation)
+                    rst_graph.add_edge(satellite_rel, new_relation,
+                                       kind='satellite')
 
                 # If the satellite is not a relation, draw edge from node
                 else:
 
                     # Add edge to graph
-                    rst_graph.add_edge(s.upper(), new_relation)
+                    rst_graph.add_edge(s.upper(), new_relation,
+                                       kind='satellite')
 
             # Draw edges from nucleus to relation
             for n in nucleus:
 
                 # Add edge to graph
-                rst_graph.add_edge(n.upper(), new_relation)
+                rst_graph.add_edge(new_relation, n.upper(),
+                                   kind='nucleus')
 
     # Continue by checking if the relation is multinuclear
     if relation_kind == 'multi':
@@ -173,7 +176,7 @@ def create_relation(rst_graph, user_input):
             rst_graph.add_node(new_relation,
                                kind='relation',
                                nuclei=nuclei,
-                               name=relation_name,
+                               rel_name=relation_name,
                                id=new_relation)
 
             # Draw edges from nuclei to the current RST relation
@@ -187,13 +190,15 @@ def create_relation(rst_graph, user_input):
 
                     # Add edge from the RST relation acting as nuclei to the
                     # current RST relation
-                    rst_graph.add_edge(origin, new_relation)
+                    rst_graph.add_edge(new_relation, origin,
+                                       kind='nucleus')
 
                 # If all nuclei are nodes, draw edges to the RST relation
                 else:
 
                     # Add edge to graph
-                    rst_graph.add_edge(n.upper(), new_relation)
+                    rst_graph.add_edge(new_relation, n.upper(),
+                                       kind='nucleus')
 
 
 def group_nodes(graph, user_input):
@@ -231,6 +236,7 @@ def group_nodes(graph, user_input):
 
         # Add edges from nodes in the user input to the new node
         for valid_elem in user_input:
+
             graph.add_edge(valid_elem.upper(), new_node)
 
 

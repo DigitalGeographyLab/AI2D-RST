@@ -193,6 +193,8 @@ class Diagram:
                     # Freeze the layout graph
                     nx.freeze(self.layout_graph)
 
+                    # TODO Unfreeze graph in revision mode
+
                     # Set status to complete
                     self.group_complete = True
 

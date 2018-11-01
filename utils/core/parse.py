@@ -182,6 +182,7 @@ def get_node_dict(graph, kind=None):
 
     # If the requested output consists of node groups, return group dict
     if kind == 'group':
+
         # Generate a dictionary of groups
         group_dict = {k: k for k, v in node_types.items() if
                       v == 'group'}

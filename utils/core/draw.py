@@ -57,6 +57,12 @@ def draw_graph(graph, dpi=100, mode='layout'):
         rel_dict = {k: "R{} ({})".format(i, graph.node[k]['rel_name'])
                     for i, (k, v) in enumerate(rel_dict.items(), start=1)}
 
+        # Get a dictionary of edge labels
+        edge_dict = nx.get_edge_attributes(graph, 'kind')
+
+        # TODO Unpack edge dict and draw nuclei and satellite lines separately
+        # TODO Find out why IO appears after defining a relation
+
     # Draw nodes present in the graph
     draw_nodes(graph, pos=pos, ax=ax, node_types=node_types, mode=mode)
 
@@ -72,9 +78,12 @@ def draw_graph(graph, dpi=100, mode='layout'):
 
     if mode == 'rst':
 
-        # Draw labels for RST relations
+        # Draw identifiers for RST relations
         nx.draw_networkx_labels(graph, pos, font_size=10,
                                 labels=rel_dict)
+
+        # Draw edge labels for nuclei and satellites
+        nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_dict)
 
     # Remove margins from the graph and axes from the plot
     fig.tight_layout(pad=0)
@@ -399,8 +408,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
                                    nodelist=groups,
                                    alpha=1,
                                    node_color='navajowhite',
-                                   ax=ax,
-                                   node_size=50
+                                   ax=ax
                                    )
 
         # Skip if there are no group nodes to draw
@@ -420,8 +428,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
                                    nodelist=relations,
                                    alpha=1,
                                    node_color='white',
-                                   ax=ax,
-                                   node_size=25
+                                   ax=ax
                                    )
 
         # Skip if there are no relations to draw
