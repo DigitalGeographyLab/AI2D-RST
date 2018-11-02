@@ -217,7 +217,7 @@ class Diagram:
 
                     # Render high-resolution versions of graph and segmentation
                     layout_hires = draw_layout(self.image_path, self.annotation,
-                                               720)
+                                               720, dpi=200)
                     diag_hires = draw_graph(self.layout_graph, dpi=200,
                                             mode='layout')
 

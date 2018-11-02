@@ -31,6 +31,9 @@ def draw_graph(graph, dpi=100, mode='layout'):
     # Initialize a neato layout for the graph
     pos = nx.nx_pydot.graphviz_layout(graph, prog='neato')
 
+    # TODO pydot seems to crash when grouping together a lot of groups and nodes
+    # This error can be reproduced using 274.png
+
     # Generate a dictionary with nodes and their kind
     node_types = nx.get_node_attributes(graph, 'kind')
 
@@ -60,7 +63,6 @@ def draw_graph(graph, dpi=100, mode='layout'):
         # Get a dictionary of edge labels
         edge_dict = nx.get_edge_attributes(graph, 'kind')
 
-        # TODO Unpack edge dict and draw nuclei and satellite lines separately
         # TODO Find out why IO appears after defining a relation
 
     # Draw nodes present in the graph
@@ -100,7 +102,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
     return img
 
 
-def draw_layout(path_to_image, annotation, height, hide=False):
+def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
     """
     Visualizes the AI2D layout annotation on the original input image.
 
@@ -272,12 +274,23 @@ def draw_layout(path_to_image, annotation, height, hide=False):
     except KeyError:
         pass
 
+    # Check if a high-resolution image has been requested
+    if kwargs and 'dpi' in kwargs:
+
+        # Save figure to file in the requested resolution
+        plt.savefig('temp.png', dpi=kwargs['dpi'])
+
+        img = cv2.imread('temp.png')
+        os.remove('temp.png')
+
+        return img
+
     # Save figure to file, read the file using OpenCV and remove the file
     plt.savefig('temp.png')
     img = cv2.imread('temp.png')
     os.remove('temp.png')
 
-    # TODO Remove OpenCV dependency and DPI to savefig
+    # TODO Remove OpenCV dependency
 
     # Close the plot
     plt.close()
@@ -416,9 +429,9 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
             pass
 
     # Check drawing mode, continue with RST
-    if mode == 'rst':
+    if mode == 'rst' and draw_edges:
 
-        # Draw nodes for relations
+        # Draw nodes for RST relations
         try:
             relations = [k for k, v in node_types.items() if v == 'relation']
 
@@ -434,6 +447,33 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         # Skip if there are no relations to draw
         except KeyError:
             pass
+
+        # Get edge list
+        edge_list = graph.edges(data=True)
+
+        # Filter the edge list for satellite edges
+        satellites = [(u, v, d) for (u, v, d) in edge_list
+                      if d['kind'] == 'satellite']
+
+        # Draw edges for satellites without arrows
+        nx.draw_networkx_edges(graph,
+                               pos,
+                               satellites,
+                               alpha=0.5,
+                               arrows=False,
+                               ax=ax)
+
+        # Filter the edge list for nuclei edges
+        nuclei = [(u, v, d) for (u, v, d) in edge_list
+                  if d['kind'] == 'nucleus']
+
+        # Draw edges for nuclei with arrows
+        nx.draw_networkx_edges(graph,
+                               pos,
+                               nuclei,
+                               alpha=0.5,
+                               arrows=True,
+                               ax=ax)
 
     # Check drawing mode, finish with connectivity
     if mode == 'connect' and draw_edges:
@@ -482,7 +522,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
             pass
 
     # Otherwise, draw standard edges if requested
-    if draw_edges and mode != 'connect':
+    if draw_edges and mode == 'layout':
 
         # Draw edges between nodes
         nx.draw_networkx_edges(graph,
