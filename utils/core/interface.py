@@ -21,6 +21,7 @@ def process_command(user_input, mode, diagram, current_graph):
 
     # Save a screenshot if requested
     if user_input == 'cap':
+
         # Get filename of current image (without extension)
         fname = os.path.basename(diagram.image_path).split('.')[0]
 
@@ -301,7 +302,6 @@ macro_groups = {'table': 'table',
                 }
 
 # TODO Document RST relations
-# TODO Move generic commands here?
 
 # TODO Add command 'status' which gives the annotation status of diagram
 # TODO Add commands that allow switching between annotation types
