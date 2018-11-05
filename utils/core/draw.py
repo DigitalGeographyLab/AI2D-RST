@@ -31,9 +31,6 @@ def draw_graph(graph, dpi=100, mode='layout'):
     # Initialize a neato layout for the graph
     pos = nx.nx_pydot.graphviz_layout(graph, prog='neato')
 
-    # TODO pydot seems to crash when grouping together a lot of groups and nodes
-    # This error can be reproduced using 274.png
-
     # Generate a dictionary with nodes and their kind
     node_types = nx.get_node_attributes(graph, 'kind')
 

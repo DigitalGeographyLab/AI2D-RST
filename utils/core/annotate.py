@@ -1,7 +1,24 @@
 # -*- coding: utf-8 -*-
 
+import string
+import random
 from .interface import *
 from .parse import *
+
+
+def create_id(length=6, chars=string.ascii_uppercase+string.digits):
+    """
+    A function for creating random identifiers for grouping identifiers, which
+    can become big enough to slowing down the drawing of graphs.
+
+    Parameters:
+        length: The requested length of the identifier.
+        chars: The characters used to generate the random identifier.
+
+    Returns:
+        A random identifier of requested length.
+    """
+    return ''.join(random.choice(chars) for x in range(length))
 
 
 def create_relation(rst_graph, user_input):
@@ -221,15 +238,19 @@ def group_nodes(graph, user_input):
 
     # If the user input contains an imageConsts, do not add a node
     if 'imageConsts' in input_node_types:
+
         for k, v in node_dict.items():
+
             if v == 'imageConsts':
+
                 for valid_elem in user_input:
+
                     graph.add_edge(valid_elem.upper(), k.upper())
 
     else:
         # Generate a name for the new node that joins together the elements
         # provided by the user
-        new_node = '+'.join(user_input).upper()
+        new_node = create_id()
 
         # Add the new node to the graph
         graph.add_node(new_node, kind='group')
