@@ -63,21 +63,38 @@ def process_command(user_input, mode, diagram, current_graph):
     if user_input == 'done':
 
         # Find nodes without edges (isolates)
-        isolates = list(nx.isolates(diagram.layout_graph))
+        isolates = list(nx.isolates(current_graph))
 
         # Remove isolates
-        diagram.layout_graph.remove_nodes_from(isolates)
+        current_graph.remove_nodes_from(isolates)
 
         # Freeze the layout graph
-        nx.freeze(diagram.layout_graph)
+        nx.freeze(current_graph)
 
         # TODO Unfreeze graph in revision mode
 
-        # Set status to complete
-        diagram.group_complete = True
+        # Check the annotation task and mark complete as appropriate
+        if mode == 'layout':
 
-        # Print status message
-        print("[INFO] Marking grouping as complete.")
+            # Set status to complete
+            diagram.group_complete = True
+
+            # Print status message
+            print("[INFO] Marking grouping as complete.")
+
+        if mode == 'connectivity':
+
+            # Set status to complete
+            diagram.connectivity_complete = True
+
+            print("[INFO] Marking connectivity as complete.")
+
+        if mode == 'rst':
+
+            # Set status to complete
+            diagram.rst_complete = True
+
+            print("[INFO] Marking rhetorical structure as complete.")
 
         # Destroy any remaining windows
         cv2.destroyAllWindows()
@@ -180,7 +197,7 @@ info = {'layout': "---\n"
                "The tool will then ask you to enter a valid name for the "
                "relation.\n"
                "Names are entered by using abbreviations, which can be listed "
-               "using the command 'rels'.\n\n"
+               "using the command 'relations'.\n\n"
                "The tool will infer the type of relation and ask you to enter "
                "either a nucleus and satellites or several nuclei.\n"
                "---\n",

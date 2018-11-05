@@ -22,7 +22,7 @@ class Diagram:
             ai2d_ann: Path to the JSON file containing the original AI2D
                       annotation or a dictionary containing parsed annotation.
             image: Path to the image file containing the diagram.
-            
+
         Returns:
             An AI2D Diagram object with various methods and attributes.
         """
@@ -121,7 +121,7 @@ class Diagram:
 
                 continue
 
-            # Check if the input is a command
+            # Check if the input is a generic command
             if user_input in commands['generic']:
 
                 # Send the command to the interface along with current graph
@@ -413,7 +413,7 @@ class Diagram:
 
                 continue
 
-            # Check if the user input is a command
+            # Check if the user input is a generic command
             if user_input in commands['generic']:
 
                 # Send the command to the interface along with current graph
@@ -579,20 +579,17 @@ class Diagram:
         # Draw the graph using RST mode
         diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')
 
-        # Set the flag for tracking updates to the graph
-        update = False
-
         # Enter a while loop for the annotation procedure
         while not self.rst_complete:
 
             # Check if the graph needs to be updated
-            if update:
+            if self.update:
 
                 # Re-draw the graph
                 diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')
 
                 # Mark update complete
-                update = False
+                self.update = False
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, segmentation))
@@ -609,110 +606,55 @@ class Diagram:
                 continue
 
             # Check the input
-            if user_input in commands['rst']:
+            if user_input in commands['generic']:
 
-                # Quit the program immediately upon command
-                if user_input == 'exit':
-                    exit("Quitting ...")
+                # Send the command to the interface along with current graph
+                process_command(user_input,
+                                mode='rst',
+                                diagram=self,
+                                current_graph=self.rst_graph)
 
-                # If next diagram is requested, store current graph and move on
-                if user_input == 'next':
+                continue
 
-                    # Destroy any remaining windows
-                    cv2.destroyAllWindows()
+            # If the user requests a list of available RST relations, print
+            # the keys and their definitions.
+            if user_input == 'rels':
 
-                    return
+                # Clear screen first
+                os.system('cls' if os.name == 'nt' else 'clear')
 
-                # If the user marks the annotation as complete, change status
-                if user_input == 'done':
+                # Loop over RST relations
+                for k, v in rst_relations.items():
 
-                    # Set status to complete
-                    self.rst_complete = True
+                    # Print information on each RST relation
+                    print("{} - abbreviation: {}, type: {}.".format(
+                        v['name'].upper(),
+                        k,
+                        v['kind']))
 
-                    # Destroy any remaining windows
-                    cv2.destroyAllWindows()
+                continue
 
-                    return
+            # If the user input is a new relation, request additional input
+            if user_input == 'new':
 
-                # If the user requests a list of available RST relations, print
-                # the keys and their definitions.
-                if user_input == 'relations':
+                # Request relation name
+                relation = input(prompts['rel_prompt'])
 
-                    # Clear screen first
-                    os.system('cls' if os.name == 'nt' else 'clear')
+                # Strip extra whitespace and convert the input to lowercase
+                relation = relation.strip().lower()
 
-                    # Loop over RST relations
-                    for k, v in rst_relations.items():
+                # Check that the input is a valid relation
+                if relation in rst_relations.keys():
 
-                        # Print information on each RST relation
-                        print("{} - abbreviation: {}, type: {}.".format(
-                            v['name'].upper(),
-                            k,
-                            v['kind']))
+                    # Create a rhetorical relation and add to graph
+                    create_relation(self.rst_graph, relation)
 
-                    pass
+                    # Flag the graph for re-drawing
+                    self.update = True
 
-                # Print information if requested
-                if user_input == 'info':
-
-                    # Clear screen first
-                    os.system('cls' if os.name == 'nt' else 'clear')
-
-                    # Print information on layout commands
-                    print(info['rst'])
-
-                    pass
-
-                # Store a comment if requested
-                if user_input == 'comment':
-
-                    # Show a prompt for comment
-                    comment = input(prompts['comment'])
-
-                    # Return the comment
-                    self.comments.append(comment)
-
-                # Save a screenshot if requested
-                if user_input == 'cap':
-
-                    # Get filename of current image
-                    fname = os.path.basename(self.image_path)
-
-                    # Write image on disk
-                    cv2.imwrite("screen_capture_{}.png".format(fname), preview)
-
-                # If the user marks the annotation as complete
-                if user_input == 'done':
-
-                    # Set status to complete
-                    self.rst_complete = True
-
-                    # Destroy any remaining windows
-                    cv2.destroyAllWindows()
-
-                    return
-
-                # If the user input is a new relation, request additional input
-                if user_input == 'new':
-
-                    # Request relation name
-                    relation = input(prompts['rel_prompt'])
-
-                    # Strip extra whitespace and convert the input to lowercase
-                    relation = relation.strip().lower()
-
-                    # Check that the input is a valid relation
-                    if relation in rst_relations.keys():
-
-                        # Create a rhetorical relation and add to graph
-                        create_relation(self.rst_graph, relation)
-
-                        # Flag the graph for re-drawing
-                        update = True
-
-                    else:
-                        print("Sorry, {} is not a valid relation."
-                              .format(relation))
+                else:
+                    print("Sorry, {} is not a valid relation."
+                          .format(relation))
 
             if user_input not in commands['rst']:
 
