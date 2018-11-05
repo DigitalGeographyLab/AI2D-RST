@@ -1,12 +1,141 @@
 # -*- coding: utf-8 -*-
 
+from .draw import *
+
+
+def process_command(user_input, mode, diagram, current_graph):
+
+    # Save a screenshot if requested
+    if user_input == 'cap':
+        # Get filename of current image (without extension)
+        fname = os.path.basename(diagram.image_path).split('.')[0]
+
+        # Join filename to get a string
+        fname = ''.join(fname)
+
+        # Render high-resolution versions of graph and segmentation
+        layout_hires = draw_layout(diagram.image_path,
+                                   diagram.annotation,
+                                   height=720,
+                                   dpi=200)
+
+        diag_hires = draw_graph(current_graph, dpi=200,
+                                mode=mode)
+
+        # Write image on disk
+        cv2.imwrite("layout_{}.png".format(fname), layout_hires)
+        cv2.imwrite("{}_{}.png".format(mode, fname), diag_hires)
+
+        # Print status message
+        print("[INFO] Saved screenshots to disk for {}.png".format(
+            fname
+        ))
+
+        return
+
+    # Store a comment if requested
+    if user_input == 'comment':
+
+        # Show a prompt for comment
+        comment = input(prompts['comment'])
+
+        # Return the comment
+        diagram.comments.append(comment)
+
+        return
+
+    # If requested, mark the annotation as complete and remove isolates from the
+    # graph.
+    if user_input == 'done':
+
+        # Find nodes without edges (isolates)
+        isolates = list(nx.isolates(diagram.layout_graph))
+
+        # Remove isolates
+        diagram.layout_graph.remove_nodes_from(isolates)
+
+        # Freeze the layout graph
+        nx.freeze(diagram.layout_graph)
+
+        # TODO Unfreeze graph in revision mode
+
+        # Set status to complete
+        diagram.group_complete = True
+
+        # Print status message
+        print("[INFO] Marking grouping as complete.")
+
+        # Destroy any remaining windows
+        cv2.destroyAllWindows()
+
+        return
+
+    # If requested, exit the annotator immediately
+    if user_input == 'exit':
+
+        exit("[INFO] Quitting ...")
+
+    # Export a graphviz DOT graph if requested
+    if user_input == 'export':
+
+        # Get filename of current image (without extension)
+        fname = os.path.basename(diagram.image_path).split('.')[0]
+
+        # Join filename to get a string
+        fname = ''.join(fname)
+
+        # Write DOT graph to disk
+        nx.nx_pydot.write_dot(current_graph,
+                              '{}_{}.dot'.format(fname, mode))
+
+        # Print status message
+        print("[INFO] Saved a DOT graph for {}.png on disk.".format(fname))
+
+        return
+
+    # If requested, print info on current annotation task
+    if user_input == 'info':
+
+        # Clear screen first
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+        # Print information on layout commands
+        print(info[mode])
+
+        return
+
+    # If requested, remove isolates from the current graph
+    if user_input == 'isolate':
+
+        # Find nodes without edges (isolates)
+        isolates = list(nx.isolates(current_graph))
+
+        # Remove isolates
+        current_graph.remove_nodes_from(isolates)
+
+        # Print status message
+        print("[INFO] Removing isolates as requested.")
+
+        # Flag the graph for re-drawing
+        diagram.update = True
+
+        return
+
+    # If requested, move to the next graph
+    if user_input == 'next':
+
+        # Destroy any remaining windows
+        cv2.destroyAllWindows()
+
+        return
+
+
 # Define a dictionary of available commands during annotation
-commands = {'rst': ['info', 'next', 'exit', 'done', 'cap', 'new', 'comment',
-                    'rels'],
-            'layout': ['info', 'comment', 'next', 'exit', 'done', 'cap',
-                       'macrogroups', 'export', 'isolate', 'hide'],
-            'connectivity': ['info', 'comment', 'next', 'exit', 'done', 'cap',
-                             'export', 'isolate', 'hide']
+commands = {'rst': ['new', 'rels'],
+            'layout': ['macrogroups'],
+            'connectivity': [],
+            'generic': ['cap', 'comment', 'done', 'exit', 'export', 'info',
+                        'isolate', 'next']
             }
 
 info = {'layout': "---\n"

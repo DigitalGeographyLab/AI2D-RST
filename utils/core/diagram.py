@@ -58,6 +58,9 @@ class Diagram:
         # Set up a placeholder for comments
         self.comments = []
 
+        # Set up a flag for tracking updates to the graph (for drawing)
+        self.update = False
+
     def annotate_layout(self):
         """
         A function for annotating the logical / layout structure (DPG-L) of a
@@ -77,9 +80,6 @@ class Diagram:
         # Draw the graph
         diagram = draw_graph(self.layout_graph, dpi=100, mode='layout')
 
-        # Set up a flag for tracking updates to the graph
-        update = False
-
         # Set up flags for tracking whether annotation should be hidden or shown
         show = False
         hide = False
@@ -88,13 +88,13 @@ class Diagram:
         while not self.group_complete:
 
             # Check if the graph needs to be updated
-            if update:
+            if self.update:
 
                 # Re-draw the graph
                 diagram = draw_graph(self.layout_graph, dpi=100, mode='layout')
 
                 # Mark update complete
-                update = False
+                self.update = False
 
             # Check if segmentation annotation is hidden and should be re-drawn
             if hide and show:
@@ -122,159 +122,52 @@ class Diagram:
                 continue
 
             # Check if the input is a command
-            if user_input in commands['layout']:
+            if user_input in commands['generic']:
 
-                # Quit the program immediately upon command
-                if user_input == 'exit':
+                # Send the command to the interface along with current graph
+                process_command(user_input,
+                                mode='layout',
+                                diagram=self,
+                                current_graph=self.layout_graph)
 
-                    exit("[INFO] Quitting ...")
+                continue
 
-                # If next diagram is requested, store current graph and move on
-                if user_input == 'next':
+            # Hide/show layout segmentation if requested
+            if user_input == 'hide':
 
-                    # Destroy any remaining windows
-                    cv2.destroyAllWindows()
+                # If hide is False, re-draw the layout without annotation
+                if not hide:
 
-                    return
+                    # Re-draw the layout
+                    segmentation = draw_layout(self.image_path,
+                                               self.annotation,
+                                               480, hide=True)
 
-                # Hide/show layout segmentation if requested
-                if user_input == 'hide':
+                    # Flag the annotation as hidden
+                    hide = True
 
-                    # If hide is False, re-draw the layout without annotation
-                    if not hide:
+                    continue
 
-                        # Re-draw the layout
-                        segmentation = draw_layout(self.image_path,
-                                                   self.annotation,
-                                                   480, hide=True)
+                # If the layout is already hidden, re-draw the annotation
+                if hide:
 
-                        # Flag the annotation as hidden
-                        hide = True
+                    # Set show to True
+                    show = True
 
-                        continue
+                    continue
 
-                    # If the layout is already hidden, re-draw the annotation
-                    if hide:
+            # Print the names of macro groups if requested
+            if user_input == 'macrogroups':
 
-                        # Set show to True
-                        show = True
+                # Print header
+                print("\nAvailable macro groups and their aliases\n---")
 
-                        continue
+                # Print the available macro groups and their aliases
+                for k, v in macro_groups.items():
+                    print("{} (alias: {})".format(v, k))
 
-                # Print information if requested
-                if user_input == 'info':
-
-                    # Clear screen first
-                    os.system('cls' if os.name == 'nt' else 'clear')
-
-                    # Print information on layout commands
-                    print(info['layout'])
-
-                    pass
-
-                # Store a comment if requested
-                if user_input == 'comment':
-
-                    # Show a prompt for comment
-                    comment = input(prompts['comment'])
-
-                    # Return the comment
-                    self.comments.append(comment)
-
-                # If the user marks the annotation as complete
-                if user_input == 'done':
-
-                    # Find nodes without edges (isolates)
-                    isolates = list(nx.isolates(self.layout_graph))
-
-                    # Remove isolates
-                    self.layout_graph.remove_nodes_from(isolates)
-
-                    # Freeze the layout graph
-                    nx.freeze(self.layout_graph)
-
-                    # TODO Unfreeze graph in revision mode
-
-                    # Set status to complete
-                    self.group_complete = True
-
-                    # Print status message
-                    print("[INFO] Marking grouping as complete.")
-
-                    # Destroy any remaining windows
-                    cv2.destroyAllWindows()
-
-                    return
-
-                # Save a screenshot if requested
-                if user_input == 'cap':
-
-                    # Get filename of current image (without extension)
-                    fname = os.path.basename(self.image_path).split('.')[0]
-
-                    # Join filename to get a string
-                    fname = ''.join(fname)
-
-                    # Render high-resolution versions of graph and segmentation
-                    layout_hires = draw_layout(self.image_path, self.annotation,
-                                               720, dpi=200)
-                    diag_hires = draw_graph(self.layout_graph, dpi=200,
-                                            mode='layout')
-
-                    # Write image on disk
-                    cv2.imwrite("layout_{}.png".format(fname), layout_hires)
-                    cv2.imwrite("grouping_{}.png".format(fname), diag_hires)
-
-                    # Print status message
-                    print("[INFO] Saved screenshots to disk for {}.png".format(
-                        fname
-                    ))
-
-                # Export a graphviz DOT graph if requested
-                if user_input == 'export':
-
-                    # Get filename of current image (without extension)
-                    fname = os.path.basename(self.image_path).split('.')[0]
-
-                    # Join filename to get a string
-                    fname = ''.join(fname)
-
-                    # Write DOT graph to disk
-                    nx.nx_pydot.write_dot(self.layout_graph,
-                                          '{}_layout.dot'.format(fname))
-
-                    # Print status message
-                    print("[INFO] Saved a DOT graph on disk for {}.png".format(
-                        fname
-                    ))
-
-                # Remove isolates if requested
-                if user_input == 'isolate':
-
-                    # Find nodes without edges (isolates)
-                    isolates = list(nx.isolates(self.layout_graph))
-
-                    # Remove isolates
-                    self.layout_graph.remove_nodes_from(isolates)
-
-                    # Print status message
-                    print("[INFO] Removing isolates as requested.")
-
-                    # Flag the graph for re-drawing
-                    update = True
-
-                # Print the names of macro groups if requested
-                if user_input == 'macrogroups':
-
-                    # Print header
-                    print("\nAvailable macro groups and their aliases\n---")
-
-                    # Print the available macro groups and their aliases
-                    for k, v in macro_groups.items():
-                        print("{} (alias: {})".format(v, k))
-
-                    # Print closing line
-                    print("---\n")
+                # Print closing line
+                print("---\n")
 
             # Check if the user has requested to describe a macro-grouping
             if 'macro' == user_input.split()[0]:
@@ -373,13 +266,13 @@ class Diagram:
                     self.layout_graph.remove_nodes_from(user_input)
 
                     # Flag the graph for re-drawing
-                    update = True
+                    self.update = True
 
                     continue
 
             # If user input does not include a valid command, assume the input
             # is a string containing a list of diagram elements.
-            elif user_input not in commands['layout']:
+            elif user_input not in commands['generic']:
 
                 # Split the input into a list
                 user_input = user_input.split(',')
@@ -441,7 +334,7 @@ class Diagram:
                         group_nodes(self.layout_graph, user_input)
 
                         # Flag the graph for re-drawing
-                        update = True
+                        self.update = True
 
                 # Continue until the annotation process is complete
                 continue
@@ -478,9 +371,6 @@ class Diagram:
         # Draw the graph using the layout mode
         diagram = draw_graph(self.connectivity_graph, dpi=100, mode='connect')
 
-        # Set the flag for tracking updates to the graph
-        update = False
-
         # Set up flags for tracking whether annotation should be hidden or shown
         show = False
         hide = False
@@ -489,14 +379,14 @@ class Diagram:
         while not self.connectivity_complete:
 
             # Check if the graph needs to be updated
-            if update:
+            if self.update:
 
                 # Re-draw the graph using the layout mode
                 diagram = draw_graph(self.connectivity_graph, dpi=100,
-                                     mode='connect')
+                                     mode='connectivity')
 
                 # Mark update complete
-                update = False
+                self.update = False
 
             # Check if segmentation annotation is hidden and should be re-drawn
             if hide and show:
@@ -524,148 +414,43 @@ class Diagram:
                 continue
 
             # Check if the user input is a command
-            if user_input in commands['connectivity']:
+            if user_input in commands['generic']:
 
-                # Quit the program immediately upon command
-                if user_input == 'exit':
+                # Send the command to the interface along with current graph
+                process_command(user_input,
+                                mode='connectivity',
+                                diagram=self,
+                                current_graph=self.connectivity_graph)
 
-                    exit("[INFO] Quitting ...")
+                continue
 
-                # If next diagram is requested, store current graph and move on
-                if user_input == 'next':
+            # Hide/show layout segmentation if requested
+            if user_input == 'hide':
 
-                    # Destroy any remaining windows
-                    cv2.destroyAllWindows()
+                # If hide is False, re-draw the layout without annotation
+                if not hide:
 
-                    return
+                    # Re-draw the layout
+                    segmentation = draw_layout(self.image_path,
+                                               self.annotation,
+                                               480, hide=True)
 
-                # Hide/show layout segmentation if requested
-                if user_input == 'hide':
+                    # Flag the annotation as hidden
+                    hide = True
 
-                    # If hide is False, re-draw the layout without annotation
-                    if not hide:
+                    continue
 
-                        # Re-draw the layout
-                        segmentation = draw_layout(self.image_path,
-                                                   self.annotation,
-                                                   480, hide=True)
+                # If the layout is already hidden, re-draw the annotation
+                if hide:
 
-                        # Flag the annotation as hidden
-                        hide = True
+                    # Set show to True
+                    show = True
 
-                        continue
-
-                    # If the layout is already hidden, re-draw the annotation
-                    if hide:
-
-                        # Set show to True
-                        show = True
-
-                        continue
-
-                # Print information if requested
-                if user_input == 'info':
-
-                    # Clear screen first
-                    os.system('cls' if os.name == 'nt' else 'clear')
-
-                    # Print information on layout commands
-                    print(info['connectivity'])
-
-                    pass
-
-                # Store a comment if requested
-                if user_input == 'comment':
-
-                    # Show a prompt for comment
-                    comment = input(prompts['comment'])
-
-                    # Return the comment
-                    self.comments.append(comment)
-
-                # If the user marks the annotation as complete
-                if user_input == 'done':
-
-                    # Find nodes without edges (isolates)
-                    isolates = list(nx.isolates(self.connectivity_graph))
-
-                    # Remove isolates
-                    self.connectivity_graph.remove_nodes_from(isolates)
-
-                    # Freeze the layout graph
-                    nx.freeze(self.connectivity_graph)
-
-                    # Set status to complete
-                    self.connectivity_complete = True
-
-                    # Print status message
-                    print("[INFO] Marking connectivity as complete.")
-
-                    # Destroy any remaining windows
-                    cv2.destroyAllWindows()
-
-                    return
-
-                # Save a screenshot if requested
-                if user_input == 'cap':
-
-                    # Get filename of current image (without extension)
-                    fname = os.path.basename(self.image_path).split('.')[0]
-
-                    # Join filename to get a string
-                    fname = ''.join(fname)
-
-                    # Render high-resolution versions of graph and segmentation
-                    layout_hires = draw_layout(self.image_path, self.annotation,
-                                               720)
-                    conn_hires = draw_graph(self.connectivity_graph, dpi=200,
-                                            mode='layout')
-
-                    # Write image on disk
-                    cv2.imwrite("layout_{}.png".format(fname), layout_hires)
-                    cv2.imwrite("connectivity_{}.png".format(fname), conn_hires)
-
-                    # Print status message
-                    print("[INFO] Saved screenshots to disk for {}.png".format(
-                        fname
-                    ))
-
-                # Export a graphviz DOT graph if requested
-                if user_input == 'export':
-
-                    # Get filename of current image (without extension)
-                    fname = os.path.basename(self.image_path).split('.')[0]
-
-                    # Join filename to get a string
-                    fname = ''.join(fname)
-
-                    # Write DOT graph to disk
-                    nx.nx_pydot.write_dot(self.connectivity_graph,
-                                          '{}_connectivity.dot'.format(fname))
-
-                    # Print status message
-                    print("[INFO] Saved a DOT graph on disk for {}.png".format(
-                        fname
-                    ))
-
-                # Remove isolates if requested
-                if user_input == 'isolate':
-
-                    # Find nodes without edges (isolates)
-                    isolates = list(nx.isolates(self.connectivity_graph))
-
-                    # Remove isolates
-                    self.connectivity_graph.remove_nodes_from(isolates)
-
-                    # Print status message
-                    print("[INFO] Removing isolates as requested.")
-
-                    # Flag the graph for re-drawing
-                    update = True
+                    continue
 
             # If user input does not include a valid command, assume the input
             # is a string defining a connectivity relation.
-            elif user_input not in commands['connectivity']:
+            elif user_input not in commands['generic']:
 
                 # Set a flag for tracking connections
                 connection_found = False
@@ -763,7 +548,7 @@ class Diagram:
                                                            kind=connection_type)
 
                     # Flag the graph for re-drawing
-                    update = True
+                    self.update = True
 
     def annotate_rst(self):
         """

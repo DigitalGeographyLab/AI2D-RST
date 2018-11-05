@@ -18,7 +18,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
         graph: A NetworkX Graph.
         dpi: The resolution of the image as dots per inch.
         mode: String indicating the diagram structure to be drawn, valid options
-              include 'layout', 'connect' and 'rst'. Default mode is layout.
+              include 'layout' (default), 'connectivity' and 'rst'.
         
     Returns:
          An image showing the NetworkX Graph.
@@ -307,7 +307,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         node_types: A dictionary of node types extracted from the Graph.
         draw_edges: A boolean indicating whether edges should be drawn.
         mode: A string indicating the selected drawing mode. Valid options are
-             'layout' (default), 'connect' and 'rst'.
+             'layout' (default), 'connectivity' and 'rst'.
 
     Returns:
          None
@@ -473,7 +473,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
                                ax=ax)
 
     # Check drawing mode, finish with connectivity
-    if mode == 'connect' and draw_edges:
+    if mode == 'connectivity' and draw_edges:
 
         # Get edge list
         edge_list = graph.edges(data=True)
