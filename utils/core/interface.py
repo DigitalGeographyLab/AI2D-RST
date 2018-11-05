@@ -73,15 +73,15 @@ info = {'layout': "---\n"
         }
 
 # Define a dictionary of various prompts presented to user during annotation
-prompts = {'nucleus_id': "Enter the identifier of nucleus: ",
-           'satellite_id': "Enter the identifier(s) of satellite(s): ",
+prompts = {'nucleus_id': "[RST] Enter the identifier of nucleus: ",
+           'satellite_id': "[RST] Enter the identifier(s) of satellite(s): ",
            'layout_default': "[GROUPING] Please enter nodes to group or a valid"
                              " command: ",
            'comment': "Enter comment: ",
            'rst_default': "[RST] Please enter a valid command: ",
-           'rel_prompt': "Please enter relation name: ",
-           'nuclei_id': "Enter the identifiers of the nuclei: ",
-           'macro_group': "Please enter macro group type: ",
+           'rel_prompt': "[RST] Please enter relation name: ",
+           'nuclei_id': "[RST] Enter the identifiers of the nuclei: ",
+           'macro_group': "[GROUPING] Please enter macro group type: ",
            'conn_default': "[CONNECTIVITY] Please enter a connection or a valid"
                            " command: "
            }
