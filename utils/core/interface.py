@@ -1,12 +1,173 @@
 # -*- coding: utf-8 -*-
 
+from .draw import *
+
+
+def process_command(user_input, mode, diagram, current_graph):
+    """
+    A function for handling generic commands coming in from multiple annotation
+    tasks.
+
+    Parameters:
+        user_input: A string containing the command entered by the user.
+        mode: A string defining the current annotation task, either 'layout',
+              'connectivity' or 'rst'.
+        diagram: A Diagram class object that is currently being annotated.
+        current_graph: The graph of a Diagram currently being annotated.
+
+    Returns:
+        Performs the requested action.
+    """
+
+    # Save a screenshot if requested
+    if user_input == 'cap':
+        # Get filename of current image (without extension)
+        fname = os.path.basename(diagram.image_path).split('.')[0]
+
+        # Join filename to get a string
+        fname = ''.join(fname)
+
+        # Render high-resolution versions of graph and segmentation
+        layout_hires = draw_layout(diagram.image_path,
+                                   diagram.annotation,
+                                   height=720,
+                                   dpi=200)
+
+        diag_hires = draw_graph(current_graph, dpi=200,
+                                mode=mode)
+
+        # Write image on disk
+        cv2.imwrite("layout_{}.png".format(fname), layout_hires)
+        cv2.imwrite("{}_{}.png".format(mode, fname), diag_hires)
+
+        # Print status message
+        print("[INFO] Saved screenshots to disk for {}.png".format(
+            fname
+        ))
+
+        return
+
+    # Store a comment if requested
+    if user_input == 'comment':
+
+        # Show a prompt for comment
+        comment = input(prompts['comment'])
+
+        # Return the comment
+        diagram.comments.append(comment)
+
+        return
+
+    # If requested, mark the annotation as complete and remove isolates from the
+    # graph.
+    if user_input == 'done':
+
+        # Find nodes without edges (isolates)
+        isolates = list(nx.isolates(current_graph))
+
+        # Remove isolates
+        current_graph.remove_nodes_from(isolates)
+
+        # Freeze the layout graph
+        nx.freeze(current_graph)
+
+        # TODO Unfreeze graph in revision mode
+
+        # Check the annotation task and mark complete as appropriate
+        if mode == 'layout':
+
+            # Set status to complete
+            diagram.group_complete = True
+
+            # Print status message
+            print("[INFO] Marking grouping as complete.")
+
+        if mode == 'connectivity':
+
+            # Set status to complete
+            diagram.connectivity_complete = True
+
+            print("[INFO] Marking connectivity as complete.")
+
+        if mode == 'rst':
+
+            # Set status to complete
+            diagram.rst_complete = True
+
+            print("[INFO] Marking rhetorical structure as complete.")
+
+        # Destroy any remaining windows
+        cv2.destroyAllWindows()
+
+        return
+
+    # If requested, exit the annotator immediately
+    if user_input == 'exit':
+
+        exit("[INFO] Quitting ...")
+
+    # Export a graphviz DOT graph if requested
+    if user_input == 'export':
+
+        # Get filename of current image (without extension)
+        fname = os.path.basename(diagram.image_path).split('.')[0]
+
+        # Join filename to get a string
+        fname = ''.join(fname)
+
+        # Write DOT graph to disk
+        nx.nx_pydot.write_dot(current_graph,
+                              '{}_{}.dot'.format(fname, mode))
+
+        # Print status message
+        print("[INFO] Saved a DOT graph for {}.png on disk.".format(fname))
+
+        return
+
+    # If requested, print info on current annotation task
+    if user_input == 'info':
+
+        # Clear screen first
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+        # Print information on layout commands
+        print(info[mode])
+        print(info['generic'])
+
+        return
+
+    # If requested, remove isolates from the current graph
+    if user_input == 'isolate':
+
+        # Find nodes without edges (isolates)
+        isolates = list(nx.isolates(current_graph))
+
+        # Remove isolates
+        current_graph.remove_nodes_from(isolates)
+
+        # Print status message
+        print("[INFO] Removing isolates as requested.")
+
+        # Flag the graph for re-drawing
+        diagram.update = True
+
+        return
+
+    # If requested, move to the next graph
+    if user_input == 'next':
+
+        # Destroy any remaining windows
+        cv2.destroyAllWindows()
+
+        return
+
+
 # Define a dictionary of available commands during annotation
-commands = {'rst': ['info', 'next', 'exit', 'done', 'cap', 'new', 'comment',
-                    'rels'],
-            'layout': ['info', 'comment', 'next', 'exit', 'done', 'cap',
-                       'macrogroups', 'export', 'isolate', 'hide'],
-            'connectivity': ['info', 'comment', 'next', 'exit', 'done', 'cap',
-                             'export', 'isolate', 'hide']
+commands = {'rst': ['new', 'rels'],
+            'layout': ['macrogroups'],
+            'connectivity': [],
+            'generic': ['cap', 'comment', 'done', 'exit', 'export', 'info',
+                        'isolate', 'next']
             }
 
 info = {'layout': "---\n"
@@ -14,62 +175,57 @@ info = {'layout': "---\n"
                   "together.\n"
                   "Separate the identifiers with a comma.\n"
                   "\n"
-                  "Example of valid input: b1 a1 t1\n\n"
+                  "Example of valid input: b1, a1, t1\n\n"
                   ""
-                  "This command would group nodes B1, A1 and T1 under "
-                  "a grouping node.\n"
+                  "This command groups nodes B1, A1 and T1 together under a "
+                  "grouping node.\n"
                   "---\n"
                   "Grouping nodes may be deleted using command rm.\n\n"
                   "Example command: rm g1\n\n"
                   "This command deletes group G1. Multiple groups can be\n"
                   "deleted by entering multiple identifiers, e.g. rm g1 g2 g3\n"
                   "---\n"
-                  "Other valid commands include:\n\n"
-                  "cap: Save a screen capture of the current visualisation.\n"
-                  "comment: Enter a comment about current diagram.\n"
-                  "exit: Exit the annotator immediately.\n"
-                  "export: Export the current graph into DOT format. \n"
-                  "done: Mark the current diagram as complete and move on.\n"
-                  "hide: Hide the annotation.\n"
-                  "info: Print this message.\n"
-                  "isolate: Remove isolates from the graph.\n"
-                  "macrogroups: List the available macro groups.\n"
-                  "next: Move on to the next diagram.\n"
-                  "---",
+                  "To add macro-grouping information to a node, group, image "
+                  "constant or their group, enter the command 'macro' followed "
+                  "by the identifier or identifiers.\n\n"
+                  "Example command: macro i0\n\n"
+                  "A list of available macro-groups can be printed using the "
+                  "command 'macrogroups'."
+                  "---\n",
         'rst': "---\n"
                "Enter the command 'new' to create a new RST relation.\n"
                "The tool will then ask you to enter a valid name for the "
                "relation.\n"
                "Names are entered by using abbreviations, which can be listed "
-               "using the command 'rels'.\n\n"
+               "using the command 'relations'.\n\n"
                "The tool will infer the type of relation and ask you to enter "
                "either a nucleus and satellites or several nuclei.\n"
-               "---\n"
-               "Other valid commands include:\n\n"
-               "info: Print this message.\n"
-               "comment: Enter a comment about current diagram.\n"
-               "cap: Save a screen capture of the current visualisation.\n"
-               "next: Move to the next diagram.\n"
-               "exit: Exit the annotator immediately.\n"
-               "done: Mark the current diagram as complete and move to the next"
-               " diagram.\n"
-               "rels: Print out a list of available RST relations.\n"
-               "---",
+               "---\n",
         'connectivity': "---\n"
-                        # TODO Populate
-                        "---\n"
-                        "Other valid commands include:\n\n"
-                        "cap: Save a screen capture of the current "
-                        "visualisation.\n"
-                        "comment: Enter a comment about current diagram.\n"
-                        "exit: Exit the annotator immediately.\n"
-                        "export: Export the current graph into DOT format. \n"
-                        "done: Mark the current diagram as complete and move to"
-                        " the next diagram.\n"
-                        "info: Print this message.\n"
-                        "isolate: Remove isolates from the graph.\n"
-                        "next: Move to the next diagram.\n"
-                        "---"
+                        "Drawing a connection between nodes requires three "
+                        "types of information: source, connection type and "
+                        "target.\n\n"
+                        "The sources and targets must be valid identifiers for "
+                        "elements and groups or lists of valid identifiers "
+                        "separated using commas.\n\n"
+                        "Example command: t1 > b0, b1\n\n"
+                        "The connection type must be one of the following "
+                        "shorthand aliases:\n\n"
+                        "- for undirected lines\n"
+                        "> for unidirectional arrow\n"
+                        "<> for bidirectional arrow\n"
+                        "---\n",
+        'generic': "Other valid commands include:\n\n"
+                   "cap: Save a screen capture of the current visualisation.\n"
+                   "comment: Enter a comment about current diagram.\n"
+                   "exit: Exit the annotator immediately.\n"
+                   "export: Export the current graph into DOT format. \n"
+                   "done: Mark the current diagram as complete and move on.\n"
+                   "hide: Hide the annotation.\n"
+                   "info: Print this message.\n"
+                   "isolate: Remove isolates from the graph.\n"
+                   "next: Move on to the next diagram.\n"
+                   "---",
         }
 
 # Define a dictionary of various prompts presented to user during annotation
