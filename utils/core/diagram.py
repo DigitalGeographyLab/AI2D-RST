@@ -61,18 +61,24 @@ class Diagram:
         # Set up a flag for tracking updates to the graph (for drawing)
         self.update = False
 
-    def annotate_layout(self):
+    def annotate_layout(self, review):
         """
         A function for annotating the logical / layout structure (DPG-L) of a
         diagram. This function covers both content hierarchy and macro-grouping.
         
         Parameters:
-            None.
+            review: A Boolean defining whether review mode is active or not.
         
         Returns:
             Updates the graph contained in the Diagram object
             (self.layout_graph) according to the user input.
         """
+
+        # If review mode is active, unfreeze the layout graph
+        if review:
+
+            # Unfreeze the layout graph by making a copy
+            self.layout_graph = self.layout_graph.copy()
 
         # Visualize the layout segmentation
         segmentation = draw_layout(self.image_path, self.annotation, 480)
@@ -339,37 +345,45 @@ class Diagram:
                 # Continue until the annotation process is complete
                 continue
 
-    def annotate_connectivity(self):
+    def annotate_connectivity(self, review):
         """
         A function for annotating a diagram for its connectivity.
 
         Parameters:
-            None. The function populates the connectivity graph using the layout
-            graph.
+            review: A Boolean defining whether review mode is active or not.
 
         Returns:
             Updated the graph contained in the Diagram object
             (self.connectivity_graph) according to the user input.
         """
+        # If review mode is active, unfreeze the layout graph
+        if review:
+
+            # Unfreeze the layout graph by making a copy
+            self.connectivity_graph = self.connectivity_graph.copy()
 
         # Visualize the layout segmentation
         segmentation = draw_layout(self.image_path, self.annotation, 480)
 
-        # Retrieve a list of valid nodes from the layout graph
-        nodes = list(self.layout_graph.nodes(data=True))
+        # If the connectivity graph does not exist, populate graph
+        if self.connectivity_graph is None:
 
-        # Remove groups from the list of nodes
-        nodes = [n for n in nodes if n[1]['kind'] != 'group']
+            # Retrieve a list of valid nodes from the layout graph
+            nodes = list(self.layout_graph.nodes(data=True))
 
-        # Populate the connectivity graph according to the list of nodes
-        self.connectivity_graph = create_graph(nodes,
-                                               edges=False,
-                                               arrowheads=False,
-                                               mode='connect'
-                                               )
+            # Remove groups from the list of nodes
+            nodes = [n for n in nodes if n[1]['kind'] != 'group']
+
+            # Populate the connectivity graph according to the list of nodes
+            self.connectivity_graph = create_graph(nodes,
+                                                   edges=False,
+                                                   arrowheads=False,
+                                                   mode='connectivity'
+                                                   )
 
         # Draw the graph using the layout mode
-        diagram = draw_graph(self.connectivity_graph, dpi=100, mode='connect')
+        diagram = draw_graph(self.connectivity_graph, dpi=100,
+                             mode='connectivity')
 
         # Set up flags for tracking whether annotation should be hidden or shown
         show = False
@@ -550,31 +564,42 @@ class Diagram:
                     # Flag the graph for re-drawing
                     self.update = True
 
-    def annotate_rst(self):
+            # Continue until the annotation process is complete
+            continue
+
+    def annotate_rst(self, review):
         """
         A function for annotating the rhetorical structure (DPG-R) of a diagram.
         
         Parameters:
-            None.
+            review: A Boolean defining whether review mode is active or not.
         
         Returns:
             Updates the RST graph in the Diagram object (self.rst_graph).
         """
+        # If review mode is active, unfreeze the layout graph
+        if review:
+
+            # Unfreeze the layout graph by making a copy
+            self.rst_graph = self.rst_graph.copy()
 
         # Visualize the layout segmentation
         segmentation = draw_layout(self.image_path, self.annotation, 480)
 
-        # Retrieve a list of valid nodes from the layout graph
-        nodes = list(self.layout_graph.nodes(data=True))
+        # If the connectivity graph does not exist, populate graph
+        if self.rst_graph is None:
 
-        # Remove groups from the list of nodes
-        nodes = [n for n in nodes if n[1]['kind'] != 'group']
+            # Retrieve a list of valid nodes from the layout graph
+            nodes = list(self.layout_graph.nodes(data=True))
 
-        # Populate the RST graph according to the list of nodes
-        self.rst_graph = create_graph(nodes,
-                                      edges=False,
-                                      arrowheads=False,
-                                      mode='rst')
+            # Remove groups from the list of nodes
+            nodes = [n for n in nodes if n[1]['kind'] != 'group']
+
+            # Populate the RST graph according to the list of nodes
+            self.rst_graph = create_graph(nodes,
+                                          edges=False,
+                                          arrowheads=False,
+                                          mode='rst')
 
         # Draw the graph using RST mode
         diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')
@@ -663,4 +688,5 @@ class Diagram:
 
                 continue
 
-        pass
+            # Continue until the annotation process is complete
+            continue

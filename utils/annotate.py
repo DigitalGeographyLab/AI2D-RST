@@ -55,6 +55,10 @@ if args['review']:
 
     review = True
 
+if not args['review']:
+
+    review = False
+
 # Check if the output file exists already, or whether to continue with previous
 # annotation.
 if os.path.isfile(output_path):
@@ -120,7 +124,7 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
         if not diagram.group_complete:
 
             # Annotate layout
-            diagram.annotate_layout()
+            diagram.annotate_layout(review)
 
         # When initial grouping is done, move to annotate connectivity
         if diagram.group_complete:
@@ -129,7 +133,7 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
             annotation_df.at[ix, 'diagram'] = diagram
 
             # Annotate connectivity
-            diagram.annotate_connectivity()
+            diagram.annotate_connectivity(review)
 
         # When connectivity has been annotated, move to rhetorical structure
         if diagram.connectivity_complete:
@@ -138,7 +142,10 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
             annotation_df.at[ix, 'diagram'] = diagram
 
             # Annotate rhetorical structure
-            diagram.annotate_rst()
+            diagram.annotate_rst(review)
+
+            # Store the diagram into the column 'diagram'
+            annotation_df.at[ix, 'diagram'] = diagram
 
         if diagram.group_complete and diagram.connectivity_complete \
                 and diagram.rst_complete:

@@ -72,8 +72,6 @@ def process_command(user_input, mode, diagram, current_graph):
         # Freeze the layout graph
         nx.freeze(current_graph)
 
-        # TODO Unfreeze graph in revision mode
-
         # Check the annotation task and mark complete as appropriate
         if mode == 'layout':
 
