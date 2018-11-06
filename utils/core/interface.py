@@ -38,7 +38,7 @@ def process_command(user_input, mode, diagram, current_graph):
                                 mode=mode)
 
         # Write image on disk
-        cv2.imwrite("layout_{}.png".format(fname), layout_hires)
+        cv2.imwrite("segmentation_{}.png".format(fname), layout_hires)
         cv2.imwrite("{}_{}.png".format(mode, fname), diag_hires)
 
         # Print status message

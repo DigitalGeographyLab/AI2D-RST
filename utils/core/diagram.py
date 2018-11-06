@@ -371,6 +371,7 @@ class Diagram:
             # Retrieve a list of valid nodes from the layout graph
             nodes = list(self.layout_graph.nodes(data=True))
 
+            # TODO Add grouping nodes and edges to their children!
             # Remove groups from the list of nodes
             nodes = [n for n in nodes if n[1]['kind'] != 'group']
 

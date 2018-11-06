@@ -24,7 +24,7 @@ def create_graph(annotation, edges=False, arrowheads=False, mode='layout'):
         # Create an undirected graph for layout annotation
         graph = nx.Graph()
 
-    if mode == 'connect':
+    if mode == 'connectivity':
         # Create a directed graph with multiple edges for connectivity
         graph = nx.MultiDiGraph()
 

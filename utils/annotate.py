@@ -66,6 +66,10 @@ if os.path.isfile(output_path):
     # Read existing file
     annotation_df = pd.read_pickle(output_path)
 
+    # Print status message
+    print("[INFO] Continuing with existing annotation in {}.".format(
+        output_path))
+
 # Otherwise, read the annotation from the input DataFrame
 if not os.path.isfile(output_path):
 
@@ -88,9 +92,10 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
     # Join with path to image directory with current filename
     image_path = os.path.join(images_path, row['image_name'])
 
-    # Print status
-    print("Now processing row {}/{} ({}) ...".format(i, len(annotation_df),
-                                                     image_fname))
+    # Print status message
+    print("[INFO ]Now processing row {}/{} ({}) ...".format(i,
+                                                            len(annotation_df),
+                                                            image_fname))
 
     # Fetch the annotation dictionary from the DataFrame
     annotation = row['annotation']
