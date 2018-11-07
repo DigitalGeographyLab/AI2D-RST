@@ -386,7 +386,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         pass
 
     # Check drawing mode, start with layout
-    if mode == 'layout' or mode == 'connect':
+    if mode == 'layout' or mode == 'connectivity':
 
         # Draw nodes for imageConsts
         try:
