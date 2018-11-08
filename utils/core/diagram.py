@@ -184,7 +184,9 @@ class Diagram:
                     continue
 
                 # Get the list of nodes provided by the user
-                user_input = user_input.lower().split(',')[1:]
+                user_input = user_input.lower().split()[1:]
+
+                # TODO This input needs to be double-checked
 
                 # Strip extra whitespace
                 user_input = [u.strip() for u in user_input]
@@ -488,6 +490,22 @@ class Diagram:
                     show = True
 
                     continue
+
+            # Check if grouping edges are to be hidden
+            if user_input == 'ungroup':
+
+                # Retrieve a list of edges in the graph
+                edge_bunch = list(self.connectivity_graph.edges(data=True))
+
+                # Collect grouping edges from the edge list
+                edge_bunch = [(u, v) for (u, v, d) in edge_bunch
+                              if d['kind'] == 'grouping']
+
+                # Remove grouping edges from the connectivity graph
+                self.connectivity_graph.remove_edges_from(edge_bunch)
+
+                # Flag the graph for re-drawing
+                self.update = True
 
             # If user input does not include a valid command, assume the input
             # is a string defining a connectivity relation.
