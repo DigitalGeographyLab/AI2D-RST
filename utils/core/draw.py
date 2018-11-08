@@ -38,7 +38,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
     node_dict = get_node_dict(graph, kind='node')
 
     # Check the mode, that is, which aspect of diagram structure is annotated
-    if mode == 'layout':
+    if mode == 'layout' or mode == 'connectivity':
 
         # Create a label dictionary for grouping nodes
         group_dict = get_node_dict(graph, kind='group')
@@ -69,17 +69,15 @@ def draw_graph(graph, dpi=100, mode='layout'):
     nx.draw_networkx_labels(graph, pos, font_size=10, labels=node_dict)
 
     # Check the annotation mode before drawing labels for groups or relations
-    if mode == 'layout':
+    if mode == 'layout' or mode == 'connectivity':
 
         # Draw labels for groups
-        nx.draw_networkx_labels(graph, pos, font_size=10,
-                                labels=group_dict)
+        nx.draw_networkx_labels(graph, pos, font_size=10, labels=group_dict)
 
     if mode == 'rst':
 
         # Draw identifiers for RST relations
-        nx.draw_networkx_labels(graph, pos, font_size=10,
-                                labels=rel_dict)
+        nx.draw_networkx_labels(graph, pos, font_size=10, labels=rel_dict)
 
         # Draw edge labels for nuclei and satellites
         nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_dict)
@@ -456,7 +454,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         nx.draw_networkx_edges(graph,
                                pos,
                                satellites,
-                               alpha=0.5,
+                               alpha=0.75,
                                arrows=False,
                                ax=ax)
 
@@ -468,54 +466,76 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         nx.draw_networkx_edges(graph,
                                pos,
                                nuclei,
-                               alpha=0.5,
+                               alpha=0.75,
                                arrows=True,
                                ax=ax)
 
     # Check drawing mode, finish with connectivity
     if mode == 'connectivity' and draw_edges:
 
-        # Get edge list
-        edge_list = graph.edges(data=True)
+        # Get a list of all edges
+        all_edges = list(graph.edges(data=True))
 
         # Draw undirectional edges
         try:
 
             # Filter the edges, retaining only undirectional edges
-            undirectional = [(u, v, d) for (u, v, d) in edge_list
+            undirectional = [(u, v, d) for u, v, d in all_edges
                              if d['kind'] == 'undirectional']
 
             # Draw edges without arrows
             nx.draw_networkx_edges(graph,
                                    pos,
                                    undirectional,
-                                   alpha=0.5,
+                                   alpha=0.75,
                                    arrows=False,
                                    ax=ax
                                    )
 
         # Skip if no undirectional arrows are found
         except KeyError:
+
             pass
 
         # Draw other edges
         try:
 
             # Filter the edges, retaining only directional/bidirectional edges
-            directional = [(u, v, d) for (u, v, d) in edge_list
-                           if d['kind'] != 'undirectional']
+            directional = [(u, v, d) for (u, v, d) in all_edges
+                           if d['kind'] in ['directional', 'bidirectional']]
 
             # Draw edges with arrows
             nx.draw_networkx_edges(graph,
                                    pos,
                                    directional,
-                                   alpha=0.5,
+                                   alpha=0.75,
                                    arrows=True,
                                    ax=ax
                                    )
 
         # Skip if no directional/bidirectional edges are found
         except KeyError:
+
+            pass
+
+        # Draw grouping edges
+        try:
+            # Fetch a list of grouping edges (which do not have any attributes!)
+            grouping_edges = [(u, v, d) for (u, v, d) in all_edges if
+                              d['kind'] == 'grouping']
+
+            # Draw edges between elements and their grouping nodes
+            nx.draw_networkx_edges(graph,
+                                   pos,
+                                   grouping_edges,
+                                   alpha=0.5,
+                                   style='dotted',
+                                   arrows=False,
+                                   ax=ax)
+
+        # Skip if no grouping edges are found
+        except KeyError:
+
             pass
 
     # Otherwise, draw standard edges if requested
@@ -524,7 +544,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         # Draw edges between nodes
         nx.draw_networkx_edges(graph,
                                pos,
-                               alpha=0.5,
+                               alpha=0.75,
                                ax=ax
                                )
 
