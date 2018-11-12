@@ -184,7 +184,9 @@ class Diagram:
                     continue
 
                 # Get the list of nodes provided by the user
-                user_input = user_input.lower().split(',')[1:]
+                user_input = user_input.lower().split()[1:]
+
+                # TODO This input needs to be double-checked
 
                 # Strip extra whitespace
                 user_input = [u.strip() for u in user_input]
@@ -368,19 +370,40 @@ class Diagram:
         # If the connectivity graph does not exist, populate graph
         if self.connectivity_graph is None:
 
-            # Retrieve a list of valid nodes from the layout graph
-            nodes = list(self.layout_graph.nodes(data=True))
+            # Create an empty MultiDiGraph
+            self.connectivity_graph = nx.MultiDiGraph()
 
-            # TODO Add grouping nodes and edges to their children!
-            # Remove groups from the list of nodes
-            nodes = [n for n in nodes if n[1]['kind'] != 'group']
+            # Create a temporary copy of the layout graph for filtering content
+            temp_graph = self.layout_graph.copy()
 
-            # Populate the connectivity graph according to the list of nodes
-            self.connectivity_graph = create_graph(nodes,
-                                                   edges=False,
-                                                   arrowheads=False,
-                                                   mode='connectivity'
-                                                   )
+            # Get a dictionary of nodes and a list of edges
+            nodes = dict(temp_graph.nodes(data=True))
+            edges = list(temp_graph.edges())
+
+            # Fetch a list of edges to/from imageConsts
+            iconst_edges = [(s, t) for (s, t) in edges
+                            if nodes[s]['kind'] == 'imageConsts'
+                            or nodes[t]['kind'] == 'imageConsts']
+
+            # Remove grouping edges using the list
+            temp_graph.remove_edges_from(iconst_edges)
+
+            # Use the isolates function to locate grouping nodes for groups
+            isolates = list(nx.isolates(temp_graph))
+
+            # Remove isolated grouping nodes
+            isolates = [i for i in isolates if nodes[i]['kind']
+                        in ['group', 'imageConsts']]
+
+            # Remove isolated nodes from the graph
+            temp_graph.remove_nodes_from(isolates)
+
+            # Add attributes to the remaining edges
+            nx.set_edge_attributes(temp_graph, 'grouping', 'kind')
+
+            # Add the filtered nodes and edgesto the connectivity graph
+            self.connectivity_graph.add_nodes_from(temp_graph.nodes(data=True))
+            self.connectivity_graph.add_edges_from(temp_graph.edges(data=True))
 
         # Draw the graph using the layout mode
         diagram = draw_graph(self.connectivity_graph, dpi=100,
@@ -395,6 +418,9 @@ class Diagram:
 
             # Check if the graph needs to be updated
             if self.update:
+
+                # Close previous plot
+                plt.close()
 
                 # Re-draw the graph using the layout mode
                 diagram = draw_graph(self.connectivity_graph, dpi=100,
@@ -463,6 +489,22 @@ class Diagram:
 
                     continue
 
+            # Check if grouping edges are to be hidden
+            if user_input == 'ungroup':
+
+                # Retrieve a list of edges in the graph
+                edge_bunch = list(self.connectivity_graph.edges(data=True))
+
+                # Collect grouping edges from the edge list
+                edge_bunch = [(u, v) for (u, v, d) in edge_bunch
+                              if d['kind'] == 'grouping']
+
+                # Remove grouping edges from the connectivity graph
+                self.connectivity_graph.remove_edges_from(edge_bunch)
+
+                # Flag the graph for re-drawing
+                self.update = True
+
             # If user input does not include a valid command, assume the input
             # is a string defining a connectivity relation.
             elif user_input not in commands['generic']:
@@ -499,9 +541,25 @@ class Diagram:
                         source = [x.strip(',') for x in source]
                         target = [x.strip(',') for x in target]
 
-                        # Check user input against nodes in graph; cast to set
-                        valid_elems = set([e.lower() for e in
-                                           self.connectivity_graph.nodes])
+                        # Check user input against nodes in graph
+                        valid_nodes = [e.lower() for e in
+                                       self.connectivity_graph.nodes]
+
+                        # Generate a dictionary of groups
+                        group_dict = get_node_dict(self.connectivity_graph,
+                                                   kind='group')
+
+                        # Count the current groups and enumerate for
+                        # convenience. This allows the user to refer to group
+                        # number instead of complex identifier.
+                        group_dict = {"g{}".format(i): k for i, (k, v) in
+                                      enumerate(group_dict.items(), start=1)}
+
+                        # Create a list of identifiers based on the dict keys
+                        valid_groups = [g.lower() for g in group_dict.keys()]
+
+                        # Combine the valid nodes and groups into a set
+                        valid_elems = set(valid_nodes + valid_groups)
 
                         # Combine input for source and target nodes; cast to set
                         combined_input = set(source + target)
@@ -532,6 +590,13 @@ class Diagram:
 
                     # Initialize a list for edge tuples
                     edge_bunch = []
+
+                    # Update the group identifiers in sources and targets to use
+                    # valid identifiers, not the G-prefixed aliases
+                    source = [group_dict[s] if s in group_dict.keys() else s
+                              for s in source]
+                    target = [group_dict[t] if t in group_dict.keys() else t
+                              for t in target]
 
                     # Loop over sources
                     for s in source:

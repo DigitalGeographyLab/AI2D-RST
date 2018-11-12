@@ -21,14 +21,17 @@ def create_graph(annotation, edges=False, arrowheads=False, mode='layout'):
     """
     # Check the mode attribute to determine the correct Graph type
     if mode == 'layout':
+
         # Create an undirected graph for layout annotation
         graph = nx.Graph()
 
     if mode == 'connectivity':
+
         # Create a directed graph with multiple edges for connectivity
         graph = nx.MultiDiGraph()
 
     if mode == 'rst':
+
         # Create a directed graph for RST annotation
         graph = nx.DiGraph()
 
@@ -40,7 +43,7 @@ def create_graph(annotation, edges=False, arrowheads=False, mode='layout'):
 
         return graph
 
-    # If the input is a dictionary, assume parsed
+    # If the input is a dictionary, assume the input is parsed AI2D annotation
     if type(annotation) == dict:
 
         # Parse the annotation from the dictionary

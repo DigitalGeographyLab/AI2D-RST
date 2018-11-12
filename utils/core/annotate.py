@@ -239,12 +239,16 @@ def group_nodes(graph, user_input):
     # If the user input contains an imageConsts, do not add a node
     if 'imageConsts' in input_node_types:
 
+        # Loop over key/value pairs
         for k, v in node_dict.items():
 
+            # If the node is an image image constants
             if v == 'imageConsts':
 
+                # Loop over image constants
                 for valid_elem in user_input:
 
+                    # Add edge from image constant to the element
                     graph.add_edge(valid_elem.upper(), k.upper())
 
     else:
