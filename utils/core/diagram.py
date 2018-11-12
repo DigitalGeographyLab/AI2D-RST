@@ -380,18 +380,13 @@ class Diagram:
             nodes = dict(temp_graph.nodes(data=True))
             edges = list(temp_graph.edges())
 
-            # Fetch a list of edges between groups
-            grouping_edges = [(s, t) for (s, t) in edges
-                              if nodes[s]['kind'] == 'group'
-                              and nodes[t]['kind'] == 'group']
-
             # Fetch a list of edges to/from imageConsts
             iconst_edges = [(s, t) for (s, t) in edges
                             if nodes[s]['kind'] == 'imageConsts'
                             or nodes[t]['kind'] == 'imageConsts']
 
             # Remove grouping edges using the list
-            temp_graph.remove_edges_from(grouping_edges + iconst_edges)
+            temp_graph.remove_edges_from(iconst_edges)
 
             # Use the isolates function to locate grouping nodes for groups
             isolates = list(nx.isolates(temp_graph))
@@ -423,6 +418,9 @@ class Diagram:
 
             # Check if the graph needs to be updated
             if self.update:
+
+                # Close previous plot
+                plt.close()
 
                 # Re-draw the graph using the layout mode
                 diagram = draw_graph(self.connectivity_graph, dpi=100,
