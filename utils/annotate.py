@@ -38,6 +38,8 @@ ap.add_argument("-o", "--output", required=True,
 ap.add_argument("-r", "--review", required=False, action='store_true',
                 help="Activates review mode, which opens each diagram marked as"
                      " complete for inspection.")
+ap.add_argument("-dr", "--disable_rst", required=False, action='store_true',
+                help="Disables RST annotation.")
 
 # Parse arguments
 args = vars(ap.parse_args())
@@ -58,6 +60,15 @@ if args['review']:
 if not args['review']:
 
     review = False
+
+# Disable RST annotation if requested using the -dr/--disable_rst flag
+if args['disable_rst']:
+
+    disable_rst = True
+
+if not args['disable_rst']:
+
+    disable_rst = False
 
 # Check if the output file exists already, or whether to continue with previous
 # annotation.
@@ -93,7 +104,7 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
     image_path = os.path.join(images_path, row['image_name'])
 
     # Print status message
-    print("[INFO ]Now processing row {}/{} ({}) ...".format(i,
+    print("[INFO] Now processing row {}/{} ({}) ...".format(i,
                                                             len(annotation_df),
                                                             image_fname))
 
@@ -106,9 +117,9 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
     # Check if a Diagram object has been initialized
     if diagram is not None:
 
-        # If diagram is marked as complete, but the script runs in a review
-        # mode, open the diagram for revision and editing.
-        if diagram.complete and review:
+        # If the annotator runs in a review open the diagram for revision and
+        # editing.
+        if review:
 
             # Set the methods tracking completeness to False
             diagram.group_complete = False
@@ -141,7 +152,7 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
             diagram.annotate_connectivity(review)
 
         # When connectivity has been annotated, move to rhetorical structure
-        if diagram.connectivity_complete:
+        if diagram.connectivity_complete and not disable_rst:
 
             # Store the diagram into the column 'diagram'
             annotation_df.at[ix, 'diagram'] = diagram
