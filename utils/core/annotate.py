@@ -312,4 +312,8 @@ def macro_group(graph, user_input):
         # Add macro grouping information to the graph nodes
         nx.set_node_attributes(graph, macro_grouping, 'macro_group')
 
-        # TODO Add information on tables
+        # Print status message
+        print("[INFO] Added macro-group information to {}.".format(
+            ', '.join(user_input)))
+
+    # TODO Add information on tables

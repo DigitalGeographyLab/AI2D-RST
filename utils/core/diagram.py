@@ -175,18 +175,25 @@ class Diagram:
                 # Print closing line
                 print("---\n")
 
+                continue
+
             # Check if the user has requested to describe a macro-grouping
             if 'macro' == user_input.split()[0]:
 
                 # Check the length of the input
                 if len(user_input.split()) < 2:
 
+                    # Print error message
+                    print("[ERROR] You must input at least one identifier in "
+                          "addition to the command 'macro'.")
+
                     continue
 
                 # Get the list of nodes provided by the user
                 user_input = user_input.lower().split()[1:]
 
-                # TODO This input needs to be double-checked
+                # Strip commas
+                user_input = [u.strip(',') for u in user_input]
 
                 # Strip extra whitespace
                 user_input = [u.strip() for u in user_input]
@@ -217,8 +224,8 @@ class Diagram:
                     diff = set(user_input).difference(valid_elems)
 
                     # Print error message with difference in sets.
-                    print("Sorry, {} is not a valid diagram element or command."
-                          " Please try again.".format(' '.join(diff)))
+                    print("[ERROR] Sorry, {} is not a valid diagram element. "
+                          "Please try again.".format(' '.join(diff)))
 
                     continue
 
