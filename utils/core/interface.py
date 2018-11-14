@@ -223,7 +223,7 @@ info = {'layout': "---\n"
                    "hide: Hide the annotation.\n"
                    "info: Print this message.\n"
                    "isolate: Remove isolates from the graph.\n"
-                   "next: Move on to the next diagram.\n"
+                   "next: Save current work and move on to the next diagram.\n"
                    "---",
         }
 
