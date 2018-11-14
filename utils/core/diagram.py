@@ -136,6 +136,13 @@ class Diagram:
                                 diagram=self,
                                 current_graph=self.layout_graph)
 
+                # If the user wants to move on the next diagram without saving
+                # the annotation, break from the while loop.
+                if user_input == 'next':
+
+                    break
+
+                # Otherwise continue
                 continue
 
             # Hide/show layout segmentation if requested
@@ -470,6 +477,13 @@ class Diagram:
                                 diagram=self,
                                 current_graph=self.connectivity_graph)
 
+                # If the user wants to move on the next diagram without saving
+                # the annotation, break from the while loop.
+                if user_input == 'next':
+
+                    break
+
+                # Otherwise continue
                 continue
 
             # Hide/show layout segmentation if requested
@@ -712,6 +726,13 @@ class Diagram:
                                 diagram=self,
                                 current_graph=self.rst_graph)
 
+                # If the user wants to move on the next diagram without saving
+                # the annotation, break from the while loop.
+                if user_input == 'next':
+
+                    break
+
+                # Otherwise continue
                 continue
 
             # If the user requests a list of available RST relations, print
