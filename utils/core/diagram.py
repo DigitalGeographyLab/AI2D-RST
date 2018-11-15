@@ -33,7 +33,7 @@ class Diagram:
         self.rst_complete = False  # rst
 
         # Set image path
-        self.image_path = image
+        self.image_filename = image
 
         # Continue by checking the annotation type. If the input is a dictionary
         # assign the dictionary to the variable 'annotation'.
@@ -81,7 +81,7 @@ class Diagram:
             self.layout_graph = self.layout_graph.copy()
 
         # Visualize the layout segmentation
-        segmentation = draw_layout(self.image_path, self.annotation, 480)
+        segmentation = draw_layout(self.image_filename, self.annotation, 480)
 
         # Draw the graph
         diagram = draw_graph(self.layout_graph, dpi=100, mode='layout')
@@ -106,7 +106,7 @@ class Diagram:
             if hide and show:
 
                 # Visualize the layout segmentation
-                segmentation = draw_layout(self.image_path, self.annotation,
+                segmentation = draw_layout(self.image_filename, self.annotation,
                                            480)
 
                 # Return to normal mode by setting both hide and show to False
@@ -152,7 +152,7 @@ class Diagram:
                 if not hide:
 
                     # Re-draw the layout
-                    segmentation = draw_layout(self.image_path,
+                    segmentation = draw_layout(self.image_filename,
                                                self.annotation,
                                                480, hide=True)
 
@@ -205,43 +205,23 @@ class Diagram:
                 # Strip extra whitespace
                 user_input = [u.strip() for u in user_input]
 
-                # Generate a list of valid diagram elements present in the graph
-                valid_nodes = [e.lower() for e in self.layout_graph.nodes]
+                # Check the input against the current graph
+                valid = validate_input(user_input, self.layout_graph)
 
-                # Generate a dictionary of groups
-                group_dict = get_node_dict(self.layout_graph, kind='group')
-
-                # Count the current groups and enumerate for convenience. This
-                # allows the user to refer to group number instead of complex
-                # identifier.
-                group_dict = {"g{}".format(i): k for i, (k, v) in
-                              enumerate(group_dict.items(), start=1)}
-
-                # Create a list of identifiers based on the dict keys
-                valid_groups = [g.lower() for g in group_dict.keys()]
-
-                # Combine the valid nodes and groups into a set
-                valid_elems = set(valid_nodes + valid_groups)
-
-                # Check for invalid input by comparing the user input and the
-                # valid elements as sets.
-                if not set(user_input).issubset(valid_elems):
-
-                    # Get difference between user input and valid element sets
-                    diff = set(user_input).difference(valid_elems)
-
-                    # Print error message with difference in sets.
-                    print("[ERROR] Sorry, {} is not a valid diagram element. "
-                          "Please try again.".format(' '.join(diff)))
+                # If the input is not valid, continue
+                if not valid:
 
                     continue
 
-                # Proceed if the user input is a subset of valid elements
-                if set(user_input).issubset(valid_elems):
+                # Proceed if the user input is valid
+                if valid:
+
+                    # Generate a dictionary mapping group aliases to IDs
+                    group_dict = replace_aliases(self.layout_graph)
 
                     # Replace aliases with valid identifiers, if used
-                    user_input = [group_dict[u] if u in valid_groups else u for
-                                  u in user_input]
+                    user_input = [group_dict[u] if u in group_dict.keys()
+                                  else u for u in user_input]
 
                     # Assign macro groups to nodes
                     macro_group(self.layout_graph, user_input)
@@ -254,31 +234,22 @@ class Diagram:
                 # Get list of groups to delete
                 user_input = user_input.lower().split()[1:]
 
-                # Generate a dictionary of groups
-                group_dict = get_node_dict(self.layout_graph, kind='group')
+                # Strip extra whitespace
+                user_input = [u.strip() for u in user_input]
 
-                # Count the current groups and enumerate for convenience. This
-                # allows the user to refer to group number instead of complex
-                # identifier.
-                group_dict = {"g{}".format(i): k for i, (k, v) in
-                              enumerate(group_dict.items(), start=1)}
+                # Check the input against the current graph
+                valid = validate_input(user_input, self.layout_graph)
 
-                # Check for invalid input by comparing the user input and the
-                # valid group identifiers as sets.
-                while not set(user_input).issubset(set(group_dict.keys())):
+                # If the input is not valid, continue
+                if not valid:
 
-                    # Get difference between user input and valid graph
-                    diff = set(user_input).difference(set(group_dict.keys()))
+                    continue
 
-                    # Print error message with difference in sets.
-                    print("Sorry, {} is not a valid group identifier."
-                          " Please try again.".format(' '.join(diff)))
+                # Proceed if the user input is valid
+                if valid:
 
-                    # Break from the loop
-                    break
-
-                # Proceed if the user input is a subset of valid group ids
-                if set(user_input).issubset(group_dict.keys()):
+                    # Generate a dictionary mapping group aliases to IDs
+                    group_dict = replace_aliases(self.layout_graph)
 
                     # Replace aliases with valid identifiers, if used
                     user_input = [group_dict[u] if u in group_dict.keys()
@@ -302,39 +273,16 @@ class Diagram:
                 # Strip extra whitespace
                 user_input = [u.strip() for u in user_input]
 
-                # Generate a list of valid diagram elements present in the graph
-                valid_nodes = [e.lower() for e in self.layout_graph.nodes]
+                # Check the input against the current graph
+                valid = validate_input(user_input, self.layout_graph)
 
-                # Generate a dictionary of groups
-                group_dict = get_node_dict(self.layout_graph, kind='group')
-
-                # Count the current groups and enumerate for convenience. This
-                # allows the user to refer to group number instead of complex
-                # identifier.
-                group_dict = {"g{}".format(i): k for i, (k, v) in
-                              enumerate(group_dict.items(), start=1)}
-
-                # Create a list of identifiers based on the dict keys
-                valid_groups = [g.lower() for g in group_dict.keys()]
-
-                # Combine the valid nodes and groups into a set
-                valid_elems = set(valid_nodes + valid_groups)
-
-                # Check for invalid input by comparing the user input and the
-                # valid elements as sets.
-                if not set(user_input).issubset(valid_elems):
-
-                    # Get difference between user input and valid element sets
-                    diff = set(user_input).difference(valid_elems)
-
-                    # Print error message with difference in sets
-                    print("Sorry, {} is not a valid diagram element or command."
-                          " Please try again.".format(' '.join(diff)))
+                # If the input is not valid, continue
+                if not valid:
 
                     continue
 
-                # Proceed if the user input is a subset of valid elements
-                if set(user_input).issubset(valid_elems):
+                # Proceed if the user input is valid
+                if valid:
 
                     # Check input length
                     if len(user_input) == 1:
@@ -348,9 +296,13 @@ class Diagram:
                     # Proceed if aufficient number of valid elements is provided
                     elif len(user_input) > 1:
 
+                        # Generate a dictionary mapping group aliases to IDs
+                        group_dict = replace_aliases(self.layout_graph)
+
                         # Replace aliases with valid identifiers, if used
-                        user_input = [group_dict[u] if u in valid_groups else
-                                      u for u in user_input]
+                        user_input = [group_dict[u]
+                                      if u.lower() in group_dict.keys()
+                                      else u for u in user_input]
 
                         # Update the graph according to user input
                         group_nodes(self.layout_graph, user_input)
@@ -379,7 +331,7 @@ class Diagram:
             self.connectivity_graph = self.connectivity_graph.copy()
 
         # Visualize the layout segmentation
-        segmentation = draw_layout(self.image_path, self.annotation, 480)
+        segmentation = draw_layout(self.image_filename, self.annotation, 480)
 
         # If the connectivity graph does not exist, populate graph
         if self.connectivity_graph is None:
@@ -447,7 +399,7 @@ class Diagram:
             if hide and show:
 
                 # Visualize the layout segmentation
-                segmentation = draw_layout(self.image_path, self.annotation,
+                segmentation = draw_layout(self.image_filename, self.annotation,
                                            480)
 
                 # Return to normal mode by setting both hide and show to False
@@ -493,7 +445,7 @@ class Diagram:
                 if not hide:
 
                     # Re-draw the layout
-                    segmentation = draw_layout(self.image_path,
+                    segmentation = draw_layout(self.image_filename,
                                                self.annotation,
                                                480, hide=True)
 
@@ -562,44 +514,17 @@ class Diagram:
                         source = [x.strip(',') for x in source]
                         target = [x.strip(',') for x in target]
 
-                        # Check user input against nodes in graph
-                        valid_nodes = [e.lower() for e in
-                                       self.connectivity_graph.nodes]
+                        # Check the input against the current graph
+                        valid = validate_input(source + target,
+                                               self.connectivity_graph)
 
-                        # Generate a dictionary of groups
-                        group_dict = get_node_dict(self.connectivity_graph,
-                                                   kind='group')
+                        # If the user input is not valid, continue
+                        if not valid:
 
-                        # Count the current groups and enumerate for
-                        # convenience. This allows the user to refer to group
-                        # number instead of complex identifier.
-                        group_dict = {"g{}".format(i): k for i, (k, v) in
-                                      enumerate(group_dict.items(), start=1)}
+                            continue
 
-                        # Create a list of identifiers based on the dict keys
-                        valid_groups = [g.lower() for g in group_dict.keys()]
-
-                        # Combine the valid nodes and groups into a set
-                        valid_elems = set(valid_nodes + valid_groups)
-
-                        # Combine input for source and target nodes; cast to set
-                        combined_input = set(source + target)
-
-                        # Check for invalid input by comparing the user input
-                        # with the set of valid elements.
-                        if not combined_input.issubset(valid_elems):
-
-                            # Get the difference in sets
-                            diff = combined_input.difference(valid_elems)
-
-                            # Print error message with difference in sets
-                            print("Sorry, {} is not a valid diagram element. "
-                                  "Please try again."
-                                  .format(' '.join(diff)))
-
-                            break
-
-                        if combined_input.issubset(valid_elems):
+                        # If the user input is valid, proceed
+                        if valid:
 
                             # Set connection tracking flag to True
                             connection_found = True
@@ -611,6 +536,9 @@ class Diagram:
 
                     # Initialize a list for edge tuples
                     edge_bunch = []
+
+                    # Generate a dictionary mapping group aliases to IDs
+                    group_dict = replace_aliases(self.connectivity_graph)
 
                     # Update the group identifiers in sources and targets to use
                     # valid identifiers, not the G-prefixed aliases
@@ -671,7 +599,7 @@ class Diagram:
             self.rst_graph = self.rst_graph.copy()
 
         # Visualize the layout segmentation
-        segmentation = draw_layout(self.image_path, self.annotation, 480)
+        segmentation = draw_layout(self.image_filename, self.annotation, 480)
 
         # If the connectivity graph does not exist, populate graph
         if self.rst_graph is None:

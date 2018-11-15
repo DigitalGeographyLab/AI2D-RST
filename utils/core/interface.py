@@ -109,7 +109,7 @@ def process_command(user_input, mode, diagram, current_graph):
     if user_input == 'export':
 
         # Get filename of current image (without extension)
-        fname = os.path.basename(diagram.image_path).split('.')[0]
+        fname = os.path.basename(diagram.image_filename).split('.')[0]
 
         # Join filename to get a string
         fname = ''.join(fname)
@@ -145,12 +145,19 @@ def process_command(user_input, mode, diagram, current_graph):
         current_graph.remove_nodes_from(isolates)
 
         # Print status message
-        print("[INFO] Removing isolates as requested.")
+        print("[INFO] Removing isolates from the graph as requested.")
 
         # Flag the graph for re-drawing
         diagram.update = True
 
         return
+
+    # If requested, remove all edges leading to a specific node
+    if user_input == 'release':
+
+        # TODO Complete
+
+        pass
 
     # If requested, move to the next graph
     if user_input == 'next':
@@ -166,7 +173,7 @@ commands = {'rst': ['new', 'rels'],
             'layout': ['macrogroups'],
             'connectivity': [],
             'generic': ['cap', 'comment', 'done', 'exit', 'export', 'info',
-                        'isolate', 'next']
+                        'isolate', 'next', 'release']
             }
 
 info = {'layout': "---\n"

@@ -298,3 +298,78 @@ def parse_annotation(annotation, mode='layout'):
         pass
 
     return diagram_elements, relations
+
+
+def validate_input(user_input, current_graph):
+    """
+    A function for validating user input against the nodes of a NetworkX graph.
+
+    Parameters:
+        user_input: A list of nodes provided by the user.
+        current_graph: The current NetworkX graph.
+
+    Returns:
+        True or False depending on whether the input is valid.
+    """
+
+    # Generate a list of valid elements present in the graph
+    valid_nodes = [n.lower() for n in current_graph.nodes]
+
+    # Generate a dictionary of groups present in the graph
+    group_dict = get_node_dict(current_graph, kind='group')
+
+    # Count the current groups and enumerate for convenience. This
+    # allows the user to refer to group number instead of complex
+    # identifier.
+    group_dict = {"g{}".format(i): k for i, (k, v) in
+                  enumerate(group_dict.items(), start=1)}
+
+    # Create a list of valid identifiers based on group dictionary keys
+    valid_groups = [g.lower() for g in group_dict.keys()]
+
+    # Combine the valid nodes and groups into a set
+    valid_elems = set(valid_nodes + valid_groups)
+
+    # Check for invalid input by comparing the user input and the valid elements
+    if not set(user_input).issubset(valid_elems):
+
+        # Get the difference in sets
+        diff = set(user_input).difference(valid_elems)
+
+        # Print an error message with difference in sets
+        print("[ERROR] Sorry, {} is not a valid diagram element or command."
+              " Please try again.".format(' '.join(diff)))
+
+        # Return validation flag
+        return False
+
+    # If the input is valid
+    if set(user_input).issubset(valid_elems):
+
+        # Return validation flag
+        return True
+
+
+def replace_aliases(current_graph):
+    """
+    A function for replacing aliases used for group identifiers in the
+    annotation tool.
+
+    Parameters:
+        current_graph: A NetworkX graph.
+
+    Returns:
+         A dictionary mapping group aliases to actual group identifiers.
+    """
+
+    # Generate a dictionary of groups present in the graph
+    gd = get_node_dict(current_graph, kind='group')
+
+    # Count the current groups and enumerate for convenience
+    gd = {"g{}".format(i): k for i, (k, v) in enumerate(gd.items(), start=1)}
+
+    # Return the group dictionary
+    return gd
+
+
+
