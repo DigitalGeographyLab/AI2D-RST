@@ -300,6 +300,30 @@ def parse_annotation(annotation, mode='layout'):
     return diagram_elements, relations
 
 
+def prepare_input(input_str, from_item):
+    """
+    A function for preparing input for validation against a graph.
+
+    Parameters:
+        input_str: A string containing node or group identifiers.
+        from_item: Start processing only after this item.
+
+    Returns:
+        A list of node identifiers.
+    """
+
+    # Get the list of nodes provided by the user
+    input_str = input_str.lower().split()[from_item:]
+
+    # Strip commas
+    input_str = [u.strip(',') for u in input_str]
+
+    # Strip extra whitespace
+    input_str = [u.strip() for u in input_str]
+
+    return input_str
+
+
 def validate_input(user_input, current_graph):
     """
     A function for validating user input against the nodes of a NetworkX graph.

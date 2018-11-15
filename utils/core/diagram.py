@@ -196,14 +196,8 @@ class Diagram:
 
                     continue
 
-                # Get the list of nodes provided by the user
-                user_input = user_input.lower().split()[1:]
-
-                # Strip commas
-                user_input = [u.strip(',') for u in user_input]
-
-                # Strip extra whitespace
-                user_input = [u.strip() for u in user_input]
+                # Prepare input for validation
+                user_input = prepare_input(user_input, 1)
 
                 # Check the input against the current graph
                 valid = validate_input(user_input, self.layout_graph)
@@ -231,11 +225,8 @@ class Diagram:
             # Check if the user has requested to delete a grouping node
             if 'rm' in user_input:
 
-                # Get list of groups to delete
-                user_input = user_input.lower().split()[1:]
-
-                # Strip extra whitespace
-                user_input = [u.strip() for u in user_input]
+                # Prepare input for validation
+                user_input = prepare_input(user_input, 1)
 
                 # Check the input against the current graph
                 valid = validate_input(user_input, self.layout_graph)
@@ -263,15 +254,45 @@ class Diagram:
 
                     continue
 
+            # Check if the user has requested to remove edges connected to node
+            if 'free' in user_input:
+
+                # Prepare input for validation
+                user_input = prepare_input(user_input, 1)
+
+                # Check the input against the current graph
+                valid = validate_input(user_input, self.layout_graph)
+
+                # If the input is not valid, continue
+                if not valid:
+
+                    continue
+
+                # If the input is valid, proceed
+                if valid:
+
+                    # Generate a dictionary mapping group aliases to IDs
+                    group_dict = replace_aliases(self.layout_graph)
+
+                    # Replace aliases with valid identifiers, if used
+                    user_input = [group_dict[u] if u in group_dict.keys()
+                                  else u.upper() for u in user_input]
+
+                    # Collect a list of edges to delete
+                    edge_bunch = list(self.layout_graph.edges(user_input))
+
+                    # Remove designated edges from the layout graph
+                    self.layout_graph.remove_edges_from(edge_bunch)
+
+                    # Flag the graph for re-drawing
+                    self.update = True
+
             # If user input does not include a valid command, assume the input
             # is a string containing a list of diagram elements.
             elif user_input not in commands['generic']:
 
-                # Split the input into a list
-                user_input = user_input.split(',')
-
-                # Strip extra whitespace
-                user_input = [u.strip() for u in user_input]
+                # Prepare input for validation
+                user_input = prepare_input(user_input, 0)
 
                 # Check the input against the current graph
                 valid = validate_input(user_input, self.layout_graph)

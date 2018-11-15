@@ -14,6 +14,7 @@ Arguments:
                  stored.
     -r/--review: Optional argument that activates review mode. This mode opens
                  each Diagram object marked as complete for editing.
+    -dr/--disable_rst: Optional argument for disabling RST annotation.
 
 Returns:
     A pandas DataFrame containing a Diagram object for each diagram.
