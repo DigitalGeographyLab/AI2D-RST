@@ -22,6 +22,7 @@ Returns:
 
 # Import packages
 from core import Diagram
+from pathlib import Path
 import argparse
 import os
 import pandas as pd
@@ -49,6 +50,15 @@ args = vars(ap.parse_args())
 ann_path = args['annotation']
 images_path = args['images']
 output_path = args['output']
+
+# Verify the input paths, print error and exit if not found
+if not Path(ann_path).exists():
+
+    exit("[ERROR] Cannot find {}. Check the input to -a!".format(ann_path))
+
+if not Path(images_path).exists():
+
+    exit("[ERROR] Cannot find {}. Check the input to -i!".format(images_path))
 
 # Set review mode initially to false
 review = False
