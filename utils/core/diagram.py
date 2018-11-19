@@ -228,7 +228,7 @@ class Diagram:
                 if valid:
 
                     # Generate a dictionary mapping group aliases to IDs
-                    group_dict = replace_aliases(self.layout_graph)
+                    group_dict = replace_aliases(self.layout_graph, 'group')
 
                     # Replace aliases with valid identifiers, if used
                     user_input = [group_dict[u] if u in group_dict.keys()
@@ -257,7 +257,7 @@ class Diagram:
                 if valid:
 
                     # Generate a dictionary mapping group aliases to IDs
-                    group_dict = replace_aliases(self.layout_graph)
+                    group_dict = replace_aliases(self.layout_graph, 'group')
 
                     # Replace aliases with valid identifiers, if used
                     user_input = [group_dict[u] if u in group_dict.keys()
@@ -289,7 +289,7 @@ class Diagram:
                 if valid:
 
                     # Generate a dictionary mapping group aliases to IDs
-                    group_dict = replace_aliases(self.layout_graph)
+                    group_dict = replace_aliases(self.layout_graph, 'group')
 
                     # Replace aliases with valid identifiers, if used
                     user_input = [group_dict[u] if u in group_dict.keys()
@@ -335,7 +335,7 @@ class Diagram:
                     elif len(user_input) > 1:
 
                         # Generate a dictionary mapping group aliases to IDs
-                        group_dict = replace_aliases(self.layout_graph)
+                        group_dict = replace_aliases(self.layout_graph, 'group')
 
                         # Replace aliases with valid identifiers, if used
                         user_input = [group_dict[u]
@@ -409,7 +409,7 @@ class Diagram:
             self.connectivity_graph.add_nodes_from(temp_graph.nodes(data=True))
             self.connectivity_graph.add_edges_from(temp_graph.edges(data=True))
 
-        # Draw the graph using the layout mode
+        # Draw the graph using the connectivity mode
         diagram = draw_graph(self.connectivity_graph, dpi=100,
                              mode='connectivity')
 
@@ -576,7 +576,8 @@ class Diagram:
                     edge_bunch = []
 
                     # Generate a dictionary mapping group aliases to IDs
-                    group_dict = replace_aliases(self.connectivity_graph)
+                    group_dict = replace_aliases(self.connectivity_graph,
+                                                 'group')
 
                     # Update the group identifiers in sources and targets to use
                     # valid identifiers, not the G-prefixed aliases
@@ -642,17 +643,40 @@ class Diagram:
         # If the connectivity graph does not exist, populate graph
         if self.rst_graph is None:
 
-            # Retrieve a list of valid nodes from the layout graph
-            nodes = list(self.layout_graph.nodes(data=True))
+            # Create an empty MultiDiGraph
+            self.rst_graph = nx.DiGraph()
 
-            # Remove groups from the list of nodes
-            nodes = [n for n in nodes if n[1]['kind'] != 'group']
+            # Create a temporary copy of the layout graph for filtering content
+            temp_graph = self.layout_graph.copy()
 
-            # Populate the RST graph according to the list of nodes
-            self.rst_graph = create_graph(nodes,
-                                          edges=False,
-                                          arrowheads=False,
-                                          mode='rst')
+            # Get a dictionary of nodes and a list of edges
+            nodes = dict(temp_graph.nodes(data=True))
+            edges = list(temp_graph.edges())
+
+            # Fetch a list of edges to/from imageConsts
+            iconst_edges = [(s, t) for (s, t) in edges
+                            if nodes[s]['kind'] == 'imageConsts'
+                            or nodes[t]['kind'] == 'imageConsts']
+
+            # Remove grouping edges using the list
+            temp_graph.remove_edges_from(iconst_edges)
+
+            # Use the isolates function to locate grouping nodes for groups
+            isolates = list(nx.isolates(temp_graph))
+
+            # Remove isolated grouping nodes
+            isolates = [i for i in isolates if nodes[i]['kind']
+                        in ['group', 'imageConsts']]
+
+            # Remove isolated nodes from the graph
+            temp_graph.remove_nodes_from(isolates)
+
+            # Add attributes to the remaining edges
+            nx.set_edge_attributes(temp_graph, 'grouping', 'kind')
+
+            # Add the filtered nodes and edgesto the connectivity graph
+            self.rst_graph.add_nodes_from(temp_graph.nodes(data=True))
+            self.rst_graph.add_edges_from(temp_graph.edges(data=True))
 
         # Draw the graph using RST mode
         diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')
@@ -662,6 +686,9 @@ class Diagram:
 
             # Check if the graph needs to be updated
             if self.update:
+
+                # Close previous plot
+                plt.close()
 
                 # Re-draw the graph
                 diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')

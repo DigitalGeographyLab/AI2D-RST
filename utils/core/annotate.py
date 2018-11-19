@@ -36,26 +36,11 @@ def create_relation(rst_graph, user_input):
     relation_name = rst_relations[user_input]['name']
     relation_kind = rst_relations[user_input]['kind']
 
-    # Create a dictionary of the nodes currently in the graph
-    node_ix = get_node_dict(rst_graph, kind='node')
+    # Generate a dictionary mapping RST relation aliases to IDs
+    rel_dict = replace_aliases(rst_graph, 'relation')
 
-    # Generate a list of valid diagram elements present in the graph
-    valid_nodes = [e.lower() for e in node_ix.keys()]
-
-    # Generate a dictionary of RST relations present in the graph
-    relation_ix = get_node_dict(rst_graph, kind='relation')
-
-    # Loop through current RST relations and rename them for convenience.
-    # This allows the user to refer to the relation identifier (e.g. r1)
-    # instead of a complex relation ID (e.g. B0-T1+B9) during annotation.
-    relation_ix = {"r{}".format(i): k for i, (k, v) in
-                   enumerate(relation_ix.items(), start=1)}
-
-    # Create a list of valid relation identifiers based on the dict keys
-    valid_rels = [r.lower() for r in relation_ix.keys()]
-
-    # Combine the valid nodes and relations into a single set
-    valid_ids = set(valid_nodes + valid_rels)
+    # Generate a dictionary mapping group aliases to IDs
+    group_dict = replace_aliases(rst_graph, 'group')
 
     # Check whether the RST relation is mono- or multinuclear. Start with
     # mononuclear relations.
@@ -64,9 +49,9 @@ def create_relation(rst_graph, user_input):
         # Request the identifier of the nucleus in the RST relation
         nucleus = input(prompts['nucleus_id'])
 
-        # Split the user input into a list and convert to lowercase
-        nucleus = nucleus.split()
-        nucleus = [n.lower() for n in nucleus]
+        # Prepare and validate input
+        nucleus = prepare_input(nucleus, 0)
+        valid = validate_input(nucleus, rst_graph, rst=True)
 
         # Check the total number of inputs in the list
         if len(nucleus) != 1:
@@ -76,81 +61,62 @@ def create_relation(rst_graph, user_input):
 
             return
 
-        # Check the user input against the set of valid identifiers
-        if not set(nucleus).issubset(valid_ids):
-
-            # If the user input is not a subset of valid identifiers, print
-            # error message and return
-            print("Sorry, {} is not a valid identifier. Please try "
-                  "again.".format(nucleus))
+        # The input is invalid, return. Otherwise continue to process satellites
+        if not valid:
 
             return
-
-        else:
-
-            # The input is valid, continue to process satellites
-            pass
 
         # Request the identifier(s) of the satellite(s) in the RST relation
         satellites = input(prompts['satellite_id'])
 
-        # Split the user input into a list and convert to lowercase
-        satellites = satellites.split()
-        satellites = [s.lower() for s in satellites]
+        # Prepare and validate input
+        satellites = prepare_input(satellites, 0)
+        valid = validate_input(satellites, rst_graph, rst=True)
 
-        # Check the user input against the set of valid identifiers
-        if not set(satellites).issubset(valid_ids):
+        # Proceed if the input is valid
+        if valid:
 
-            # Get difference between user input and valid graph
-            diff = set(satellites).difference(valid_ids)
+            # Replace aliases with valid identifiers
+            satellites = [group_dict[s] if s in group_dict.keys() else s for s
+                          in satellites]
 
-            # If the user input is not a subset of valid identifiers, print
-            # error message and return
-            print("Sorry, {} is not a valid diagram element or command."
-                  " Please try again.".format(' '.join(diff)))
-
-            return
-
-        else:
-
-            # If the input is valid, generate a name for the new relation
-            new_relation = ''.join(nucleus).upper() + '-' + \
-                           '+'.join(satellites).upper()
+            # Generate an ID for the new relation
+            new_rel_id = create_id()
 
             # Add a new node to the graph to represent the RST relation
-            rst_graph.add_node(new_relation,
+            rst_graph.add_node(new_rel_id,
                                kind='relation',
                                nucleus=nucleus,
                                satellites=satellites,
                                rel_name=relation_name,
-                               id=new_relation
+                               id=new_rel_id
                                )
 
             # Draw edges from satellite(s) to the current RST relation
             for s in satellites:
 
                 # Check if the satellites include another RST relation
-                if s in relation_ix.keys():
+                if s in rel_dict.keys():
 
                     # Fetch the origin node from the dictionary of relations
-                    satellite_rel = relation_ix[s]
+                    satellite_rel = rel_dict[s]
 
                     # Add edge from satellite relation to the new relation
-                    rst_graph.add_edge(satellite_rel, new_relation,
+                    rst_graph.add_edge(satellite_rel, new_rel_id,
                                        kind='satellite')
 
                 # If the satellite is not a relation, draw edge from node
                 else:
 
                     # Add edge to graph
-                    rst_graph.add_edge(s.upper(), new_relation,
+                    rst_graph.add_edge(s.upper(), new_rel_id,
                                        kind='satellite')
 
             # Draw edges from nucleus to relation
             for n in nucleus:
 
                 # Add edge to graph
-                rst_graph.add_edge(new_relation, n.upper(),
+                rst_graph.add_edge(new_rel_id, n.upper(),
                                    kind='nucleus')
 
     # Continue by checking if the relation is multinuclear

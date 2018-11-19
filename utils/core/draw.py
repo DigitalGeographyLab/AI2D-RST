@@ -37,16 +37,14 @@ def draw_graph(graph, dpi=100, mode='layout'):
     # Create a label dictionary for nodes
     node_dict = get_node_dict(graph, kind='node')
 
-    # Check the mode, that is, which aspect of diagram structure is annotated
-    if mode == 'layout' or mode == 'connectivity':
+    # Create a label dictionary for grouping nodes
+    group_dict = get_node_dict(graph, kind='group')
 
-        # Create a label dictionary for grouping nodes
-        group_dict = get_node_dict(graph, kind='group')
+    # Enumerate groups and use their numbers as labels for clarity
+    group_dict = {k: "G{}".format(i) for i, (k, v) in
+                  enumerate(group_dict.items(), start=1)}
 
-        # Enumerate groups and use their numbers as labels for clarity
-        group_dict = {k: "G{}".format(i) for i, (k, v) in
-                      enumerate(group_dict.items(), start=1)}
-
+    # If annotating RST structure, draw relations
     if mode == 'rst':
 
         # Create a label dictionary for RST relations
@@ -60,19 +58,14 @@ def draw_graph(graph, dpi=100, mode='layout'):
         # Get a dictionary of edge labels
         edge_dict = nx.get_edge_attributes(graph, 'kind')
 
-        # TODO Find out why IO appears after defining a relation
-
     # Draw nodes present in the graph
     draw_nodes(graph, pos=pos, ax=ax, node_types=node_types, mode=mode)
 
     # Draw labels for each node in the graph
     nx.draw_networkx_labels(graph, pos, font_size=10, labels=node_dict)
 
-    # Check the annotation mode before drawing labels for groups or relations
-    if mode == 'layout' or mode == 'connectivity':
-
-        # Draw labels for groups
-        nx.draw_networkx_labels(graph, pos, font_size=10, labels=group_dict)
+    # Draw labels for groups
+    nx.draw_networkx_labels(graph, pos, font_size=10, labels=group_dict)
 
     if mode == 'rst':
 
@@ -384,7 +377,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         pass
 
     # Check drawing mode, start with layout
-    if mode == 'layout' or mode == 'connectivity':
+    if mode == 'layout' or mode == 'connectivity' or mode == 'rst':
 
         # Draw nodes for imageConsts
         try:
@@ -469,6 +462,26 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
                                alpha=0.75,
                                arrows=True,
                                ax=ax)
+
+        # Draw grouping edges
+        try:
+            # Fetch a list of grouping edges (which do not have any attributes!)
+            grouping_edges = [(u, v, d) for (u, v, d) in edge_list if
+                              d['kind'] == 'grouping']
+
+            # Draw edges between elements and their grouping nodes
+            nx.draw_networkx_edges(graph,
+                                   pos,
+                                   grouping_edges,
+                                   alpha=0.5,
+                                   style='dotted',
+                                   arrows=False,
+                                   ax=ax)
+
+        # Skip if no grouping edges are found
+        except KeyError:
+
+            pass
 
     # Check drawing mode, finish with connectivity
     if mode == 'connectivity' and draw_edges:

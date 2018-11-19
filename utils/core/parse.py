@@ -361,7 +361,7 @@ def prepare_input(input_str, from_item):
     return final_list
 
 
-def validate_input(user_input, current_graph):
+def validate_input(user_input, current_graph, **kwargs):
     """
     A function for validating user input against the nodes of a NetworkX graph.
 
@@ -388,8 +388,29 @@ def validate_input(user_input, current_graph):
     # Create a list of valid identifiers based on group dictionary keys
     valid_groups = [g.lower() for g in group_dict.keys()]
 
-    # Combine the valid nodes and groups into a set
-    valid_elems = set(valid_nodes + valid_groups)
+    try:
+
+        if kwargs['rst']:
+
+            # Generate a dictionary of RST relations present in the graph
+            relation_ix = get_node_dict(current_graph, kind='relation')
+
+            # Loop through current RST relations and rename for convenience.
+            # This allows the user to refer to the relation identifier (e.g. r1)
+            # instead of complex relation ID (e.g. B0-T1+B9) during annotation.
+            relation_ix = {"r{}".format(i): k for i, (k, v) in
+                           enumerate(relation_ix.items(), start=1)}
+
+            # Create a list of valid relation identifiers based on the dict keys
+            valid_rels = [r.lower() for r in relation_ix.keys()]
+
+            # Combine valid nodes, groups and relations into a set
+            valid_elems = set(valid_nodes + valid_groups + valid_rels)
+
+    except KeyError:
+
+        # Combine the valid nodes and groups into a set
+        valid_elems = set(valid_nodes + valid_groups)
 
     # Check for invalid input by comparing the user input and the valid elements
     if not set(user_input).issubset(valid_elems):
@@ -411,23 +432,24 @@ def validate_input(user_input, current_graph):
         return True
 
 
-def replace_aliases(current_graph):
+def replace_aliases(current_graph, kind='group'):
     """
-    A function for replacing aliases used for group identifiers in the
-    annotation tool.
+    A function for replacing aliases used for identifiers in the tool.
 
     Parameters:
         current_graph: A NetworkX graph.
+        kind: A string indicating the type of alias used ('group' or 'relation')
 
     Returns:
          A dictionary mapping group aliases to actual group identifiers.
     """
 
     # Generate a dictionary of groups present in the graph
-    gd = get_node_dict(current_graph, kind='group')
+    gd = get_node_dict(current_graph, kind=kind)
 
     # Count the current groups and enumerate for convenience
-    gd = {"g{}".format(i): k for i, (k, v) in enumerate(gd.items(), start=1)}
+    gd = {"{}{}".format(kind[0], i):
+          k for i, (k, v) in enumerate(gd.items(), start=1)}
 
     # Return the group dictionary
     return gd
