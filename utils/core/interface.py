@@ -23,13 +23,13 @@ def process_command(user_input, mode, diagram, current_graph):
     if user_input == 'cap':
 
         # Get filename of current image (without extension)
-        fname = os.path.basename(diagram.image_path).split('.')[0]
+        fname = os.path.basename(diagram.image_filename).split('.')[0]
 
         # Join filename to get a string
         fname = ''.join(fname)
 
         # Render high-resolution versions of graph and segmentation
-        layout_hires = draw_layout(diagram.image_path,
+        layout_hires = draw_layout(diagram.image_filename,
                                    diagram.annotation,
                                    height=720,
                                    dpi=200)
@@ -152,13 +152,6 @@ def process_command(user_input, mode, diagram, current_graph):
 
         return
 
-    # If requested, remove all edges leading to a specific node
-    if user_input == 'release':
-
-        # TODO Complete
-
-        pass
-
     # If requested, move to the next graph
     if user_input == 'next':
 
@@ -173,7 +166,7 @@ commands = {'rst': ['new', 'rels'],
             'layout': ['macrogroups'],
             'connectivity': [],
             'generic': ['cap', 'comment', 'done', 'exit', 'export', 'info',
-                        'isolate', 'next', 'release']
+                        'isolate', 'next', 'free']
             }
 
 info = {'layout': "---\n"
@@ -196,7 +189,8 @@ info = {'layout': "---\n"
                   "by the identifier or identifiers.\n\n"
                   "Example command: macro i0\n\n"
                   "A list of available macro-groups can be printed using the "
-                  "command 'macrogroups'."
+                  "command 'macrogroups'. This command will also print all "
+                  "currently defined macro-groups."
                   "---\n",
         'rst': "---\n"
                "Enter the command 'new' to create a new RST relation.\n"

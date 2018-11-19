@@ -313,15 +313,52 @@ def prepare_input(input_str, from_item):
     """
 
     # Get the list of nodes provided by the user
-    input_str = input_str.lower().split()[from_item:]
+    input_list = input_str.lower().split()[from_item:]
 
     # Strip commas
-    input_str = [u.strip(',') for u in input_str]
+    input_list = [u.strip(',') for u in input_list]
 
     # Strip extra whitespace
-    input_str = [u.strip() for u in input_str]
+    input_list = [u.strip() for u in input_list]
 
-    return input_str
+    # Create a placeholder for the final list of identifiers
+    final_list = []
+
+    # Check if the input contains group aliases
+    for i in input_list:
+
+        # If the input contains a range of identifiers, unpack
+        if ':' in i:
+
+            # Get the prefix of the alias (I, B, T, or G)
+            prefix = i[0]
+
+            # Get numbers and cast: ignore the first character of the first id
+            try:
+                start, end = int(i.split(':')[0][1:]), int(i.split(':')[1])
+
+            except ValueError:
+
+                # Print error message
+                print("[ERROR] Check syntax for identifier range: do not add "
+                      "identifier prefix to the second part, i.e. g1:g5.")
+
+                # Append erroneous identifier to the list to catch the error
+                final_list.append(i)
+
+                continue
+
+            # Create a list of unpacked identifiers in the range
+            unpacked = [prefix + str(x) for x in range(start, end + 1)]
+
+            # Extend the list of identifiers
+            final_list.extend(unpacked)
+
+        # Otherwise, append identifier to the final list
+        if ':' not in i:
+            final_list.append(i)
+
+    return final_list
 
 
 def validate_input(user_input, current_graph):

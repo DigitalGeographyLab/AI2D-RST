@@ -32,7 +32,7 @@ class Diagram:
         self.connectivity_complete = False  # connectivity
         self.rst_complete = False  # rst
 
-        # Set image path
+        # Set image filename
         self.image_filename = image
 
         # Continue by checking the annotation type. If the input is a dictionary
@@ -169,26 +169,43 @@ class Diagram:
 
                     continue
 
-            # Print the names of macro groups if requested
+            # Print the names of macro-groups if requested
             if user_input == 'macrogroups':
 
-                # Print header
-                print("\nAvailable macro groups and their aliases\n---")
+                # Print header for available macro-groups
+                print("---\nAvailable macro-groups and their aliases\n---")
 
-                # Print the available macro groups and their aliases
+                # Print the available macro-groups and their aliases
                 for k, v in macro_groups.items():
                     print("{} (alias: {})".format(v, k))
 
                 # Print closing line
-                print("---\n")
+                print("---")
+
+                # Get current macro-groups
+                mgroups = dict(nx.get_node_attributes(self.layout_graph,
+                                                      'macro_group'))
+
+                # If more than one macro-group has been defined, print groups
+                if len(mgroups) > 0:
+
+                    # Print header for current macro-groups
+                    print("\nCurrent macro-groups \n---")
+
+                    # Print the currently defined macro-groups
+                    for k, v in mgroups.items():
+                        print("{}: {}".format(k, v))
+
+                    # Print closing line
+                    print("---\n")
 
                 continue
 
-            # Check if the user has requested to describe a macro-grouping
+            # Check if the user has requested to describe a macro-group
             if 'macro' == user_input.split()[0]:
 
-                # Check the length of the input
-                if len(user_input.split()) < 2:
+                # Check the length of the input after the command [1:]
+                if len(user_input.split()[1:]) < 1:
 
                     # Print error message
                     print("[ERROR] You must input at least one identifier in "
