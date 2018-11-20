@@ -398,7 +398,7 @@ def validate_input(user_input, current_graph, **kwargs):
             # Loop through current RST relations and rename for convenience.
             # This allows the user to refer to the relation identifier (e.g. r1)
             # instead of complex relation ID (e.g. B0-T1+B9) during annotation.
-            relation_ix = {"r{}".format(i): k for i, (k, v) in
+            relation_ix = {"R{}".format(i): k for i, (k, v) in
                            enumerate(relation_ix.items(), start=1)}
 
             # Create a list of valid relation identifiers based on the dict keys
@@ -444,10 +444,10 @@ def replace_aliases(current_graph, kind='group'):
          A dictionary mapping group aliases to actual group identifiers.
     """
 
-    # Generate a dictionary of groups present in the graph
+    # Generate a dictionary of nodes present in the graph
     gd = get_node_dict(current_graph, kind=kind)
 
-    # Count the current groups and enumerate for convenience
+    # Count the current nodes and enumerate for convenience
     gd = {"{}{}".format(kind[0], i):
           k for i, (k, v) in enumerate(gd.items(), start=1)}
 

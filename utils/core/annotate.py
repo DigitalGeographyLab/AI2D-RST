@@ -61,7 +61,7 @@ def create_relation(rst_graph, user_input):
 
             return
 
-        # The input is invalid, return. Otherwise continue to process satellites
+        # The input is invalid, return: otherwise continue to process satellites
         if not valid:
 
             return
@@ -125,9 +125,9 @@ def create_relation(rst_graph, user_input):
         # Request the identifiers of the nuclei in the RST relation
         nuclei = input(prompts['nuclei_id'])
 
-        # Split the user input into a list and convert to lowercase
-        nuclei = nuclei.split()
-        nuclei = [n.lower() for n in nuclei]
+        # Prepare and validate input
+        nuclei = prepare_input(nuclei, 0)
+        valid = validate_input(nuclei, rst_graph, rst=True)
 
         # Check the total number of inputs in the list
         if len(nuclei) <= 1:
@@ -137,50 +137,47 @@ def create_relation(rst_graph, user_input):
 
             return
 
-        # Check the user input against the set of valid identifiers
-        if not set(nuclei).issubset(valid_ids):
-
-            # Get the difference between user input and valid ID sets
-            diff = set(nuclei).difference(valid_ids)
-
-            # Print error message with difference in sets
-            print("Sorry, {} is not a valid diagram element or command. "
-                  "Please try again.".format(' '.join(diff)))
+        # The input is invalid, return: otherwise continue to process nuclei
+        if not valid:
 
             return
 
         # If the input is valid, continue to draw the relations
-        else:
+        if valid:
 
-            # Generate a name for the new relation
-            new_relation = '+'.join(nuclei).upper()
+            # Replace aliases with valid identifiers
+            nuclei = [group_dict[n] if n in group_dict.keys() else n for n
+                      in nuclei]
+
+            # Generate an ID for the new relation
+            new_rel_id = create_id()
 
             # Add a new node to the graph to represent the RST relation
-            rst_graph.add_node(new_relation,
+            rst_graph.add_node(new_rel_id,
                                kind='relation',
                                nuclei=nuclei,
                                rel_name=relation_name,
-                               id=new_relation)
+                               id=new_rel_id
+                               )
 
             # Draw edges from nuclei to the current RST relation
             for n in nuclei:
 
                 # Check if the nuclei include another RST relation
-                if n in relation_ix.keys():
+                if n in rel_dict.keys():
 
                     # Fetch the origin node from the relation index
-                    origin = relation_ix[n]
+                    origin = rel_dict[n]
 
-                    # Add edge from the RST relation acting as nuclei to the
-                    # current RST relation
-                    rst_graph.add_edge(new_relation, origin,
+                    # Add edge from the RST relation to the nuclei
+                    rst_graph.add_edge(new_rel_id, origin,
                                        kind='nucleus')
 
-                # If all nuclei are nodes, draw edges to the RST relation
+                # If all nuclei are nodes, draw edges from relation to nuclei
                 else:
 
                     # Add edge to graph
-                    rst_graph.add_edge(new_relation, n.upper(),
+                    rst_graph.add_edge(new_rel_id, n.upper(),
                                        kind='nucleus')
 
 

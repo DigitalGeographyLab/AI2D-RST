@@ -160,11 +160,29 @@ def process_command(user_input, mode, diagram, current_graph):
 
         return
 
+    # If requested, removing grouping nodes
+    if user_input == 'ungroup':
+
+        # Retrieve a list of edges in the graph
+        edge_bunch = list(current_graph.edges(data=True))
+
+        # Collect grouping edges from the edge list
+        edge_bunch = [(u, v) for (u, v, d) in edge_bunch
+                      if d['kind'] == 'grouping']
+
+        # Remove grouping edges from current graph
+        current_graph.remove_edges_from(edge_bunch)
+
+        # Flag the graph for re-drawing
+        diagram.update = True
+
+        return
+
 
 # Define a dictionary of available commands during annotation
 commands = {'rst': ['new', 'rels'],
             'layout': ['macrogroups'],
-            'connectivity': [],
+            'connectivity': ['ungroup'],
             'generic': ['cap', 'comment', 'done', 'exit', 'export', 'info',
                         'isolate', 'next', 'free']
             }

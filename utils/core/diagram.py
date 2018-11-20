@@ -471,7 +471,8 @@ class Diagram:
                 process_command(user_input,
                                 mode='connectivity',
                                 diagram=self,
-                                current_graph=self.connectivity_graph)
+                                current_graph=self.connectivity_graph
+                                )
 
                 # If the user wants to move on the next diagram without saving
                 # the annotation, break from the while loop.
@@ -481,6 +482,16 @@ class Diagram:
 
                 # Otherwise continue
                 continue
+
+            # Check if the user input is a connectivity-specific command
+            if user_input in commands['connectivity']:
+
+                # Send the command to the interface with the current graph
+                process_command(user_input,
+                                mode='connectivity',
+                                diagram=self,
+                                current_graph=self.connectivity_graph
+                                )
 
             # Hide/show layout segmentation if requested
             if user_input == 'hide':
@@ -506,25 +517,9 @@ class Diagram:
 
                     continue
 
-            # Check if grouping edges are to be hidden
-            if user_input == 'ungroup':
-
-                # Retrieve a list of edges in the graph
-                edge_bunch = list(self.connectivity_graph.edges(data=True))
-
-                # Collect grouping edges from the edge list
-                edge_bunch = [(u, v) for (u, v, d) in edge_bunch
-                              if d['kind'] == 'grouping']
-
-                # Remove grouping edges from the connectivity graph
-                self.connectivity_graph.remove_edges_from(edge_bunch)
-
-                # Flag the graph for re-drawing
-                self.update = True
-
             # If user input does not include a valid command, assume the input
             # is a string defining a connectivity relation.
-            elif user_input not in commands['generic']:
+            elif user_input not in (commands['generic'] + commands['connectivity']):
 
                 # Set a flag for tracking connections
                 connection_found = False
@@ -637,19 +632,25 @@ class Diagram:
         Returns:
             Updates the RST graph in the Diagram object (self.rst_graph).
         """
-        # If review mode is active, unfreeze the layout graph
+        # If review mode is active, unfreeze the RST graph
         if review:
 
-            # Unfreeze the layout graph by making a copy
-            self.rst_graph = self.rst_graph.copy()
+            try:
+                # Unfreeze the RST graph by making a copy
+                self.rst_graph = self.rst_graph.copy()
+
+            # If RST graph has never been annotated, catch the error
+            except AttributeError:
+
+                pass
 
         # Visualize the layout segmentation
         segmentation = draw_layout(self.image_filename, self.annotation, 480)
 
-        # If the connectivity graph does not exist, populate graph
+        # If the RST graph does not exist, populate graph
         if self.rst_graph is None:
 
-            # Create an empty MultiDiGraph
+            # Create an empty DiGraph
             self.rst_graph = nx.DiGraph()
 
             # Create a temporary copy of the layout graph for filtering content

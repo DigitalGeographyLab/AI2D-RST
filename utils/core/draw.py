@@ -58,6 +58,28 @@ def draw_graph(graph, dpi=100, mode='layout'):
         # Get a dictionary of edge labels
         edge_dict = nx.get_edge_attributes(graph, 'kind')
 
+        # Set up a temporary edge dict
+        temp_edge_dict = edge_dict.copy()
+
+        # Replace edge labels for clarity by looping over the temporary edge
+        # dict. Note that modifications are made on the actual edge dict.
+        for k, v in temp_edge_dict.items():
+
+            # If the edge type is group, pop
+            if v == 'grouping':
+
+                edge_dict.pop(k)
+
+            # If the edge type is satellite, replace with 's'
+            if v == 'satellite':
+
+                edge_dict[k] = 's'
+
+            # If the edge type is nucleus, replace with 'n'
+            if v == 'nucleus':
+
+                edge_dict[k] = 'n'
+
     # Draw nodes present in the graph
     draw_nodes(graph, pos=pos, ax=ax, node_types=node_types, mode=mode)
 
