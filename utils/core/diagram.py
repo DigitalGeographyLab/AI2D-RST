@@ -365,8 +365,14 @@ class Diagram:
         # If review mode is active, unfreeze the layout graph
         if review:
 
-            # Unfreeze the layout graph by making a copy
-            self.connectivity_graph = self.connectivity_graph.copy()
+            try:
+                # Unfreeze the layout graph by making a copy
+                self.connectivity_graph = self.connectivity_graph.copy()
+
+            # If a connectivity graph has never been annotated, catch the error
+            except AttributeError:
+
+                pass
 
         # Visualize the layout segmentation
         segmentation = draw_layout(self.image_filename, self.annotation, 480)
