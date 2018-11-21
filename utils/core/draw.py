@@ -52,8 +52,11 @@ def draw_graph(graph, dpi=100, mode='layout'):
 
         # Enumerate relations and use their numbers as labels for clarity; add
         # relation name to the label by fetching it from the graph.
-        rel_dict = {k: "R{} ({})".format(i, graph.node[k]['rel_name'])
-                    for i, (k, v) in enumerate(rel_dict.items(), start=1)}
+        # rel_dict = {k: "R{} ({})".format(i, graph.node[k]['rel_name'])
+        #             for i, (k, v) in enumerate(rel_dict.items(), start=1)}
+        # TODO Temporary solution for cleaning up the graph
+        rel_dict = {k: "R{}".format(i) for i, (k, v) in
+                    enumerate(rel_dict.items(), start=1)}
 
         # Get a dictionary of edge labels
         edge_dict = nx.get_edge_attributes(graph, 'kind')

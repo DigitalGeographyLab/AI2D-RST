@@ -19,8 +19,11 @@ def process_command(user_input, mode, diagram, current_graph):
         Performs the requested action.
     """
 
+    # Extract command from the user input
+    command = user_input.split()[0]
+
     # Save a screenshot if requested
-    if user_input == 'cap':
+    if command == 'cap':
 
         # Get filename of current image (without extension)
         fname = os.path.basename(diagram.image_filename).split('.')[0]
@@ -49,7 +52,7 @@ def process_command(user_input, mode, diagram, current_graph):
         return
 
     # Store a comment if requested
-    if user_input == 'comment':
+    if command == 'comment':
 
         # Show a prompt for comment
         comment = input(prompts['comment'])
@@ -61,7 +64,7 @@ def process_command(user_input, mode, diagram, current_graph):
 
     # If requested, mark the annotation as complete and remove isolates from the
     # graph.
-    if user_input == 'done':
+    if command == 'done':
 
         # Find nodes without edges (isolates)
         isolates = list(nx.isolates(current_graph))
@@ -101,12 +104,12 @@ def process_command(user_input, mode, diagram, current_graph):
         return
 
     # If requested, exit the annotator immediately
-    if user_input == 'exit':
+    if command == 'exit':
 
         exit("[INFO] Quitting ...")
 
     # Export a graphviz DOT graph if requested
-    if user_input == 'export':
+    if command == 'export':
 
         # Get filename of current image (without extension)
         fname = os.path.basename(diagram.image_filename).split('.')[0]
@@ -123,8 +126,50 @@ def process_command(user_input, mode, diagram, current_graph):
 
         return
 
+    # If requested, release all connections leading to a node
+    if command == 'free':
+
+        # Prepare input for validation
+        user_input = prepare_input(user_input, 1)
+
+        # Check input against current graph
+        valid = validate_input(user_input, current_graph)
+
+        # If the input is not valid, return
+        if not valid:
+
+            return
+
+        # If the input is valid, proceed
+        if valid:
+
+            # Generate a dictionary mapping group aliases to IDs
+            group_dict = replace_aliases(diagram.layout_graph, 'group')
+
+            # Replace aliases with valid identifiers, if used
+            user_input = [group_dict[u] if u in group_dict.keys()
+                          else u.upper() for u in user_input]
+
+            # If mode is RST, replace aliases for relations as well
+            if mode == 'rst':
+
+                rel_dict = replace_aliases(diagram.rst_graph, 'relation')
+
+                # Replace aliases with valid identifiers, if used
+                user_input = [rel_dict[u] if u in rel_dict.keys()
+                              else u.upper() for u in user_input]
+
+            # Retrieve the list of edges to delete
+            edge_bunch = list(current_graph.edges(user_input))
+
+            # Remove designated edges
+            current_graph.remove_edges_from(edge_bunch)
+
+            # Flag the graph for re-drawing
+            diagram.update = True
+
     # If requested, print info on current annotation task
-    if user_input == 'info':
+    if command == 'info':
 
         # Clear screen first
         os.system('cls' if os.name == 'nt' else 'clear')
@@ -136,7 +181,7 @@ def process_command(user_input, mode, diagram, current_graph):
         return
 
     # If requested, remove isolates from the current graph
-    if user_input == 'isolate':
+    if command == 'isolate':
 
         # Find nodes without edges (isolates)
         isolates = list(nx.isolates(current_graph))
@@ -152,8 +197,40 @@ def process_command(user_input, mode, diagram, current_graph):
 
         return
 
+    # If requested, print macro-groups
+    if command == 'macrogroups':
+
+        # Print header for available macro-groups
+        print("---\nAvailable macro-groups and their aliases\n---")
+
+        # Print the available macro-groups and their aliases
+        for k, v in macro_groups.items():
+            print("{} (alias: {})".format(v, k))
+
+        # Print closing line
+        print("---")
+
+        # Get current macro-groups from the layout graph
+        mgroups = dict(nx.get_node_attributes(diagram.layout_graph,
+                                              'macro_group'))
+
+        # If more than one macro-group has been defined, print groups
+        if len(mgroups) > 0:
+
+            # Print header for current macro-groups
+            print("\nCurrent macro-groups \n---")
+
+            # Print the currently defined macro-groups
+            for k, v in mgroups.items():
+                print("{}: {}".format(k, v))
+
+            # Print closing line
+            print("---\n")
+
+        return
+
     # If requested, move to the next graph
-    if user_input == 'next':
+    if command == 'next':
 
         # Destroy any remaining windows
         cv2.destroyAllWindows()
@@ -161,7 +238,7 @@ def process_command(user_input, mode, diagram, current_graph):
         return
 
     # If requested, removing grouping nodes
-    if user_input == 'ungroup':
+    if command == 'ungroup':
 
         # Retrieve a list of edges in the graph
         edge_bunch = list(current_graph.edges(data=True))
@@ -178,13 +255,61 @@ def process_command(user_input, mode, diagram, current_graph):
 
         return
 
+    # If requested, print available RST relations
+    if command == 'rels':
+
+        # Clear screen first
+        os.system('cls' if os.name == 'nt' else 'clear')
+
+        # Loop over RST relations
+        for k, v in rst_relations.items():
+            # Print information on each RST relation
+            print("{} - abbreviation: {}, type: {}.".format(
+                v['name'].upper(),
+                k,
+                v['kind']))
+
+        return
+
+    # If requested, delete grouping nodes
+    if command == 'rm':
+
+        # Prepare input for validation
+        user_input = prepare_input(user_input, 1)
+
+        # Check input against the current graph
+        valid = validate_input(user_input, current_graph)
+
+        # If the input is not valid, continue
+        if not valid:
+
+            return
+
+        # If input is valid, proceed
+        if valid:
+
+            # Generate a dictionary mapping group aliases to IDs
+            group_dict = replace_aliases(current_graph, 'group')
+
+            # Replace aliases with valid identifiers, if used
+            user_input = [group_dict[u] if u in group_dict.keys()
+                          else u for u in user_input]
+
+            # Remove the designated nodes from the graph
+            current_graph.remove_nodes_from(user_input)
+
+            # Flag the graph for re-drawing
+            diagram.update = True
+
+            return
+
 
 # Define a dictionary of available commands during annotation
-commands = {'rst': ['new', 'rels'],
-            'layout': ['macrogroups'],
+commands = {'rst': ['rels', 'ungroup'],
+            # 'layout': ['macrogroups'],
             'connectivity': ['ungroup'],
-            'generic': ['cap', 'comment', 'done', 'exit', 'export', 'info',
-                        'isolate', 'next', 'free']
+            'generic': ['cap', 'comment', 'done', 'exit', 'export', 'free',
+                        'hide', 'info', 'isolate', 'macrogroups', 'next', 'rm']
             }
 
 info = {'layout': "---\n"
@@ -306,6 +431,7 @@ rst_relations = {'anti': {'name': 'antithesis', 'kind': 'mono'},
                  'titl': {'name': 'title', 'kind': 'mono'}
                  }
 
+# Define a dictionary of valid macro-groups and their aliases
 macro_groups = {'table': 'table',
                 'hor': 'horizontal',
                 'ver': 'vertical',

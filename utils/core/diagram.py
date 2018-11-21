@@ -128,7 +128,7 @@ class Diagram:
                 continue
 
             # Check if the input is a generic command
-            if user_input in commands['generic']:
+            if user_input.split()[0] in commands['generic']:
 
                 # Send the command to the interface along with current graph
                 process_command(user_input,
@@ -169,38 +169,6 @@ class Diagram:
 
                     continue
 
-            # Print the names of macro-groups if requested
-            if user_input == 'macrogroups':
-
-                # Print header for available macro-groups
-                print("---\nAvailable macro-groups and their aliases\n---")
-
-                # Print the available macro-groups and their aliases
-                for k, v in macro_groups.items():
-                    print("{} (alias: {})".format(v, k))
-
-                # Print closing line
-                print("---")
-
-                # Get current macro-groups
-                mgroups = dict(nx.get_node_attributes(self.layout_graph,
-                                                      'macro_group'))
-
-                # If more than one macro-group has been defined, print groups
-                if len(mgroups) > 0:
-
-                    # Print header for current macro-groups
-                    print("\nCurrent macro-groups \n---")
-
-                    # Print the currently defined macro-groups
-                    for k, v in mgroups.items():
-                        print("{}: {}".format(k, v))
-
-                    # Print closing line
-                    print("---\n")
-
-                continue
-
             # Check if the user has requested to describe a macro-group
             if 'macro' == user_input.split()[0]:
 
@@ -239,74 +207,9 @@ class Diagram:
 
                     continue
 
-            # Check if the user has requested to delete a grouping node
-            if 'rm' in user_input:
-
-                # Prepare input for validation
-                user_input = prepare_input(user_input, 1)
-
-                # Check the input against the current graph
-                valid = validate_input(user_input, self.layout_graph)
-
-                # If the input is not valid, continue
-                if not valid:
-
-                    continue
-
-                # Proceed if the user input is valid
-                if valid:
-
-                    # Generate a dictionary mapping group aliases to IDs
-                    group_dict = replace_aliases(self.layout_graph, 'group')
-
-                    # Replace aliases with valid identifiers, if used
-                    user_input = [group_dict[u] if u in group_dict.keys()
-                                  else u for u in user_input]
-
-                    # Update the graph according to user input
-                    self.layout_graph.remove_nodes_from(user_input)
-
-                    # Flag the graph for re-drawing
-                    self.update = True
-
-                    continue
-
-            # Check if the user has requested to remove edges connected to node
-            if 'free' in user_input:
-
-                # Prepare input for validation
-                user_input = prepare_input(user_input, 1)
-
-                # Check the input against the current graph
-                valid = validate_input(user_input, self.layout_graph)
-
-                # If the input is not valid, continue
-                if not valid:
-
-                    continue
-
-                # If the input is valid, proceed
-                if valid:
-
-                    # Generate a dictionary mapping group aliases to IDs
-                    group_dict = replace_aliases(self.layout_graph, 'group')
-
-                    # Replace aliases with valid identifiers, if used
-                    user_input = [group_dict[u] if u in group_dict.keys()
-                                  else u.upper() for u in user_input]
-
-                    # Collect a list of edges to delete
-                    edge_bunch = list(self.layout_graph.edges(user_input))
-
-                    # Remove designated edges from the layout graph
-                    self.layout_graph.remove_edges_from(edge_bunch)
-
-                    # Flag the graph for re-drawing
-                    self.update = True
-
             # If user input does not include a valid command, assume the input
             # is a string containing a list of diagram elements.
-            elif user_input not in commands['generic']:
+            elif user_input.split()[0] not in commands['generic']:
 
                 # Prepare input for validation
                 user_input = prepare_input(user_input, 0)
@@ -464,8 +367,9 @@ class Diagram:
 
                 continue
 
-            # Check if the user input is a generic command
-            if user_input in commands['generic']:
+            # Check if the user input is a command
+            if user_input.split()[0] in (commands['generic'] +
+                                         commands['connectivity']):
 
                 # Send the command to the interface along with current graph
                 process_command(user_input,
@@ -482,16 +386,6 @@ class Diagram:
 
                 # Otherwise continue
                 continue
-
-            # Check if the user input is a connectivity-specific command
-            if user_input in commands['connectivity']:
-
-                # Send the command to the interface with the current graph
-                process_command(user_input,
-                                mode='connectivity',
-                                diagram=self,
-                                current_graph=self.connectivity_graph
-                                )
 
             # Hide/show layout segmentation if requested
             if user_input == 'hide':
@@ -519,7 +413,8 @@ class Diagram:
 
             # If user input does not include a valid command, assume the input
             # is a string defining a connectivity relation.
-            elif user_input not in (commands['generic'] + commands['connectivity']):
+            elif user_input.split()[0] not in (commands['generic'] +
+                                               commands['connectivity']):
 
                 # Set a flag for tracking connections
                 connection_found = False
@@ -718,7 +613,7 @@ class Diagram:
                 continue
 
             # Check the input
-            if user_input in commands['generic']:
+            if user_input.split()[0] in (commands['generic'] + commands['rst']):
 
                 # Send the command to the interface along with current graph
                 process_command(user_input,
@@ -733,24 +628,6 @@ class Diagram:
                     break
 
                 # Otherwise continue
-                continue
-
-            # If the user requests a list of available RST relations, print
-            # the keys and their definitions.
-            if user_input == 'rels':
-
-                # Clear screen first
-                os.system('cls' if os.name == 'nt' else 'clear')
-
-                # Loop over RST relations
-                for k, v in rst_relations.items():
-
-                    # Print information on each RST relation
-                    print("{} - abbreviation: {}, type: {}.".format(
-                        v['name'].upper(),
-                        k,
-                        v['kind']))
-
                 continue
 
             # If the user input is a new relation, request additional input
@@ -772,13 +649,14 @@ class Diagram:
                     self.update = True
 
                 else:
-                    print("Sorry, {} is not a valid relation."
+                    print("[ERROR] Sorry, {} is not a valid relation."
                           .format(relation))
 
-            if user_input not in commands['rst']:
+            else:
 
                 # Print error message
-                print("Sorry, {} is not a valid command.".format(user_input))
+                print("[ERROR] Sorry, {} is not a valid command."
+                      .format(user_input))
 
                 continue
 
