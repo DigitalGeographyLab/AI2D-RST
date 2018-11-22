@@ -309,7 +309,7 @@ commands = {'rst': ['rels', 'ungroup'],
             # 'layout': ['macrogroups'],
             'connectivity': ['ungroup'],
             'generic': ['cap', 'comment', 'done', 'exit', 'export', 'free',
-                        'hide', 'info', 'isolate', 'macrogroups', 'next', 'rm']
+                        'info', 'isolate', 'macrogroups', 'next', 'rm']
             }
 
 info = {'layout': "---\n"
