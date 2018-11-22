@@ -115,9 +115,22 @@ def create_relation(rst_graph, user_input):
             # Draw edges from nucleus to relation
             for n in nucleus:
 
-                # Add edge to graph
-                rst_graph.add_edge(new_rel_id, n.upper(),
-                                   kind='nucleus')
+                # Check if the nucleus is a RST relation
+                if n in rel_dict.keys():
+
+                    # Fetch the origin node from the dictionary of relations
+                    nuclei_rel = rel_dict[n]
+
+                    # Add edge from satellite relation to the new relation
+                    rst_graph.add_edge(new_rel_id, nuclei_rel,
+                                       kind='nucleus')
+
+                # If the nucleus is not a relation, draw edge from node
+                else:
+
+                    # Add edge to graph
+                    rst_graph.add_edge(new_rel_id, n.upper(),
+                                       kind='nucleus')
 
     # Continue by checking if the relation is multinuclear
     if relation_kind == 'multi':

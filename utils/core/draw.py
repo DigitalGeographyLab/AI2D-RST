@@ -94,7 +94,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
 
     if mode == 'rst':
 
-        # Draw identifiers for RST relations
+        # Draw labels for nodes representing for RST relations
         nx.draw_networkx_labels(graph, pos, font_size=10, labels=rel_dict)
 
         # Draw edge labels for nuclei and satellites
@@ -401,51 +401,49 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     except KeyError:
         pass
 
-    # Check drawing mode, start with layout
-    if mode == 'layout' or mode == 'connectivity' or mode == 'rst':
+    # Draw nodes for image constants
+    try:
+        # Retrieve image constants (in most cases, only one per diagram)
+        constants = [k for k, v in node_types.items() if
+                     v == 'imageConsts']
 
-        # Draw nodes for imageConsts
-        try:
-            # Retrieve image constants (in most cases, only one per diagram)
-            constants = [k for k, v in node_types.items() if
-                         v == 'imageConsts']
+        # Add the image constants to the graph
+        nx.draw_networkx_nodes(graph,
+                               pos,
+                               nodelist=constants,
+                               alpha=1,
+                               node_color='palegoldenrod',
+                               ax=ax
+                               )
 
-            # Add the image constants to the graph
-            nx.draw_networkx_nodes(graph,
-                                   pos,
-                                   nodelist=constants,
-                                   alpha=1,
-                                   node_color='palegoldenrod',
-                                   ax=ax
-                                   )
+    # Skip if there are no image constants to draw
+    except KeyError:
+        pass
 
-        # Skip if there are no image constants to draw
-        except KeyError:
-            pass
+    # Draw nodes for groups
+    try:
+        # Retrieve group nodes from the list of nodes
+        groups = [k for k, v in node_types.items() if v == 'group']
 
-        # Draw nodes for element groups
-        try:
-            # Retrieve the group nodes for the list of nodes
-            groups = [k for k, v in node_types.items() if v == 'group']
+        # Add the group nodes to the graph
+        nx.draw_networkx_nodes(graph,
+                               pos,
+                               nodelist=groups,
+                               alpha=1,
+                               node_color='navajowhite',
+                               ax=ax
+                               )
 
-            # Add the group nodes to the graph
-            nx.draw_networkx_nodes(graph,
-                                   pos,
-                                   nodelist=groups,
-                                   alpha=1,
-                                   node_color='navajowhite',
-                                   ax=ax
-                                   )
-
-        # Skip if there are no group nodes to draw
-        except KeyError:
-            pass
+    # Skip if there are no group nodes to draw
+    except KeyError:
+        pass
 
     # Check drawing mode, continue with RST
     if mode == 'rst' and draw_edges:
 
         # Draw nodes for RST relations
         try:
+            # Retrieve relations from the list of nodes
             relations = [k for k, v in node_types.items() if v == 'relation']
 
             # Add the relations to the graph
@@ -453,7 +451,9 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
                                    pos,
                                    nodelist=relations,
                                    alpha=1,
-                                   node_color='white',
+                                   linewidths=4,
+                                   node_color='peru',
+                                   node_shape='s',
                                    ax=ax
                                    )
 

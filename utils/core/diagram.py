@@ -254,6 +254,8 @@ class Diagram:
                 # Continue until the annotation process is complete
                 continue
 
+    # TODO Done command needs to clean up groups for connectivity
+
     def annotate_connectivity(self, review):
         """
         A function for annotating a diagram for its connectivity.
@@ -529,6 +531,10 @@ class Diagram:
         """
         # If review mode is active, unfreeze the RST graph
         if review:
+
+        # TODO There is a problem when populating the graph in a review mode –
+        # individual nodes are deleted. Presumably due to the 'done' command?
+        # Solution: add command reset?
 
             try:
                 # Unfreeze the RST graph by making a copy
