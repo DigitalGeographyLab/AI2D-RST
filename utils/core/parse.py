@@ -171,7 +171,7 @@ def get_node_dict(graph, kind=None):
     A function for creating a dictionary of nodes and their kind.
 
     Parameters:
-        graph: A networkx graph.
+        graph: A NetworkX Graph.
         kind: A string defining what to include in the dictionary. 'node'
               returns only nodes and 'group' returns only groups. By
               default, the function returns all nodes defined in the graph.

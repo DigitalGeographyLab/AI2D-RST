@@ -86,8 +86,8 @@ def create_relation(rst_graph, user_input):
             # Add a new node to the graph to represent the RST relation
             rst_graph.add_node(new_rel_id,
                                kind='relation',
-                               nucleus=nucleus,
-                               satellites=satellites,
+                               nucleus=' '.join(nucleus).upper(),
+                               satellites=' '.join(satellites).upper(),
                                rel_name=relation_name,
                                id=new_rel_id
                                )
@@ -168,7 +168,7 @@ def create_relation(rst_graph, user_input):
             # Add a new node to the graph to represent the RST relation
             rst_graph.add_node(new_rel_id,
                                kind='relation',
-                               nuclei=nuclei,
+                               nuclei=' '.join(nuclei).upper(),
                                rel_name=relation_name,
                                id=new_rel_id
                                )

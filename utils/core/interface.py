@@ -153,6 +153,7 @@ def process_command(user_input, mode, diagram, current_graph):
             # If mode is RST, replace aliases for relations as well
             if mode == 'rst':
 
+                # Generate a dictionary mapping relation aliases to IDs
                 rel_dict = replace_aliases(diagram.rst_graph, 'relation')
 
                 # Replace aliases with valid identifiers, if used
@@ -261,13 +262,41 @@ def process_command(user_input, mode, diagram, current_graph):
         # Clear screen first
         os.system('cls' if os.name == 'nt' else 'clear')
 
+        # Print header for available macro-groups
+        print("---\nAvailable RST relations and their aliases\n---")
+
         # Loop over RST relations
         for k, v in rst_relations.items():
             # Print information on each RST relation
-            print("{} - abbreviation: {}, type: {}.".format(
-                v['name'].upper(),
+            print("{} (alias: {}, type: {})".format(
+                v['name'],
                 k,
                 v['kind']))
+
+        # Print closing line
+        print("---")
+
+        # Generate a dictionary of RST relations present in the graph
+        relation_ix = get_node_dict(current_graph, kind='relation')
+
+        # Loop through current RST relations and rename for convenience.
+        relation_ix = {"R{}".format(i): k for i, (k, v) in
+                       enumerate(relation_ix.items(), start=1)}
+
+        # If more than one macro-group has been defined, print groups
+        if len(relation_ix) > 0:
+
+            # Print header for current macro-groups
+            print("\nCurrent RST relations \n---")
+
+            # Print relations currently defined in the graph
+            for k, v in relation_ix.items():
+
+                print("{}: {}".format(k,
+                                      diagram.rst_graph.nodes[v]['rel_name']))
+
+            # Print closing line
+            print("---\n")
 
         return
 
@@ -277,8 +306,15 @@ def process_command(user_input, mode, diagram, current_graph):
         # Prepare input for validation
         user_input = prepare_input(user_input, 1)
 
-        # Check input against the current graph
-        valid = validate_input(user_input, current_graph)
+        # Check if RST relations need to be included in validation
+        if mode == 'rst':
+
+            # Validate input against relations as well
+            valid = validate_input(user_input, current_graph, rst=True)
+
+        else:
+            # Check input against the current graph
+            valid = validate_input(user_input, current_graph)
 
         # If the input is not valid, continue
         if not valid:
@@ -294,6 +330,16 @@ def process_command(user_input, mode, diagram, current_graph):
             # Replace aliases with valid identifiers, if used
             user_input = [group_dict[u] if u in group_dict.keys()
                           else u for u in user_input]
+
+            # If annotating RST relations, check RST relations as well
+            if mode == 'rst':
+
+                # Generate a dictionary mapping relation aliases to IDs
+                rel_dict = replace_aliases(current_graph, 'relation')
+
+                # Replace aliases with valid identifiers, if used
+                user_input = [rel_dict[u] if u in rel_dict.keys()
+                              else u.upper() for u in user_input]
 
             # Remove the designated nodes from the graph
             current_graph.remove_nodes_from(user_input)
