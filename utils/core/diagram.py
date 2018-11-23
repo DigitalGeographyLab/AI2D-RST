@@ -532,10 +532,6 @@ class Diagram:
         # If review mode is active, unfreeze the RST graph
         if review:
 
-        # TODO There is a problem when populating the graph in a review mode –
-        # individual nodes are deleted. Presumably due to the 'done' command?
-        # Solution: add command reset?
-
             try:
                 # Unfreeze the RST graph by making a copy
                 self.rst_graph = self.rst_graph.copy()

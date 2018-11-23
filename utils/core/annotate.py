@@ -76,7 +76,9 @@ def create_relation(rst_graph, user_input):
         # Proceed if the input is valid
         if valid:
 
-            # Replace aliases with valid identifiers
+            # Replace aliases with valid IDs for nuclei and satellites
+            nucleus = [group_dict[n] if n in group_dict.keys() else n for n
+                       in nucleus]
             satellites = [group_dict[s] if s in group_dict.keys() else s for s
                           in satellites]
 
@@ -291,5 +293,3 @@ def macro_group(graph, user_input):
         # Print status message
         print("[INFO] Added macro-group information to {}.".format(
             ', '.join(user_input)))
-
-    # TODO Add information on tables
