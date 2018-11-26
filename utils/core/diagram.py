@@ -594,6 +594,10 @@ class Diagram:
         # Draw the graph using RST mode
         diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')
 
+        # Set up flags for tracking whether annotation should be hidden or shown
+        show = False
+        hide = False
+
         # Enter a while loop for the annotation procedure
         while not self.rst_complete:
 
@@ -608,6 +612,17 @@ class Diagram:
 
                 # Mark update complete
                 self.update = False
+
+            # Check if segmentation annotation is hidden and should be re-drawn
+            if hide and show:
+
+                # Visualize the layout segmentation
+                segmentation = draw_layout(self.image_filename, self.annotation,
+                                           480)
+
+                # Return to normal mode by setting both hide and show to False
+                hide = False
+                show = False
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, segmentation))
@@ -640,6 +655,30 @@ class Diagram:
 
                 # Otherwise continue
                 continue
+
+            # Hide/show layout segmentation if requested
+            if user_input == 'hide':
+
+                # If hide is False, re-draw the layout without annotation
+                if not hide:
+
+                    # Re-draw the layout
+                    segmentation = draw_layout(self.image_filename,
+                                               self.annotation,
+                                               480, hide=True)
+
+                    # Flag the annotation as hidden
+                    hide = True
+
+                    continue
+
+                # If the layout is already hidden, re-draw the annotation
+                if hide:
+
+                    # Set show to True
+                    show = True
+
+                    continue
 
             # If the user input is a new relation, request additional input
             if user_input == 'new':
