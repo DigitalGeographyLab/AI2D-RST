@@ -177,6 +177,9 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
         if diagram.group_complete and diagram.connectivity_complete \
                 and diagram.rst_complete:
 
+            # Delete the reset graph
+            delattr(diagram, 'reset')
+
             # Mark diagram as complete
             diagram.complete = True
 

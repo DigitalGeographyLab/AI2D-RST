@@ -317,6 +317,32 @@ def process_command(user_input, mode, diagram, current_graph):
 
         return
 
+    # If requested, reset the annotation
+    if command == 'reset':
+
+        # Reset layout graph if requested
+        if mode == 'layout':
+
+            # Unfreeze the reset graph and assign to layout_graph
+            diagram.layout_graph = diagram.reset.copy()
+
+        # Reset connectivity graph if requested
+        if mode == 'connectivity':
+
+            # Unfreeze the connectivity graph and assign to connectivity_graph
+            diagram.connectivity_graph = diagram.reset.copy()
+
+        # Reset RST graph if requested
+        if mode == 'rst':
+
+            # Unfreeze the RST graph and assign to rst_graph
+            diagram.rst_graph = diagram.reset.copy()
+
+        # Flag the graph for re-drawing
+        diagram.update = True
+
+        return
+
     # If requested, delete grouping nodes
     if command == 'rm':
 
@@ -372,7 +398,7 @@ commands = {'rst': ['rels', 'ungroup'],
             # 'layout': ['macrogroups'],
             'connectivity': ['ungroup'],
             'generic': ['cap', 'comment', 'done', 'exit', 'export', 'free',
-                        'info', 'isolate', 'macrogroups', 'next', 'rm']
+                        'info', 'isolate', 'macrogroups', 'next', 'reset', 'rm']
             }
 
 info = {'layout': "---\n"
@@ -432,6 +458,7 @@ info = {'layout': "---\n"
                    "info: Print this message.\n"
                    "isolate: Remove isolates from the graph.\n"
                    "next: Save current work and move on to the next diagram.\n"
+                   "reset: Reset the current annotation.\n" 
                    "---",
         }
 
@@ -485,12 +512,13 @@ rst_relations = {'anti': {'name': 'antithesis', 'kind': 'mono'},
                  'join': {'name': 'joint', 'kind': 'multi'},
                  'list': {'name': 'list', 'kind': 'multi'},
                  'sequ': {'name': 'sequence', 'kind': 'multi'},
+                 'cseq': {'name': 'cyclic sequence', 'kind': 'multi'},  # NEW
                  'iden': {'name': 'identification', 'kind': 'mono'},
                  'casc': {'name': 'class-ascription', 'kind': 'mono'},
                  'pasc': {'name': 'property-ascription', 'kind': 'mono'},
                  'poss': {'name': 'possession', 'kind': 'mono'},
                  'proj': {'name': 'projection', 'kind': 'mono'},
-                 'effe': {'name': 'effect', 'kind': 'mono'},
+                 'conn': {'name': 'connected', 'kind': 'multi'},  # NEW!
                  'titl': {'name': 'title', 'kind': 'mono'}
                  }
 

@@ -38,9 +38,11 @@ class Diagram:
         # Continue by checking the annotation type. If the input is a dictionary
         # assign the dictionary to the variable 'annotation'.
         if type(ai2d_ann) == dict:
+
             self.annotation = ai2d_ann
 
         else:
+
             # Read the JSON annotation into a dictionary
             self.annotation = load_annotation(ai2d_ann)
 
@@ -79,6 +81,9 @@ class Diagram:
 
             # Unfreeze the layout graph by making a copy
             self.layout_graph = self.layout_graph.copy()
+
+        # Freeze and save current graph for resetting annotation if required
+        self.reset = nx.freeze(self.layout_graph.copy())
 
         # Visualize the layout segmentation
         segmentation = draw_layout(self.image_filename, self.annotation, 480)
@@ -317,6 +322,9 @@ class Diagram:
             # Add the filtered nodes and edgesto the connectivity graph
             self.connectivity_graph.add_nodes_from(temp_graph.nodes(data=True))
             self.connectivity_graph.add_edges_from(temp_graph.edges(data=True))
+
+        # Freeze and save current graph for resetting annotation if required
+        self.reset = nx.freeze(self.connectivity_graph.copy())
 
         # Draw the graph using the connectivity mode
         diagram = draw_graph(self.connectivity_graph, dpi=100,
@@ -579,6 +587,9 @@ class Diagram:
             # Add the filtered nodes and edgesto the connectivity graph
             self.rst_graph.add_nodes_from(temp_graph.nodes(data=True))
             self.rst_graph.add_edges_from(temp_graph.edges(data=True))
+
+        # Freeze and save current graph for resetting annotation if required
+        self.reset = nx.freeze(self.rst_graph.copy())
 
         # Draw the graph using RST mode
         diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')
