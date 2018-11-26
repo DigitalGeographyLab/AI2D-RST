@@ -66,15 +66,6 @@ def process_command(user_input, mode, diagram, current_graph):
     # graph.
     if command == 'done':
 
-        # Find nodes without edges (isolates)
-        isolates = list(nx.isolates(current_graph))
-
-        # Remove isolates
-        current_graph.remove_nodes_from(isolates)
-
-        # Freeze the layout graph
-        nx.freeze(current_graph)
-
         # Check the annotation task and mark complete as appropriate
         if mode == 'layout':
 
@@ -97,6 +88,32 @@ def process_command(user_input, mode, diagram, current_graph):
             diagram.rst_complete = True
 
             print("[INFO] Marking rhetorical structure as complete.")
+
+        # Remove grouping edges from RST and connectivity annotation
+        if mode == 'rst' or mode == 'connectivity':
+
+            # Retrieve a list of edges in the graph
+            edge_bunch = list(current_graph.edges(data=True))
+
+            # Collect grouping edges from the edge list
+            try:
+                edge_bunch = [(u, v) for (u, v, d) in edge_bunch
+                              if d['kind'] == 'grouping']
+
+            except KeyError:
+                pass
+
+            # Remove grouping edges from current graph
+            current_graph.remove_edges_from(edge_bunch)
+
+        # Find nodes without edges (isolates)
+        isolates = list(nx.isolates(current_graph))
+
+        # Remove isolates
+        current_graph.remove_nodes_from(isolates)
+
+        # Freeze the graph
+        nx.freeze(current_graph)
 
         # Destroy any remaining windows
         cv2.destroyAllWindows()

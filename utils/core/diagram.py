@@ -254,8 +254,6 @@ class Diagram:
                 # Continue until the annotation process is complete
                 continue
 
-    # TODO Done command needs to clean up groups for connectivity
-
     def annotate_connectivity(self, review):
         """
         A function for annotating a diagram for its connectivity.

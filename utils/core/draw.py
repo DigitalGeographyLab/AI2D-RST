@@ -50,11 +50,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
         # Create a label dictionary for RST relations
         rel_dict = get_node_dict(graph, kind='relation')
 
-        # Enumerate relations and use their numbers as labels for clarity; add
-        # relation name to the label by fetching it from the graph.
-        # rel_dict = {k: "R{} ({})".format(i, graph.node[k]['rel_name'])
-        #             for i, (k, v) in enumerate(rel_dict.items(), start=1)}
-        # TODO Temporary solution for cleaning up the graph
+        # Enumerate relations and use their numbers as labels for clarity
         rel_dict = {k: "R{}".format(i) for i, (k, v) in
                     enumerate(rel_dict.items(), start=1)}
 
