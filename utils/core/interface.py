@@ -415,10 +415,72 @@ def process_command(user_input, mode, diagram, current_graph):
 
             return
 
+    # if requested, split a node
+    if command == 'split':
+
+        # Begin by checking the number of desired splits
+        n_splits = int(user_input.split()[1])
+
+        # Prepare input for validation
+        user_input = prepare_input(user_input, 2)
+
+        # Validate input
+        valid = validate_input(user_input, current_graph, rst=True)
+
+        # If the input is valid, proceed
+        if valid:
+
+            # Generate a dictionary mapping group aliases to IDs
+            group_dict = replace_aliases(current_graph, 'group')
+
+            # Replace aliases with valid identifiers, if used
+            user_input = [group_dict[u] if u in group_dict.keys()
+                          else u for u in user_input]
+
+            # Generate a dictionary mapping relation aliases to IDs
+            rel_dict = replace_aliases(current_graph, 'relation')
+
+            # Replace aliases with valid identifiers, if used
+            user_input = [rel_dict[u] if u in rel_dict.keys()
+                          else u.upper() for u in user_input]
+
+            # Set up a placeholder list for split nodes
+            split_list = []
+
+            # Get properties of the node to duplicate
+            for n in user_input:
+
+                # Generate new identifiers for split nodes by taking the node
+                # name in uppercase and adding the number of split after stop.
+                split_ids = [n.upper() + '.{}'.format(i)
+                             for i in range(1, n_splits + 1)]
+
+                # Get the attribute of the node that is being split
+                attr_dict = current_graph.nodes[n]
+
+                # Add parent node information to the dictionary
+                attr_dict['copy_of'] = n.upper()
+
+                # Loop over split ids
+                for s in split_ids:
+
+                    # Append a tuple of identifier and attributes to split_list
+                    split_list.append((s, attr_dict))
+
+                # Remove node from the RST graph
+                current_graph.remove_node(n)
+
+            # Add split nodes to the graph
+            current_graph.add_nodes_from(split_list)
+
+            # Flag the graph for re-drawing
+            diagram.update = True
+
+            return
+
 
 # Define a dictionary of available commands during annotation
-commands = {'rst': ['rels', 'ungroup'],
-            # 'layout': ['macrogroups'],
+commands = {'rst': ['rels', 'split', 'ungroup'],
             'connectivity': ['ungroup'],
             'generic': ['cap', 'comment', 'done', 'exit', 'export', 'free',
                         'info', 'isolate', 'macrogroups', 'next', 'reset', 'rm']
