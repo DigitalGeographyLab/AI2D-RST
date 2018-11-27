@@ -134,6 +134,29 @@ def process_command(user_input, mode, diagram, current_graph):
         # Join filename to get a string
         fname = ''.join(fname)
 
+        # Remove grouping edges from RST and connectivity annotation
+        if mode == 'rst' or mode == 'connectivity':
+
+            # Retrieve a list of edges in the graph
+            edge_bunch = list(current_graph.edges(data=True))
+
+            # Collect grouping edges from the edge list
+            try:
+                edge_bunch = [(u, v) for (u, v, d) in edge_bunch
+                              if d['kind'] == 'grouping']
+
+            except KeyError:
+                pass
+
+            # Remove grouping edges from current graph
+            current_graph.remove_edges_from(edge_bunch)
+
+        # Find nodes without edges (isolates)
+        isolates = list(nx.isolates(current_graph))
+
+        # Remove isolates
+        current_graph.remove_nodes_from(isolates)
+
         # Write DOT graph to disk
         nx.nx_pydot.write_dot(current_graph,
                               '{}_{}.dot'.format(fname, mode))
