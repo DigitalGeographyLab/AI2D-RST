@@ -190,7 +190,8 @@ class Diagram:
                 user_input = prepare_input(user_input, 1)
 
                 # Check the input against the current graph
-                valid = validate_input(user_input, self.layout_graph)
+                valid = validate_input(user_input, self.layout_graph,
+                                       groups=True)
 
                 # If the input is not valid, continue
                 if not valid:
@@ -220,7 +221,8 @@ class Diagram:
                 user_input = prepare_input(user_input, 0)
 
                 # Check the input against the current graph
-                valid = validate_input(user_input, self.layout_graph)
+                valid = validate_input(user_input, self.layout_graph,
+                                       groups=True)
 
                 # If the input is not valid, continue
                 if not valid:
@@ -458,7 +460,8 @@ class Diagram:
 
                         # Check the input against the current graph
                         valid = validate_input(source + target,
-                                               self.connectivity_graph)
+                                               self.connectivity_graph,
+                                               groups=True)
 
                         # If the user input is not valid, continue
                         if not valid:

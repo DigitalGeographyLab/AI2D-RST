@@ -183,22 +183,8 @@ def process_command(user_input, mode, diagram, current_graph):
         # If the input is valid, proceed
         if valid:
 
-            # Generate a dictionary mapping group aliases to IDs
-            group_dict = replace_aliases(diagram.layout_graph, 'group')
-
-            # Replace aliases with valid identifiers, if used
-            user_input = [group_dict[u] if u in group_dict.keys()
-                          else u.upper() for u in user_input]
-
-            # If mode is RST, replace aliases for relations as well
-            if mode == 'rst':
-
-                # Generate a dictionary mapping relation aliases to IDs
-                rel_dict = replace_aliases(diagram.rst_graph, 'relation')
-
-                # Replace aliases with valid identifiers, if used
-                user_input = [rel_dict[u] if u in rel_dict.keys()
-                              else u.upper() for u in user_input]
+            # Convert user input to uppercase
+            user_input = [i.upper() for i in user_input]
 
             # Retrieve the list of edges to delete
             edge_bunch = list(current_graph.edges(user_input))
@@ -294,6 +280,8 @@ def process_command(user_input, mode, diagram, current_graph):
         # Flag the graph for re-drawing
         diagram.update = True
 
+        # TODO Remove grouping nodes after ungroup
+
         return
 
     # If requested, print available RST relations
@@ -376,11 +364,12 @@ def process_command(user_input, mode, diagram, current_graph):
         if mode == 'rst':
 
             # Validate input against relations as well
-            valid = validate_input(user_input, current_graph, rst=True)
+            valid = validate_input(user_input, current_graph,
+                                   groups=True, rst=True)
 
         else:
             # Check input against the current graph
-            valid = validate_input(user_input, current_graph)
+            valid = validate_input(user_input, current_graph, groups=True)
 
         # If the input is not valid, continue
         if not valid:
@@ -415,23 +404,70 @@ def process_command(user_input, mode, diagram, current_graph):
 
             return
 
+    # if requested, split a node
+    if command == 'split':
+
+        # Begin by checking the number of desired splits
+        n_splits = int(user_input.split()[1])
+
+        # Prepare input for validation
+        user_input = prepare_input(user_input, 2)
+
+        # Validate input – only diagram elements can be split
+        valid = validate_input(user_input, current_graph)
+
+        # If the input is valid, proceed
+        if valid:
+
+            # Set up a placeholder list for split nodes
+            split_list = []
+
+            # Get properties of the node to duplicate
+            for n in user_input:
+
+                # Generate new identifiers for split nodes by taking the node
+                # name in uppercase and adding the number of split after stop.
+                split_ids = [n.upper() + '.{}'.format(i)
+                             for i in range(1, n_splits + 1)]
+
+                # Get the attribute of the node that is being split
+                attr_dict = current_graph.nodes[n.upper()]
+
+                # Add parent node information to the dictionary
+                attr_dict['copy_of'] = n.upper()
+
+                # Loop over split ids
+                for s in split_ids:
+
+                    # Append a tuple of identifier and attributes to split_list
+                    split_list.append((s, attr_dict))
+
+                # Remove node from the RST graph
+                current_graph.remove_node(n.upper())
+
+            # Add split nodes to the graph
+            current_graph.add_nodes_from(split_list)
+
+            # Flag the graph for re-drawing
+            diagram.update = True
+
+            return
+
 
 # Define a dictionary of available commands during annotation
-commands = {'rst': ['rels', 'ungroup'],
-            # 'layout': ['macrogroups'],
+commands = {'rst': ['rels', 'split', 'ungroup'],
             'connectivity': ['ungroup'],
             'generic': ['cap', 'comment', 'done', 'exit', 'export', 'free',
                         'info', 'isolate', 'macrogroups', 'next', 'reset', 'rm']
             }
 
 info = {'layout': "---\n"
-                  "Enter the identifiers of diagram elements you wish to group "
-                  "together.\n"
-                  "Separate the identifiers with a comma.\n"
+                  "Enter the identifiers of diagram elements you wish to\n"
+                  "group together. Separate the identifiers with a comma.\n"
                   "\n"
                   "Example of valid input: b1, a1, t1\n\n"
                   ""
-                  "This command groups nodes B1, A1 and T1 together under a "
+                  "This command groups nodes B1, A1 and T1 together under a\n"
                   "grouping node.\n"
                   "---\n"
                   "Grouping nodes may be deleted using command rm.\n\n"
@@ -439,32 +475,40 @@ info = {'layout': "---\n"
                   "This command deletes group G1. Multiple groups can be\n"
                   "deleted by entering multiple identifiers, e.g. rm g1 g2 g3\n"
                   "---\n"
-                  "To add macro-grouping information to a node, group, image "
-                  "constant or their group, enter the command 'macro' followed "
+                  "To add macro-grouping information to a node, group, image\n"
+                  "constant or their groups, enter the command 'macro' and \n"
                   "by the identifier or identifiers.\n\n"
                   "Example command: macro i0\n\n"
-                  "A list of available macro-groups can be printed using the "
-                  "command 'macrogroups'. This command will also print all "
-                  "currently defined macro-groups."
+                  "A list of available macro-groups can be printed using the\n"
+                  "command 'macrogroups'. This command will also print all\n"
+                  "currently defined macro-groups.\n"
                   "---\n",
         'rst': "---\n"
                "Enter the command 'new' to create a new RST relation.\n"
-               "The tool will then ask you to enter a valid name for the "
-               "relation.\n"
-               "Names are entered by using abbreviations, which can be listed "
+               "The tool will then ask you to enter a valid name for the\n"
+               "relation. Relations can be deleted using the command 'rm'.\n"
+               "Names are entered by using abbreviations, which can be listed\n"
                "using the command 'relations'.\n\n"
-               "The tool will infer the type of relation and ask you to enter "
+               "The tool will infer the type of relation and ask you to enter\n"
                "either a nucleus and satellites or several nuclei.\n"
+               "---\n"
+               "If diagram elements are picked out by multiple rhetorical\n"
+               "relations, you can use the command 'split' to split the node.\n"
+               "This creates multiple instances of the same node, which can \n"
+               "be picked out as parts of different rhetorical relations.\n\n"
+               "Example command: split 2 b1\n\n"
+               "This command splits node B1 into two nodes, which are given\n"
+               "identifiers B1.1 and B1.2.\n"
                "---\n",
         'connectivity': "---\n"
-                        "Drawing a connection between nodes requires three "
-                        "types of information: source, connection type and "
+                        "Drawing a connection between nodes requires three\n"
+                        "types of information: source, connection type and\n"
                         "target.\n\n"
-                        "The sources and targets must be valid identifiers for "
-                        "elements and groups or lists of valid identifiers "
+                        "The sources and targets must be valid identifiers,\n"
+                        "elements and groups or lists of valid identifiers\n"
                         "separated using commas.\n\n"
                         "Example command: t1 > b0, b1\n\n"
-                        "The connection type must be one of the following "
+                        "The connection type must be one of the following\n"
                         "shorthand aliases:\n\n"
                         "- for undirected lines\n"
                         "> for unidirectional arrow\n"
