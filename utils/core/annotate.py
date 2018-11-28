@@ -51,7 +51,7 @@ def create_relation(rst_graph, user_input):
 
         # Prepare and validate input
         nucleus = prepare_input(nucleus, 0)
-        valid = validate_input(nucleus, rst_graph, rst=True)
+        valid = validate_input(nucleus, rst_graph, rst=True, groups=True)
 
         # Check the total number of inputs in the list
         if len(nucleus) != 1:
@@ -71,7 +71,7 @@ def create_relation(rst_graph, user_input):
 
         # Prepare and validate input
         satellites = prepare_input(satellites, 0)
-        valid = validate_input(satellites, rst_graph, rst=True)
+        valid = validate_input(satellites, rst_graph, rst=True, groups=True)
 
         # Proceed if the input is valid
         if valid:
@@ -142,7 +142,7 @@ def create_relation(rst_graph, user_input):
 
         # Prepare and validate input
         nuclei = prepare_input(nuclei, 0)
-        valid = validate_input(nuclei, rst_graph, rst=True)
+        valid = validate_input(nuclei, rst_graph, rst=True, groups=True)
 
         # Check the total number of inputs in the list
         if len(nuclei) <= 1:

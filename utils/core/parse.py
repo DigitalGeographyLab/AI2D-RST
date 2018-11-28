@@ -376,18 +376,35 @@ def validate_input(user_input, current_graph, **kwargs):
     # Generate a list of valid elements present in the graph
     valid_nodes = [n.lower() for n in current_graph.nodes]
 
-    # Generate a dictionary of groups present in the graph
-    group_dict = get_node_dict(current_graph, kind='group')
+    # Forms the initial set of nodes, which may be updated using optional flags
+    valid_elems = set(valid_nodes)
 
-    # Count the current groups and enumerate for convenience. This
-    # allows the user to refer to group number instead of complex
-    # identifier.
-    group_dict = {"g{}".format(i): k for i, (k, v) in
-                  enumerate(group_dict.items(), start=1)}
+    # Check for optional keywords and arguments, begin by checking if groups
+    # need to be validated as well
+    try:
 
-    # Create a list of valid identifiers based on group dictionary keys
-    valid_groups = [g.lower() for g in group_dict.keys()]
+        if kwargs['groups']:
 
+            # Generate a dictionary of groups present in the graph
+            group_dict = get_node_dict(current_graph, kind='group')
+
+            # Count the current groups and enumerate for convenience. This
+            # allows the user to refer to group number instead of complex
+            # identifier.
+            group_dict = {"g{}".format(i): k for i, (k, v) in
+                          enumerate(group_dict.items(), start=1)}
+
+            # Create a list of valid identifiers based on group dictionary keys
+            valid_groups = [g.lower() for g in group_dict.keys()]
+
+            # Add valid groups to the set of valid elements
+            valid_elems.update(valid_groups)
+
+    except KeyError:
+
+        pass
+
+    # Check if RST relations need to be validated as well
     try:
 
         if kwargs['rst']:
@@ -404,13 +421,12 @@ def validate_input(user_input, current_graph, **kwargs):
             # Create a list of valid relation identifiers based on the dict keys
             valid_rels = [r.lower() for r in relation_ix.keys()]
 
-            # Combine valid nodes, groups and relations into a set
-            valid_elems = set(valid_nodes + valid_groups + valid_rels)
+            # Add valid relations to the set of valid elements
+            valid_elems.update(valid_rels)
 
     except KeyError:
 
-        # Combine the valid nodes and groups into a set
-        valid_elems = set(valid_nodes + valid_groups)
+        pass
 
     # Check for invalid input by comparing the user input and the valid elements
     if not set(user_input).issubset(valid_elems):
