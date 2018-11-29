@@ -287,6 +287,133 @@ def macro_group(graph, user_input):
         # Create a dictionary from user input; convert to uppercase
         macro_grouping = dict(zip(user_input, group_list))
 
+        # Loop over macro-groups to check whether they include tables
+        for node, macro_group in macro_grouping.items():
+
+            # If macro-group is a table
+            if macro_group == 'table':
+
+                # Create a dictionary mapping group aliases to valid IDs. This
+                # is needed for converting possible aliases in table cells.
+                group_dict = replace_aliases(graph, 'group')
+
+                # Prompt user for table properties and cast into integers
+                try:
+                    table_rows = int(input(prompts['table_rows']))
+
+                except ValueError:
+
+                    break  # TODO needs to be changed to continue?
+
+                try:
+                    table_cols = int(input(prompts['table_cols']))
+
+                except ValueError:
+
+                    break
+
+                try:
+                    table_axes = int(input(prompts['table_axes']))
+
+                except ValueError:
+
+                    break
+
+                # Store table shape into a dict with a tuple (rows, columns)
+                shape_dict = {node: (table_rows, table_cols)}
+
+                # Store row information into a dictionary
+                row_dict = {}
+
+                # Add table shape attribute to the node
+                nx.set_node_attributes(graph, shape_dict, 'table_shape')
+
+                # Prompt user to fill the table rows
+                for x in range(1, table_rows + 1):
+
+                    # Set up a flag to track row completion
+                    row_complete = False
+
+                    # Keep requesting input for each row until complete
+                    while row_complete is False:
+
+                        # Get identifiers for each row
+                        row = input("[GROUPING] Please enter identifiers for "
+                                    "elements on row {} (use ; to separate "
+                                    "identifiers for each row): ".format(x))
+
+                        # Compare the number of identifiers and columns
+                        if len(row.split(';')) == table_cols:
+
+                            # Split the input into entries for each column
+                            row_entries = row.split(';')
+
+                            # Strip whitespace
+                            row_entries = [r.strip() for r in row_entries]
+
+                            # Set up a placeholder for validation results
+                            validation = set()
+
+                            # Prepare and validate each entry
+                            for i, entry in enumerate(row_entries):
+
+                                # Prepare the input for validation
+                                entry = prepare_input(entry, from_item=0)
+
+                                # Validate the input for both nodes and groups
+                                valid = validate_input(entry, graph,
+                                                       groups=True)
+
+                                # Add validation result to the set
+                                validation.add(valid)
+
+                            # If there are no false entries, mark row complete
+                            if False not in validation:
+
+                                # Replace aliases with valid identifiers
+                                row_entries = [group_dict[e]
+                                               if e.lower() in group_dict.keys()
+                                               else e for e in row_entries]
+
+                                # Make sure all row entries are uppercase
+                                row_entries = [r.upper() for r in row_entries]
+
+                                # Add row entries to row dict
+                                row_dict['row_{}'.format(x)] = ' '\
+                                    .join(row_entries)
+
+                                # Mark row complete
+                                row_complete = True
+
+                # Assign table data to a dictionary for setting node properties
+                table_data = {node: row_dict}
+
+                # Add table information to node
+                nx.set_node_attributes(graph, table_data, 'table_data')
+
+                # Set a placeholder dict for axis labels
+                axis_labels = {}
+
+                # Prompt user for axis labels
+                for x in range(1, table_axes + 1):
+
+                    # Get axis labels
+                    axis_label = input("[GROUPING] Please enter the identifier "
+                                       "for label on axis {}: ".format(x))
+
+                    # If there is no label, continue
+                    if len(axis_label.split()) == 0:
+
+                        continue
+
+                    # Construe axis label key for dictionary
+                    label = "label_axis_{}".format(x)
+
+                    # TODO Remember to validate labels
+
+                    # Add axis label to the dictionary
+                    axis_labels[label] = axis_label
+
         # Add macro grouping information to the graph nodes
         nx.set_node_attributes(graph, macro_grouping, 'macro_group')
 

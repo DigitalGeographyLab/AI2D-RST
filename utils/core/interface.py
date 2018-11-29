@@ -538,9 +538,13 @@ prompts = {'nucleus_id': "[RST] Enter the identifier of nucleus: ",
            'rst_default': "[RST] Please enter a valid command: ",
            'rel_prompt': "[RST] Please enter relation name: ",
            'nuclei_id': "[RST] Enter the identifiers of the nuclei: ",
-           'macro_group': "[GROUPING] Please enter macro group type: ",
+           'macro_group': "[GROUPING] Please enter macro-group type: ",
            'conn_default': "[CONNECTIVITY] Please enter a connection or a valid"
-                           " command: "
+                           " command: ",
+           'table_rows': "[GROUPING] How many rows does the table have? ",
+           'table_cols': "[GROUPING] How many columns does the table have? ",
+           'table_axes': "[GROUPING] How many axes of organization does the "
+                         "table have? "
            }
 
 # Define a dictionary of various error messages that may arise during annotation
