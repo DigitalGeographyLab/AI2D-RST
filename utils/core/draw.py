@@ -299,8 +299,6 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
     img = cv2.imread('temp.png')
     os.remove('temp.png')
 
-    # TODO Remove OpenCV dependency
-
     # Close the plot
     plt.close()
 

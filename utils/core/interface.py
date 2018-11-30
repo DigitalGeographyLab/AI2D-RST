@@ -89,6 +89,12 @@ def process_command(user_input, mode, diagram, current_graph):
 
             print("[INFO] Marking rhetorical structure as complete.")
 
+        # Check if the current graph is frozen
+        if nx.is_frozen(current_graph):
+
+            # If the graph is frozen, unfreeze by making a copy
+            current_graph = current_graph.copy()
+
         # Remove grouping edges from RST and connectivity annotation
         if mode == 'rst' or mode == 'connectivity':
 
