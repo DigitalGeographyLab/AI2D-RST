@@ -301,26 +301,42 @@ def macro_group(graph, user_input):
                 try:
                     table_rows = int(input(prompts['table_rows']))
 
+                # Catch error from invalid input type
                 except ValueError:
 
-                    break  # TODO needs to be changed to continue?
+                    # Print error message and return
+                    print("[ERROR] Sorry, {} is not an integer."
+                          .format(table_rows))
+
+                    return
 
                 try:
                     table_cols = int(input(prompts['table_cols']))
 
+                # Catch error from invalid input type
                 except ValueError:
 
-                    break
+                    # Print error message and return
+                    print("[ERROR] Sorry, {} is not an integer."
+                          .format(table_cols))
+
+                    return
 
                 try:
                     table_axes = int(input(prompts['table_axes']))
 
+                # Catch error from invalid input type
                 except ValueError:
 
-                    break
+                    # Print error message and return
+                    print("[ERROR] Sorry, {} is not an integer."
+                          .format(table_axes))
 
-                # Store table shape into a dict with a tuple (rows, columns)
-                shape_dict = {node: (table_rows, table_cols)}
+                    return
+
+                # Store table shape into a dict with a string (rows, columns)
+                shape_dict = {node: ', '.join([str(table_rows),
+                                               str(table_cols)])}
 
                 # Store row information into a dictionary
                 row_dict = {}
@@ -385,34 +401,69 @@ def macro_group(graph, user_input):
                                 # Mark row complete
                                 row_complete = True
 
+                # Format table data by unpacking the dictionary into a list
+                row_dict = [str(k) + ': ' + str(v) for k, v in row_dict.items()]
+
+                # Join the list into a single string separated by commas
+                row_dict = ', '.join(row_dict)
+
                 # Assign table data to a dictionary for setting node properties
                 table_data = {node: row_dict}
 
                 # Add table information to node
                 nx.set_node_attributes(graph, table_data, 'table_data')
 
-                # Set a placeholder dict for axis labels
-                axis_labels = {}
+                # Check if table has axis labels
+                if table_axes > 0:
 
-                # Prompt user for axis labels
-                for x in range(1, table_axes + 1):
+                    # Set a placeholder dict for axis labels
+                    axis_labels = {}
 
-                    # Get axis labels
-                    axis_label = input("[GROUPING] Please enter the identifier "
-                                       "for label on axis {}: ".format(x))
+                    # Prompt user for axis labels
+                    for x in range(1, table_axes + 1):
 
-                    # If there is no label, continue
-                    if len(axis_label.split()) == 0:
+                        # Get axis labels
+                        axis_label = input("[GROUPING] Please enter the "
+                                           "identifiers for labels on axis {}: "
+                                           .format(x))
 
-                        continue
+                        # Prepare the input for validation
+                        axis_label = prepare_input(axis_label, from_item=0)
 
-                    # Construe axis label key for dictionary
-                    label = "label_axis_{}".format(x)
+                        # Validate the input for both nodes and groups
+                        valid = validate_input(axis_label, graph, groups=True)
 
-                    # TODO Remember to validate labels
+                        # If the the input is valid, proceed
+                        if valid:
 
-                    # Add axis label to the dictionary
-                    axis_labels[label] = axis_label
+                            # Replace aliases with valid identifiers
+                            axis_label = [group_dict[l] if l.lower() in
+                                          group_dict.keys()
+                                          else l for l in axis_label]
+
+                            # Convert to uppercase
+                            axis_label = [l.upper() for l in axis_label]
+
+                            # Make sure all row entries are uppercase
+                            row_entries = [r.upper() for r in row_entries]
+
+                            # Add axis label to the dictionary
+                            axis_labels['axis_{}'.format(x)] = ' '.join(
+                                axis_label)
+
+                    # Format table data by unpacking the dictionary into a list
+                    axis_labels = [str(k) + ': ' + str(v) for k, v in
+                                   axis_labels.items()]
+
+                    # Join the list into a single string separated by commas
+                    axis_labels = ', '.join(axis_labels)
+
+                    # Assign table data to a dictionary for setting node
+                    # properties.
+                    label_data = {node: axis_labels}
+
+                    # Add table information to node
+                    nx.set_node_attributes(graph, label_data, 'table_labels')
 
         # Add macro grouping information to the graph nodes
         nx.set_node_attributes(graph, macro_grouping, 'macro_group')

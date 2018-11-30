@@ -543,8 +543,7 @@ prompts = {'nucleus_id': "[RST] Enter the identifier of nucleus: ",
                            " command: ",
            'table_rows': "[GROUPING] How many rows does the table have? ",
            'table_cols': "[GROUPING] How many columns does the table have? ",
-           'table_axes': "[GROUPING] How many axes of organization does the "
-                         "table have? "
+           'table_axes': "[GROUPING] How many axes have labels? "
            }
 
 # Define a dictionary of various error messages that may arise during annotation
