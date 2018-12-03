@@ -458,6 +458,10 @@ class Diagram:
                         source = [x.strip(',') for x in source]
                         target = [x.strip(',') for x in target]
 
+                        # Prepare input for validation
+                        source = prepare_input(' '.join(source), from_item=0)
+                        target = prepare_input(' '.join(target), from_item=0)
+
                         # Check the input against the current graph
                         valid = validate_input(source + target,
                                                self.connectivity_graph,

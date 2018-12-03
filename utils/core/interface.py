@@ -286,8 +286,6 @@ def process_command(user_input, mode, diagram, current_graph):
         # Flag the graph for re-drawing
         diagram.update = True
 
-        # TODO Remove grouping nodes after ungroup
-
         return
 
     # If requested, print available RST relations
