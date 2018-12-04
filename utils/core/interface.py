@@ -22,6 +22,72 @@ def process_command(user_input, mode, diagram, current_graph):
     # Extract command from the user input
     command = user_input.split()[0]
 
+    # Save a screenshot of all annotations if requested
+    if command == 'acap':
+
+        # Get filename of current image (without extension)
+        fname = os.path.basename(diagram.image_filename).split('.')[0]
+
+        # Join filename to get a string
+        fname = ''.join(fname)
+
+        # Draw segmentation
+        segmentation = draw_layout(diagram.image_filename,
+                                   diagram.annotation,
+                                   height=720,
+                                   dpi=100)
+
+        # Draw grouping graph
+        try:
+            grouping = draw_graph(diagram.layout_graph, dpi=100, mode='layout')
+
+        except AttributeError:
+
+            # Print error message
+            print("[ERROR] Sorry, you have not annotated the {} graph yet."
+                  .format(mode))
+
+            return
+
+        # Draw connectivity graph
+        try:
+            connectivity = draw_graph(diagram.connectivity_graph, dpi=100,
+                                      mode='connectivity')
+
+        except AttributeError:
+
+            # Print error message
+            print("[ERROR] Sorry, you have not annotated the {} graph yet."
+                  .format(mode))
+
+            return
+
+        # Draw RST graph
+        try:
+            rst = draw_graph(diagram.rst_graph, dpi=100, mode='rst')
+
+        except AttributeError:
+
+            # Print error message
+            print("[ERROR] Sorry, you have not annotated the {} graph yet."
+                  .format(mode))
+
+            return
+
+        # Stack images of all graphs side by side and on top of each other
+        seg_group = np.hstack([segmentation, grouping])
+        rst_group = np.hstack([connectivity, rst])
+        all_graphs = np.vstack([seg_group, rst_group])
+
+        # Write image on disk
+        cv2.imwrite("all_graphs_{}.png".format(fname), all_graphs)
+
+        # Print status message
+        print("[INFO] Saved screenshots for all graphs on disk for {}.png"
+              .format(fname))
+
+        return
+
     # Save a screenshot if requested
     if command == 'cap':
 
@@ -45,7 +111,7 @@ def process_command(user_input, mode, diagram, current_graph):
         cv2.imwrite("{}_{}.png".format(mode, fname), diag_hires)
 
         # Print status message
-        print("[INFO] Saved screenshots to disk for {}.png".format(
+        print("[INFO] Saved separate screenshots on disk for {}.png".format(
             fname
         ))
 
@@ -461,8 +527,9 @@ def process_command(user_input, mode, diagram, current_graph):
 # Define a dictionary of available commands during annotation
 commands = {'rst': ['rels', 'split', 'ungroup'],
             'connectivity': ['ungroup'],
-            'generic': ['cap', 'comment', 'done', 'exit', 'export', 'free',
-                        'info', 'isolate', 'macrogroups', 'next', 'reset', 'rm']
+            'generic': ['acap', 'cap', 'comment', 'done', 'exit', 'export',
+                        'free', 'info', 'isolate', 'macrogroups', 'next',
+                        'reset', 'rm']
             }
 
 info = {'layout': "---\n"
@@ -519,6 +586,7 @@ info = {'layout': "---\n"
                         "<> for bidirectional arrow\n"
                         "---\n",
         'generic': "Other valid commands include:\n\n"
+                   "acap: Save a screen capture for all graphs in diagram.\n"
                    "cap: Save a screen capture of the current visualisation.\n"
                    "comment: Enter a comment about current diagram.\n"
                    "free: Remove all edges leading to a node, e.g. free b0.\n"
