@@ -593,11 +593,13 @@ info = {'layout': "---\n"
                    "exit: Exit the annotator immediately.\n"
                    "export: Export the current graph into DOT format. \n"
                    "done: Mark the current diagram as complete and move on.\n"
-                   "hide: Hide the annotation.\n"
+                   "hide: Hide the layout segmentation.\n"
                    "info: Print this message.\n"
                    "isolate: Remove isolates from the graph.\n"
                    "next: Save current work and move on to the next diagram.\n"
-                   "reset: Reset the current annotation.\n" 
+                   "reset: Reset the current annotation.\n"
+                   "show: Show the layout segmentation. Use e.g. show b0 to\n"
+                   "      a single unit.\n"
                    "---",
         }
 

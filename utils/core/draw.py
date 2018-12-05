@@ -121,6 +121,10 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
         height: Target height of the image.
         hide: A Boolean indicating whether to draw annotation or not.
 
+    Optional parameters:
+        dpi: An integer indicating the resolution to use.
+        point: A list of layout elements to draw.
+
     Returns:
         An image with the AI2D annotation overlaid.
     """
@@ -154,6 +158,14 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
     # Draw blobs
     try:
         for b in annotation['blobs']:
+
+            # Check if some annotation should be highlighted
+            if kwargs and 'point' in kwargs:
+
+                # Continue if the blob is not in the list of elements to draw
+                if b not in kwargs['point']:
+
+                    continue
 
             # Get blob ID
             blob_id = annotation['blobs'][b]['id']
@@ -196,6 +208,14 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
     try:
         for a in annotation['arrows']:
 
+            # Check if some annotation should be highlighted
+            if kwargs and 'point' in kwargs:
+
+                # Continue if the blob is not in the list of elements to draw
+                if a not in kwargs['point']:
+
+                    continue
+
             # Get arrow ID
             arrow_id = annotation['arrows'][a]['id']
 
@@ -235,6 +255,14 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
     # Draw text blocks
     try:
         for t in annotation['text']:
+
+            # Check if some annotation should be highlighted
+            if kwargs and 'point' in kwargs:
+
+                # Continue if the blob is not in the list of elements to draw
+                if t not in kwargs['point']:
+
+                    continue
 
             # Get text ID
             text_id = annotation['text'][t]['id']

@@ -91,8 +91,7 @@ class Diagram:
         # Draw the graph
         diagram = draw_graph(self.layout_graph, dpi=100, mode='layout')
 
-        # Set up flags for tracking whether annotation should be hidden or shown
-        show = False
+        # Set up flag a for tracking whether annotation is hidden
         hide = False
 
         # Enter a while loop for the annotation procedure
@@ -101,22 +100,14 @@ class Diagram:
             # Check if the graph needs to be updated
             if self.update:
 
+                # Close previous plot
+                plt.close()
+
                 # Re-draw the graph
                 diagram = draw_graph(self.layout_graph, dpi=100, mode='layout')
 
                 # Mark update complete
                 self.update = False
-
-            # Check if segmentation annotation is hidden and should be re-drawn
-            if hide and show:
-
-                # Visualize the layout segmentation
-                segmentation = draw_layout(self.image_filename, self.annotation,
-                                           480)
-
-                # Return to normal mode by setting both hide and show to False
-                hide = False
-                show = False
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, segmentation))
@@ -150,27 +141,57 @@ class Diagram:
                 # Otherwise continue
                 continue
 
-            # Hide/show layout segmentation if requested
+            # Hide layout segmentation if requested
             if user_input == 'hide':
 
-                # If hide is False, re-draw the layout without annotation
-                if not hide:
+                # Re-draw the layout
+                segmentation = draw_layout(self.image_filename,
+                                           self.annotation,
+                                           480, hide=True)
+
+                # Flag the annotation as hidden
+                hide = True
+
+                continue
+
+            # Show layout segmentation if requested
+            if user_input == 'show':
+
+                # Re-draw the layout
+                segmentation = draw_layout(self.image_filename,
+                                           self.annotation,
+                                           480, hide=False)
+
+                # Flag the annotation as visible
+                hide = False
+
+                continue
+
+            # Check if some elements should be highlighted in the segmentation
+            if user_input.split()[0] == 'show':
+
+                # Prepare user input
+                user_input = prepare_input(user_input, from_item=1)
+
+                # Validate input against current graph
+                valid = validate_input(user_input, self.layout_graph)
+
+                # Proceed if the input is valid
+                if valid:
+
+                    # Convert input to uppercase
+                    user_input = [u.upper() for u in user_input]
 
                     # Re-draw the layout
                     segmentation = draw_layout(self.image_filename,
                                                self.annotation,
-                                               480, hide=True)
-
-                    # Flag the annotation as hidden
-                    hide = True
+                                               480, hide=False,
+                                               point=user_input)
 
                     continue
 
-                # If the layout is already hidden, re-draw the annotation
-                if hide:
-
-                    # Set show to True
-                    show = True
+                # If the user input is not valid, continue
+                if not valid:
 
                     continue
 
@@ -332,8 +353,7 @@ class Diagram:
         diagram = draw_graph(self.connectivity_graph, dpi=100,
                              mode='connectivity')
 
-        # Set up flags for tracking whether annotation should be hidden or shown
-        show = False
+        # Set up flag a for tracking whether annotation is hidden
         hide = False
 
         # Enter a while loop for the annotation procedure
@@ -351,17 +371,6 @@ class Diagram:
 
                 # Mark update complete
                 self.update = False
-
-            # Check if segmentation annotation is hidden and should be re-drawn
-            if hide and show:
-
-                # Visualize the layout segmentation
-                segmentation = draw_layout(self.image_filename, self.annotation,
-                                           480)
-
-                # Return to normal mode by setting both hide and show to False
-                hide = False
-                show = False
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, segmentation))
@@ -397,27 +406,57 @@ class Diagram:
                 # Otherwise continue
                 continue
 
-            # Hide/show layout segmentation if requested
+            # Hide layout segmentation if requested
             if user_input == 'hide':
 
-                # If hide is False, re-draw the layout without annotation
-                if not hide:
+                # Re-draw the layout
+                segmentation = draw_layout(self.image_filename,
+                                           self.annotation,
+                                           480, hide=True)
+
+                # Flag the annotation as hidden
+                hide = True
+
+                continue
+
+            # Show layout segmentation if requested
+            if user_input == 'show':
+
+                # Re-draw the layout
+                segmentation = draw_layout(self.image_filename,
+                                           self.annotation,
+                                           480, hide=False)
+
+                # Flag the annotation as visible
+                hide = False
+
+                continue
+
+            # Check if some elements should be highlighted in the segmentation
+            if user_input.split()[0] == 'show':
+
+                # Prepare user input
+                user_input = prepare_input(user_input, from_item=1)
+
+                # Validate input against current graph
+                valid = validate_input(user_input, self.layout_graph)
+
+                # Proceed if the input is valid
+                if valid:
+
+                    # Convert input to uppercase
+                    user_input = [u.upper() for u in user_input]
 
                     # Re-draw the layout
                     segmentation = draw_layout(self.image_filename,
                                                self.annotation,
-                                               480, hide=True)
-
-                    # Flag the annotation as hidden
-                    hide = True
+                                               480, hide=False,
+                                               point=user_input)
 
                     continue
 
-                # If the layout is already hidden, re-draw the annotation
-                if hide:
-
-                    # Set show to True
-                    show = True
+                # If the user input is not valid, continue
+                if not valid:
 
                     continue
 
@@ -601,8 +640,7 @@ class Diagram:
         # Draw the graph using RST mode
         diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')
 
-        # Set up flags for tracking whether annotation should be hidden or shown
-        show = False
+        # Set up flag a for tracking whether annotation is hidden
         hide = False
 
         # Enter a while loop for the annotation procedure
@@ -620,16 +658,6 @@ class Diagram:
                 # Mark update complete
                 self.update = False
 
-            # Check if segmentation annotation is hidden and should be re-drawn
-            if hide and show:
-
-                # Visualize the layout segmentation
-                segmentation = draw_layout(self.image_filename, self.annotation,
-                                           480)
-
-                # Return to normal mode by setting both hide and show to False
-                hide = False
-                show = False
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, segmentation))
@@ -663,27 +691,57 @@ class Diagram:
                 # Otherwise continue
                 continue
 
-            # Hide/show layout segmentation if requested
+            # Hide layout segmentation if requested
             if user_input == 'hide':
 
-                # If hide is False, re-draw the layout without annotation
-                if not hide:
+                # Re-draw the layout
+                segmentation = draw_layout(self.image_filename,
+                                           self.annotation,
+                                           480, hide=True)
+
+                # Flag the annotation as hidden
+                hide = True
+
+                continue
+
+            # Show layout segmentation if requested
+            if user_input == 'show':
+
+                # Re-draw the layout
+                segmentation = draw_layout(self.image_filename,
+                                           self.annotation,
+                                           480, hide=False)
+
+                # Flag the annotation as visible
+                hide = False
+
+                continue
+
+            # Check if some elements should be highlighted in the segmentation
+            if user_input.split()[0] == 'show':
+
+                # Prepare user input
+                user_input = prepare_input(user_input, from_item=1)
+
+                # Validate input against current graph
+                valid = validate_input(user_input, self.layout_graph)
+
+                # Proceed if the input is valid
+                if valid:
+
+                    # Convert input to uppercase
+                    user_input = [u.upper() for u in user_input]
 
                     # Re-draw the layout
                     segmentation = draw_layout(self.image_filename,
                                                self.annotation,
-                                               480, hide=True)
-
-                    # Flag the annotation as hidden
-                    hide = True
+                                               480, hide=False,
+                                               point=user_input)
 
                     continue
 
-                # If the layout is already hidden, re-draw the annotation
-                if hide:
-
-                    # Set show to True
-                    show = True
+                # If the user input is not valid, continue
+                if not valid:
 
                     continue
 
