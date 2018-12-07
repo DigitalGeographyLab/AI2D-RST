@@ -134,12 +134,17 @@ class Diagram:
 
                 # If the user wants to move on the next diagram without saving
                 # the annotation, break from the while loop.
-                if user_input == 'next':
+                if user_input.split()[0] == 'next':
 
-                    break
+                    return user_input
 
                 # Otherwise continue
                 continue
+
+            # Check if the user has requested to switch annotation task
+            if user_input.split()[0] in commands['tasks']:
+
+                return user_input
 
             # Hide layout segmentation if requested
             if user_input == 'hide':
@@ -308,43 +313,14 @@ class Diagram:
         # Visualize the layout segmentation
         segmentation = draw_layout(self.image_filename, self.annotation, 480)
 
-        # If the connectivity graph does not exist, populate graph
+        # If the connectivity graph does not exist, create graph
         if self.connectivity_graph is None:
 
             # Create an empty MultiDiGraph
             self.connectivity_graph = nx.MultiDiGraph()
 
-            # Create a temporary copy of the layout graph for filtering content
-            temp_graph = self.layout_graph.copy()
-
-            # Get a dictionary of nodes and a list of edges
-            nodes = dict(temp_graph.nodes(data=True))
-            edges = list(temp_graph.edges())
-
-            # Fetch a list of edges to/from imageConsts
-            iconst_edges = [(s, t) for (s, t) in edges
-                            if nodes[s]['kind'] == 'imageConsts'
-                            or nodes[t]['kind'] == 'imageConsts']
-
-            # Remove grouping edges using the list
-            temp_graph.remove_edges_from(iconst_edges)
-
-            # Use the isolates function to locate grouping nodes for groups
-            isolates = list(nx.isolates(temp_graph))
-
-            # Remove isolated grouping nodes
-            isolates = [i for i in isolates if nodes[i]['kind']
-                        in ['group', 'imageConsts']]
-
-            # Remove isolated nodes from the graph
-            temp_graph.remove_nodes_from(isolates)
-
-            # Add attributes to the remaining edges
-            nx.set_edge_attributes(temp_graph, 'grouping', 'kind')
-
-            # Add the filtered nodes and edgesto the connectivity graph
-            self.connectivity_graph.add_nodes_from(temp_graph.nodes(data=True))
-            self.connectivity_graph.add_edges_from(temp_graph.edges(data=True))
+        # Update grouping information using the grouping layer
+        update_grouping(self, self.connectivity_graph)
 
         # Freeze and save current graph for resetting annotation if required
         self.reset = nx.freeze(self.connectivity_graph.copy())
@@ -405,6 +381,11 @@ class Diagram:
 
                 # Otherwise continue
                 continue
+
+            # Check if the user has requested to switch annotation task
+            if user_input.split()[0] in commands['tasks']:
+
+                return user_input
 
             # Hide layout segmentation if requested
             if user_input == 'hide':
@@ -602,37 +583,8 @@ class Diagram:
             # Create an empty DiGraph
             self.rst_graph = nx.DiGraph()
 
-            # Create a temporary copy of the layout graph for filtering content
-            temp_graph = self.layout_graph.copy()
-
-            # Get a dictionary of nodes and a list of edges
-            nodes = dict(temp_graph.nodes(data=True))
-            edges = list(temp_graph.edges())
-
-            # Fetch a list of edges to/from imageConsts
-            iconst_edges = [(s, t) for (s, t) in edges
-                            if nodes[s]['kind'] == 'imageConsts'
-                            or nodes[t]['kind'] == 'imageConsts']
-
-            # Remove grouping edges using the list
-            temp_graph.remove_edges_from(iconst_edges)
-
-            # Use the isolates function to locate grouping nodes for groups
-            isolates = list(nx.isolates(temp_graph))
-
-            # Remove isolated grouping nodes
-            isolates = [i for i in isolates if nodes[i]['kind']
-                        in ['group', 'imageConsts']]
-
-            # Remove isolated nodes from the graph
-            temp_graph.remove_nodes_from(isolates)
-
-            # Add attributes to the remaining edges
-            nx.set_edge_attributes(temp_graph, 'grouping', 'kind')
-
-            # Add the filtered nodes and edgesto the connectivity graph
-            self.rst_graph.add_nodes_from(temp_graph.nodes(data=True))
-            self.rst_graph.add_edges_from(temp_graph.edges(data=True))
+        # Update grouping information using the grouping layer
+        update_grouping(self, self.rst_graph)
 
         # Freeze and save current graph for resetting annotation if required
         self.reset = nx.freeze(self.rst_graph.copy())
@@ -657,7 +609,6 @@ class Diagram:
 
                 # Mark update complete
                 self.update = False
-
 
             # Join the graph and the layout structure horizontally
             preview = np.hstack((diagram, segmentation))
@@ -690,6 +641,11 @@ class Diagram:
 
                 # Otherwise continue
                 continue
+
+            # Check if the user has requested to switch annotation task
+            if user_input.split()[0] in commands['tasks']:
+
+                return user_input
 
             # Hide layout segmentation if requested
             if user_input == 'hide':
