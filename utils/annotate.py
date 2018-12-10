@@ -21,6 +21,7 @@ Returns:
 """
 
 # Import packages
+from core.interface import *
 from core import Diagram
 from pathlib import Path
 import argparse
@@ -149,7 +150,10 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
     # If the diagram has not been marked as complete, annotate
     while not diagram.complete:
 
-        # TODO Switching to task that has been marked as complete hangs the tool
+        # If the user has requested next diagram, break from while loop
+        if task == 'next':
+
+            break
 
         # Evaluate the completion of different annotation tasks
         while not diagram.group_complete and task == 'group':
@@ -184,9 +188,23 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
             # If RST is marked as complete, break from the loop
             if diagram.rst_complete:
 
-                break
+                if not diagram.group_complete:
 
-        # If all annotation layers have been completed, mark diagram complete
+                    task = 'group'
+
+                    break
+
+                if not diagram.connectivity_complete:
+
+                    task = 'conn'
+
+                    break
+
+                else:
+
+                    diagram.complete = True
+
+        # Mark diagram complete if all annotation layers have been completed
         if diagram.group_complete and diagram.connectivity_complete \
                 and diagram.rst_complete:
 
@@ -197,10 +215,58 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
 
             diagram.complete = False
 
-        # If the user has requested next diagram, break from while loop
-        if task == 'next':
+        # Make sure switches to layers marked as complete are handled
+        if task == 'group' and diagram.group_complete and not diagram.complete:
 
-            break
+            # Print error message
+            print(messages['layout_complete'])
+
+            if not diagram.connectivity_complete:
+
+                task = 'conn'
+
+                continue
+
+            if not diagram.rst_complete:
+
+                task = 'rst'
+
+                continue
+
+        if task == 'conn' and diagram.connectivity_complete and \
+                not diagram.complete:
+
+            # Print error message
+            print(messages['conn_complete'])
+
+            if not diagram.group_complete:
+
+                task = 'group'
+
+                continue
+
+            if not diagram.rst_complete:
+
+                task = 'rst'
+
+                continue
+
+        if task == 'rst' and diagram.rst_complete and not diagram.complete:
+
+            # Print error message
+            print(messages['rst_complete'])
+
+            if not diagram.group_complete:
+
+                task = 'group'
+
+                continue
+
+            if not diagram.connectivity_complete:
+
+                task = 'conn'
+
+                continue
 
         # Otherwise continue
         continue

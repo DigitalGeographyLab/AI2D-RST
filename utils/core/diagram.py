@@ -375,9 +375,9 @@ class Diagram:
 
                 # If the user wants to move on the next diagram without saving
                 # the annotation, break from the while loop.
-                if user_input == 'next':
+                if user_input.split()[0] == 'next':
 
-                    break
+                    return user_input
 
                 # Otherwise continue
                 continue
@@ -635,9 +635,9 @@ class Diagram:
 
                 # If the user wants to move on the next diagram without saving
                 # the annotation, break from the while loop.
-                if user_input == 'next':
+                if user_input.split()[0] == 'next':
 
-                    break
+                    return user_input
 
                 # Otherwise continue
                 continue

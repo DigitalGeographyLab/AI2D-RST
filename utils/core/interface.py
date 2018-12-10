@@ -627,7 +627,13 @@ prompts = {'nucleus_id': "[RST] Enter the identifier of nucleus: ",
 messages = {'nucleus_err': "Sorry, a mononuclear relation cannot have more "
                            "than one nucleus. Please try again.",
             'nuclei_err': "Sorry, a multinuclear relation must have more than "
-                          "one nucleus. Please try again."}
+                          "one nucleus. Please try again.",
+            'layout_complete': "[ERROR] Grouping annotation is marked as "
+                               "complete.",
+            'conn_complete': "[ERROR] Connectivity annotation is marked as "
+                             "complete.",
+            'rst_complete': "[ERROR] RST annotation is marked as complete. "
+            }
 
 
 # Define a dictionary of RST relations / types and their aliases (keys)
