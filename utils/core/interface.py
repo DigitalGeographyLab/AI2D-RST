@@ -277,8 +277,6 @@ def process_command(user_input, mode, diagram, current_graph):
         print(info[mode])
         print(info['generic'])
 
-        return
-
     # If requested, remove isolates from the current graph
     if command == 'isolate':
 
@@ -405,7 +403,11 @@ def process_command(user_input, mode, diagram, current_graph):
         if mode == 'layout':
 
             # Unfreeze the reset graph and assign to layout_graph
-            diagram.layout_graph = diagram.reset.copy()
+            diagram.layout_graph = create_graph(diagram.annotation,
+                                                edges=False,
+                                                arrowheads=False,
+                                                mode='layout'
+                                                )
 
         # Reset connectivity graph if requested
         if mode == 'connectivity':
@@ -529,7 +531,8 @@ commands = {'rst': ['rels', 'split', 'ungroup'],
             'connectivity': ['ungroup'],
             'generic': ['acap', 'cap', 'comment', 'done', 'exit', 'export',
                         'free', 'info', 'isolate', 'macrogroups', 'next',
-                        'reset', 'rm']
+                        'reset', 'rm'],
+            'tasks': ['conn', 'group', 'rst']
             }
 
 info = {'layout': "---\n"
@@ -624,7 +627,13 @@ prompts = {'nucleus_id': "[RST] Enter the identifier of nucleus: ",
 messages = {'nucleus_err': "Sorry, a mononuclear relation cannot have more "
                            "than one nucleus. Please try again.",
             'nuclei_err': "Sorry, a multinuclear relation must have more than "
-                          "one nucleus. Please try again."}
+                          "one nucleus. Please try again.",
+            'layout_complete': "[ERROR] Grouping annotation is marked as "
+                               "complete.",
+            'conn_complete': "[ERROR] Connectivity annotation is marked as "
+                             "complete.",
+            'rst_complete': "[ERROR] RST annotation is marked as complete. "
+            }
 
 
 # Define a dictionary of RST relations / types and their aliases (keys)

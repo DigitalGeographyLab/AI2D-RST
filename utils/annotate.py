@@ -21,6 +21,7 @@ Returns:
 """
 
 # Import packages
+from core.interface import *
 from core import Diagram
 from pathlib import Path
 import argparse
@@ -89,8 +90,7 @@ if os.path.isfile(output_path):
     annotation_df = pd.read_pickle(output_path)
 
     # Print status message
-    print("[INFO] Continuing with existing annotation in {}.".format(
-        output_path))
+    print("[INFO] Continuing existing annotation in {}.".format(output_path))
 
 # Otherwise, read the annotation from the input DataFrame
 if not os.path.isfile(output_path):
@@ -144,49 +144,132 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
         # Initialise a Diagram class and assign to variable
         diagram = Diagram(annotation, image_path)
 
+    # Set grouping as initial annotation task
+    task = 'group'
+
     # If the diagram has not been marked as complete, annotate
-    if not diagram.complete:
+    while not diagram.complete:
 
-        # Request the user to perform grouping (hierarchy + macro grouping)
-        if not diagram.group_complete:
+        # If the user has requested next diagram, break from while loop
+        if task == 'next':
 
-            # Annotate layout
-            diagram.annotate_layout(review)
+            break
 
-        # When initial grouping is done, move to annotate connectivity
-        if diagram.group_complete:
+        # Evaluate the completion of different annotation tasks
+        while not diagram.group_complete and task == 'group':
 
-            # Store the diagram into the column 'diagram'
-            annotation_df.at[ix, 'diagram'] = diagram
+            # Annotate layout, use variable 'task' to track switches
+            task = diagram.annotate_layout(review)
 
-            # Annotate connectivity
-            diagram.annotate_connectivity(review)
+            # If grouping is marked as complete, annotate connectivity
+            if diagram.group_complete:
 
-        # When connectivity has been annotated, move to rhetorical structure
-        if diagram.connectivity_complete and not disable_rst:
+                task = 'conn'
 
-            # Store the diagram into the column 'diagram'
-            annotation_df.at[ix, 'diagram'] = diagram
+                break
 
-            # Annotate rhetorical structure
-            diagram.annotate_rst(review)
+        while not diagram.connectivity_complete and task == 'conn':
 
-            # Store the diagram into the column 'diagram'
-            annotation_df.at[ix, 'diagram'] = diagram
+            # Annotate connectivity, use variable 'task' to track switches
+            task = diagram.annotate_connectivity(review)
 
+            # If connectivity is marked as complete, annotate RST
+            if diagram.connectivity_complete:
+
+                task = 'rst'
+
+                break
+
+        while not diagram.rst_complete and task == 'rst':
+
+            # Annotate RST, use variable 'task' to track switches
+            task = diagram.annotate_rst(review)
+
+            # If RST is marked as complete, break from the loop
+            if diagram.rst_complete:
+
+                if not diagram.group_complete:
+
+                    task = 'group'
+
+                    break
+
+                if not diagram.connectivity_complete:
+
+                    task = 'conn'
+
+                    break
+
+                else:
+
+                    diagram.complete = True
+
+        # Mark diagram complete if all annotation layers have been completed
         if diagram.group_complete and diagram.connectivity_complete \
                 and diagram.rst_complete:
 
-            # Delete the reset graph
-            delattr(diagram, 'reset')
-
-            # Mark diagram as complete
             diagram.complete = True
 
         # Otherwise, mark diagram as incomplete
         else:
 
             diagram.complete = False
+
+        # Make sure switches to layers marked as complete are handled
+        if task == 'group' and diagram.group_complete and not diagram.complete:
+
+            # Print error message
+            print(messages['layout_complete'])
+
+            if not diagram.connectivity_complete:
+
+                task = 'conn'
+
+                continue
+
+            if not diagram.rst_complete:
+
+                task = 'rst'
+
+                continue
+
+        if task == 'conn' and diagram.connectivity_complete and \
+                not diagram.complete:
+
+            # Print error message
+            print(messages['conn_complete'])
+
+            if not diagram.group_complete:
+
+                task = 'group'
+
+                continue
+
+            if not diagram.rst_complete:
+
+                task = 'rst'
+
+                continue
+
+        if task == 'rst' and diagram.rst_complete and not diagram.complete:
+
+            # Print error message
+            print(messages['rst_complete'])
+
+            if not diagram.group_complete:
+
+                task = 'group'
+
+                continue
+
+            if not diagram.connectivity_complete:
+
+                task = 'conn'
+
+                continue
+
+        # Otherwise continue
+        continue
 
     # Store the diagram into the column 'diagram'
     annotation_df.at[ix, 'diagram'] = diagram
