@@ -195,7 +195,10 @@ def process_command(user_input, mode, diagram, current_graph):
     # If requested, exit the annotator immediately
     if command == 'exit':
 
-        exit("[INFO] Quitting ...")
+        # Destroy any remaining windows
+        cv2.destroyAllWindows()
+
+        return
 
     # Export a graphviz DOT graph if requested
     if command == 'export':

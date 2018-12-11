@@ -132,13 +132,17 @@ class Diagram:
                                 diagram=self,
                                 current_graph=self.layout_graph)
 
-                # If the user wants to move on the next diagram without saving
-                # the annotation, break from the while loop.
+                # If the user wants to move on the next diagram without marking
+                # the annotation as done or exit altogether, break from the
+                # loop.
                 if user_input.split()[0] == 'next':
 
-                    return user_input
+                    return user_input.split()[0]
 
-                # Otherwise continue
+                if user_input.split()[0] == 'exit':
+
+                    return user_input.split()[0]
+
                 continue
 
             # Check if the user has requested to switch annotation task
@@ -373,11 +377,16 @@ class Diagram:
                                 current_graph=self.connectivity_graph
                                 )
 
-                # If the user wants to move on the next diagram without saving
-                # the annotation, break from the while loop.
+                # If the user wants to move on the next diagram without marking
+                # the annotation as done or exit altogether, break from the
+                # loop.
                 if user_input.split()[0] == 'next':
 
-                    return user_input
+                    return user_input.split()[0]
+
+                if user_input.split()[0] == 'exit':
+
+                    return user_input.split()[0]
 
                 # Otherwise continue
                 continue
@@ -633,11 +642,16 @@ class Diagram:
                                 diagram=self,
                                 current_graph=self.rst_graph)
 
-                # If the user wants to move on the next diagram without saving
-                # the annotation, break from the while loop.
+                # If the user wants to move on the next diagram without marking
+                # the annotation as done or exit altogether, break from the
+                # loop.
                 if user_input.split()[0] == 'next':
 
-                    return user_input
+                    return user_input.split()[0]
+
+                if user_input.split()[0] == 'exit':
+
+                    return user_input.split()[0]
 
                 # Otherwise continue
                 continue

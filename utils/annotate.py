@@ -155,6 +155,18 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
 
             break
 
+        # If the user has requested to exit the annotator, break from the loop
+        if task == 'exit':
+
+            # Store the diagram into the column 'diagram'
+            annotation_df.at[ix, 'diagram'] = diagram
+
+            # Write the DataFrame to disk at each step
+            annotation_df.to_pickle(output_path)
+
+            # Print status message
+            exit("[INFO] Saving current graph and quitting.")
+
         # Evaluate the completion of different annotation tasks
         while not diagram.group_complete and task == 'group':
 
@@ -202,13 +214,15 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
 
                 else:
 
-                    diagram.complete = True
+                    break
 
         # Mark diagram complete if all annotation layers have been completed
         if diagram.group_complete and diagram.connectivity_complete \
                 and diagram.rst_complete:
 
             diagram.complete = True
+
+            continue
 
         # Otherwise, mark diagram as incomplete
         else:
