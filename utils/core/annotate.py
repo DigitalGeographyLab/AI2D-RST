@@ -258,7 +258,9 @@ def macro_group(graph, user_input):
     macro_group_type = input(prompts['macro_group'])
 
     # Flatten a dictionary of valid macro groups and their abbreviations
-    valid_macro_groups = list(macro_groups.keys()) + list(macro_groups.values())
+    valid_macro_groups = list(macro_groups.keys()) +\
+                         list(macro_groups.values()) +\
+                         ['none']
 
     # Check for valid macro group type
     if macro_group_type not in valid_macro_groups:
@@ -288,9 +290,19 @@ def macro_group(graph, user_input):
         macro_grouping = dict(zip(user_input, group_list))
 
         # Loop over macro-groups to check whether they include tables
-        for node, macro_group in macro_grouping.items():
+        for node, macro_group in macro_grouping.copy().items():
 
-            # If macro-group is a table
+            if macro_group == 'none':
+
+                # Delete node attribute and item from macro_grouping dictionary
+                del graph.node[node]['macro_group']
+                del macro_grouping[node]
+
+                # Print status
+                print("[INFO] Deleted macro-group information from {}.".format(
+                    node))
+
+            # If macro-group is a table, request description
             if macro_group == 'table':
 
                 # Create a dictionary mapping group aliases to valid IDs. This
@@ -469,7 +481,7 @@ def macro_group(graph, user_input):
         nx.set_node_attributes(graph, macro_grouping, 'macro_group')
 
         # Print status message
-        print("[INFO] Added macro-group information to {}.".format(
+        print("[INFO] Updated macro-group information for {}.".format(
             ', '.join(user_input)))
 
 
