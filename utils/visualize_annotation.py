@@ -9,6 +9,7 @@ Usage:
 Arguments:
     -a/--annotation: Path to the pandas DataFrame containing annotation.
     -i/--images: Path to the directory containing the original AI2D images.
+    -s/--similar_to: An AI2D diagram ID (integer).
 
 Returns:
     Visualises the annotation for all layers and prints rhetorical relations,
@@ -21,6 +22,7 @@ from core.parse import *
 from pathlib import Path
 import argparse
 import cv2
+import json
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
@@ -36,6 +38,10 @@ ap.add_argument("-a", "--annotation", required=True,
                 help="Path to the pandas DataFrame with AI2D-RST annotation.")
 ap.add_argument("-i", "--images", required=True,
                 help="Path to the directory with AI2D images.")
+ap.add_argument("-s", "--similar_to", required=False, type=int,
+                help="An AI2D diagram identifier as an integer (e.g. 1132). "
+                     "Limits the visualisation to examples similar to this "
+                     "diagram.")
 
 # Parse arguments
 args = vars(ap.parse_args())
@@ -61,11 +67,48 @@ if not Path(images_path).exists():
     exit("[ERROR] Cannot find {}. Check the input to -i!".format(images_path))
 
 # Open the input file
-annotation_df = pd.read_pickle(ann_path)
+df = pd.read_pickle(ann_path)
+
+# Check if the user has requested limiting the results
+if args['similar_to']:
+
+    # Assign requested id to a variable
+    requested_id = str(args['similar_to']) + '.png'
+
+    # Open the JSON file for AI2D categories
+    with open('data/categories.json') as f:
+
+            # Load category information
+            categories = json.load(f)
+
+            # Fetch the requested category from the dictionary
+            try:
+                requested_cat = categories[requested_id]
+
+                print("[INFO] Finding examples of category '{}' ...".format(
+                    requested_cat))
+
+            # Catch error thrown by erroneous key and exit
+            except KeyError:
+
+                exit("[ERROR] {} is not a valid identifier.".format(
+                    requested_id))
+
+            # Fetch the categories for diagrams in the DataFrame
+            df['category'] = df['image_name'].apply(lambda x: categories[x])
+
+            # Filter the DataFrame for requested diagram types
+            df = df.loc[df['category'] == requested_cat]
+
+            # If there are no results to display, exit with an error message
+            if len(df) == 0:
+
+                exit("[ERROR] No examples of category '{}' found.".format(
+                    requested_cat))
 
 # Begin looping over the rows of the input DataFrame. Enumerate the result to
 # show annotation progress to the user.
-for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
+for i, (ix, row) in enumerate(df.iterrows(), start=1):
 
     # Fetch the filename of current diagram image
     image_fname = row['image_name']
@@ -75,7 +118,7 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
 
     # Print status message
     print("[INFO] Now processing row {}/{} ({}) ...".format(i,
-                                                            len(annotation_df),
+                                                            len(df),
                                                             image_fname))
 
     # Assign diagram to variable
