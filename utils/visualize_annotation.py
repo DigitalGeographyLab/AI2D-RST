@@ -131,17 +131,17 @@ for i, (ix, row) in enumerate(df.iterrows(), start=1):
         segmentation = draw_layout(diagram.image_filename,
                                    diagram.annotation,
                                    height=720,
-                                   dpi=100)
+                                   dpi=80)
 
         # Visualize grouping annotation
-        grouping = draw_graph(diagram.layout_graph, dpi=100, mode='layout')
+        grouping = draw_graph(diagram.layout_graph, dpi=80, mode='layout')
 
         # Visualize connectivity annotation
-        connectivity = draw_graph(diagram.connectivity_graph, dpi=100,
+        connectivity = draw_graph(diagram.connectivity_graph, dpi=80,
                                   mode='connectivity')
 
         # Visualize RST annotation
-        rst = draw_graph(diagram.rst_graph, dpi=100, mode='rst')
+        rst = draw_graph(diagram.rst_graph, dpi=80, mode='rst')
 
         # Stack segmentation and grouping annotation side by side
         seg_group = np.hstack([segmentation, grouping])
