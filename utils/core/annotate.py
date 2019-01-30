@@ -76,11 +76,17 @@ def create_relation(rst_graph, user_input):
         # Proceed if the input is valid
         if valid:
 
-            # Replace aliases with valid IDs for nuclei and satellites
+            # Replace group aliases with valid IDs for nuclei and satellites
             nucleus = [group_dict[n] if n in group_dict.keys() else n for n
                        in nucleus]
             satellites = [group_dict[s] if s in group_dict.keys() else s for s
                           in satellites]
+
+            # Replace relation aliases with valid IDs for nuclei and satellites
+            nucleus = [rel_dict[n] if n in rel_dict.keys() else n for n in
+                       nucleus]
+            satellites = [rel_dict[s] if s in rel_dict.keys() else s for s in
+                          satellites]
 
             # Generate an ID for the new relation
             new_rel_id = create_id()
@@ -163,6 +169,9 @@ def create_relation(rst_graph, user_input):
             # Replace aliases with valid identifiers
             nuclei = [group_dict[n] if n in group_dict.keys() else n for n
                       in nuclei]
+
+            nuclei = [rel_dict[n] if n in rel_dict.keys() else n for n in
+                      nuclei]
 
             # Generate an ID for the new relation
             new_rel_id = create_id()
