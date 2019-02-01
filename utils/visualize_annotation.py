@@ -42,6 +42,9 @@ ap.add_argument("-s", "--similar_to", required=False, type=int,
                 help="An AI2D diagram identifier as an integer (e.g. 1132). "
                      "Limits the visualisation to examples similar to this "
                      "diagram.")
+ap.add_argument("-o", "--only", required=False, type=int,
+                help="An AI2D diagram identifier as an integer (e.g. 1132). "
+                     "Shows this diagram only.")
 
 # Parse arguments
 args = vars(ap.parse_args())
@@ -105,6 +108,26 @@ if args['similar_to']:
 
                 exit("[ERROR] No examples of category '{}' found.".format(
                     requested_cat))
+
+# Check if the user has requested visualizing a single diagram
+if args['only']:
+
+    # Assign the requested diagram ID to a variable
+    requested_diagram = str(args['only']) + '.png'
+
+    # Check if the requested diagram is in the DataFrame
+    requested_df = df.loc[df['image_name'] == requested_diagram]
+
+    # If the search came up empty, exit
+    if requested_df.empty:
+
+        exit("[ERROR] Sorry, diagram {} was not found in this DataFrame."
+             .format(requested_diagram))
+
+    # Otherwise limit the DataFrame to the requested diagram
+    else:
+
+        df = requested_df
 
 # Begin looping over the rows of the input DataFrame. Enumerate the result to
 # show annotation progress to the user.
