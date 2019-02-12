@@ -311,6 +311,61 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
     except KeyError:
         pass
 
+    # If requested, draw arrowheads
+    if kwargs and 'arrowheads' in kwargs:
+
+        try:
+            for ah in annotation['arrowHeads']:
+
+                # Get arrowhead ID
+                arrowhead_id = annotation['arrowHeads'][ah]['id']
+
+                # Get the start and end points of the rectangle and cast them
+                # into tuples for drawing.
+                rect = np.array(annotation['arrowHeads'][ah]['rectangle'],
+                                np.int32)
+
+                # Get start and end coordinates, convert to int and cast into
+                # tuple
+                startx, starty = np.round(rect[0] * r, decimals=0).astype('int')
+                endx, endy = np.round(rect[1] * r, decimals=0).astype('int')
+
+                # Calculate bounding box width and height
+                width = endx - startx
+                height = endy - starty
+
+                # Define a rectangle and add to batch
+                rectangle = patches.Rectangle((startx, starty),
+                                              width, height,
+                                              fill=False,
+                                              alpha=1,
+                                              color='darkorange',
+                                              edgecolor=None)
+
+                # Add patch to the image
+                ax.add_patch(rectangle)
+
+                # Add artist object for rectangle
+                ax.add_artist(rectangle)
+
+                # Get starting coordinates
+                x, y = rectangle.get_xy()
+
+                # Get coordinates for the centre; adjust positioning
+                cx = (x + rectangle.get_width() / 2.0)
+                cy = (y + rectangle.get_height() / 2.0)
+
+                # Add annotation to the text box
+                ann = ax.annotate(arrowhead_id, (cx, cy), color='white',
+                                  fontsize=10, ha='center', va='center')
+
+                # Add a box around the annotation
+                ann.set_bbox(dict(alpha=1, color='darkorange', pad=0))
+
+        # Skip if there are no arrowheads to draw
+        except KeyError:
+            pass
+
     # Check if a high-resolution image has been requested
     if kwargs and 'dpi' in kwargs:
 

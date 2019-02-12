@@ -10,6 +10,7 @@ Arguments:
     -a/--annotation: Path to the pandas DataFrame containing annotation.
     -i/--images: Path to the directory containing the original AI2D images.
     -s/--similar_to: An AI2D diagram ID (integer).
+    -o/--only: An AI2D diagram ID (integer).
 
 Returns:
     Visualises the annotation for all layers and prints rhetorical relations,
@@ -19,6 +20,7 @@ Returns:
 # Import packages
 from core.draw import *
 from core.parse import *
+from core.interface import *
 from pathlib import Path
 import argparse
 import cv2
@@ -45,6 +47,8 @@ ap.add_argument("-s", "--similar_to", required=False, type=int,
 ap.add_argument("-o", "--only", required=False, type=int,
                 help="An AI2D diagram identifier as an integer (e.g. 1132). "
                      "Shows this diagram only.")
+ap.add_argument("-e", "--export", required=False, action='store_true',
+                help="Export DOT graphs for each Diagram object.")
 
 # Parse arguments
 args = vars(ap.parse_args())
@@ -226,6 +230,21 @@ for i, (ix, row) in enumerate(df.iterrows(), start=1):
 
             # Print final linebreak
             print("---\n")
+
+        # If export has been requested, export all graphs:
+        if args['export']:
+
+            # Export grouping graph
+            process_command('export', 'layout', diagram,
+                            diagram.layout_graph.copy())
+
+            # Export connectivity graph
+            process_command('export', 'connectivity', diagram,
+                            diagram.connectivity_graph.copy())
+
+            # Export RST graph
+            process_command('export', 'rst', diagram,
+                            diagram.rst_graph.copy())
 
         # Print instructions
         print("Print any key to continue or 'q' to exit.\n")
