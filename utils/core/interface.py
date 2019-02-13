@@ -675,7 +675,9 @@ rst_relations = {'anti': {'name': 'antithesis', 'kind': 'mono'},
                  'poss': {'name': 'possession', 'kind': 'mono'},
                  'proj': {'name': 'projection', 'kind': 'mono'},
                  'conn': {'name': 'connected', 'kind': 'multi'},  # NEW!
-                 'titl': {'name': 'title', 'kind': 'mono'}
+                 'titl': {'name': 'title', 'kind': 'mono'},
+                 'conj': {'name': 'conjunction', 'kind': 'multi'},  # NEW!
+                 'disj': {'name': 'disjunction', 'kind': 'multi'}  # NEW!
                  }
 
 # Define a dictionary of valid macro-groups and their aliases
@@ -691,8 +693,3 @@ macro_groups = {'table': 'table',
                 'ill': 'illustration',
                 'diag': 'diagrammatic'
                 }
-
-# TODO Document RST relations
-
-# TODO Add command 'status' which gives the annotation status of diagram
-# TODO Add commands that allow switching between annotation types
