@@ -48,7 +48,7 @@ ap.add_argument("-o", "--only", required=False, type=int,
                 help="An AI2D diagram identifier as an integer (e.g. 1132). "
                      "Shows this diagram only.")
 ap.add_argument("-e", "--export", required=False, action='store_true',
-                help="Export DOT graphs for each Diagram object.")
+                help="Export DOT graphs and screenshots for each graph.")
 
 # Parse arguments
 args = vars(ap.parse_args())
@@ -234,17 +234,29 @@ for i, (ix, row) in enumerate(df.iterrows(), start=1):
         # If export has been requested, export all graphs:
         if args['export']:
 
-            # Export grouping graph
+            # Export DOT graph for grouping graph
             process_command('export', 'layout', diagram,
                             diagram.layout_graph.copy())
 
-            # Export connectivity graph
+            # Export DOT graph for connectivity graph
             process_command('export', 'connectivity', diagram,
                             diagram.connectivity_graph.copy())
 
-            # Export RST graph
+            # Export DOT graph for RST graph
             process_command('export', 'rst', diagram,
                             diagram.rst_graph.copy())
+
+            # Export screenshot for grouping graph
+            process_command('cap', 'layout', diagram, diagram.
+                            layout_graph)
+
+            # Export screenshot for connectivity graph
+            process_command('cap', 'connectivity', diagram,
+                            diagram.connectivity_graph)
+
+            # Export screenshot for RST graph
+            process_command('cap', 'rst', diagram,
+                            diagram.rst_graph)
 
         # Print instructions
         print("Print any key to continue or 'q' to exit.\n")
