@@ -327,7 +327,7 @@ class Diagram:
         update_grouping(self, self.connectivity_graph)
 
         # Freeze and save current graph for resetting annotation if required
-        self.reset = nx.freeze(self.connectivity_graph.copy())
+        # self.reset = nx.freeze(self.connectivity_graph.copy())
 
         # Draw the graph using the connectivity mode
         diagram = draw_graph(self.connectivity_graph, dpi=100,
@@ -596,7 +596,7 @@ class Diagram:
         update_grouping(self, self.rst_graph)
 
         # Freeze and save current graph for resetting annotation if required
-        self.reset = nx.freeze(self.rst_graph.copy())
+        # self.reset = nx.freeze(self.rst_graph.copy())
 
         # Draw the graph using RST mode
         diagram = draw_graph(self.rst_graph, dpi=100, mode='rst')
