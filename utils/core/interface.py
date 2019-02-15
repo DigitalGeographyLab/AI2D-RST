@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+# Import modules
 from .draw import *
 
 
@@ -415,14 +416,22 @@ def process_command(user_input, mode, diagram, current_graph):
         # Reset connectivity graph if requested
         if mode == 'connectivity':
 
-            # Unfreeze the connectivity graph and assign to connectivity_graph
-            diagram.connectivity_graph = diagram.reset.copy()
+            # Create a new connectivity graph for the Diagram object
+            diagram.connectivity_graph = nx.MultiDiGraph()
+
+            # Update grouping information from the grouping graph to the new
+            # connectivity graph
+            update_grouping(diagram, diagram.connectivity_graph)
 
         # Reset RST graph if requested
         if mode == 'rst':
 
-            # Unfreeze the RST graph and assign to rst_graph
-            diagram.rst_graph = diagram.reset.copy()
+            # Create a new RST graph for the Diagram object
+            diagram.rst_graph = nx.DiGraph()
+
+            # Update grouping information from the grouping graph to the new RST
+            # graph
+            update_grouping(diagram, diagram.rst_graph)
 
         # Flag the graph for re-drawing
         diagram.update = True

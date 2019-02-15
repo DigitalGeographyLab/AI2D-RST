@@ -471,4 +471,69 @@ def replace_aliases(current_graph, kind='group'):
     return gd
 
 
+def update_grouping(diagram, graph):
+    """
+    Updates a graph after switches between annotation tasks. This means removing
+    obsolete grouping nodes and edges, which have been removed from the grouping
+    annotation.
+
+    Parameters:
+        diagram: A Diagram object.
+        graph: A graph of the Diagram object that is currently being annotated.
+
+    Returns:
+        A NetworkX graph with updated grouping edges.
+    """
+
+    # Get a lists of existing nodes and edge tuples
+    edge_bunch = list(graph.edges(data=True))
+    nodes = dict(graph.nodes(data=True))
+
+    # Collect grouping edges
+    edge_bunch = [(u, v) for (u, v, d) in edge_bunch if d['kind'] == 'grouping']
+
+    # Remove grouping edges from current graph
+    graph.remove_edges_from(edge_bunch)
+
+    # Use the isolates function to locate obsolete grouping nodes
+    isolates = list(nx.isolates(graph))
+
+    # Remove isolated grouping nodes
+    isolates = [i for i in isolates if nodes[i]['kind'] == 'group']
+
+    # Remove isolated nodes from the graph
+    graph.remove_nodes_from(isolates)
+
+    # Create a temporary copy of the layout graph for filtering content
+    temp_graph = diagram.layout_graph.copy()
+
+    # Get a dictionary of nodes and a list of edges
+    nodes = dict(temp_graph.nodes(data=True))
+    edges = list(temp_graph.edges())
+
+    # Fetch a list of edges to/from imageConsts
+    iconst_edges = [(s, t) for (s, t) in edges
+                    if nodes[s]['kind'] == 'imageConsts'
+                    or nodes[t]['kind'] == 'imageConsts']
+
+    # Remove grouping edges using the list
+    temp_graph.remove_edges_from(iconst_edges)
+
+    # Use the isolates function to locate grouping nodes for groups
+    isolates = list(nx.isolates(temp_graph))
+
+    # Remove isolated grouping nodes
+    isolates = [i for i in isolates if nodes[i]['kind']
+                in ['group', 'imageConsts']]
+
+    # Remove isolated nodes from the graph
+    temp_graph.remove_nodes_from(isolates)
+
+    # Add attributes to the remaining edges
+    nx.set_edge_attributes(temp_graph, 'grouping', 'kind')
+
+    # Add the filtered nodes and edges to the graph
+    graph.add_nodes_from(temp_graph.nodes(data=True))
+    graph.add_edges_from(temp_graph.edges(data=True))
+
 
