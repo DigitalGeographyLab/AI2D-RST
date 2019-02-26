@@ -306,12 +306,22 @@ def macro_group(graph, user_input):
             if macro_group == 'none':
 
                 # Delete node attribute and item from macro_grouping dictionary
-                del graph.node[node]['macro_group']
-                del macro_grouping[node]
+                try:
+                    del graph.node[node]['macro_group']
+                    del macro_grouping[node]
 
-                # Print status
-                print("[INFO] Deleted macro-group information from {}.".format(
-                    node))
+                    # Print status
+                    print("[INFO] Deleted macro-group information from"
+                          " {}.".format(node))
+
+                # Catch error from missing macro-group information
+                except KeyError:
+
+                    # Print error
+                    print("[INFO] Sorry, node {} has not been assigned with a "
+                          "macro-group. Please check your input.".format(node))
+
+                    return
 
             # If macro-group is a table, request description
             if macro_group == 'table':
