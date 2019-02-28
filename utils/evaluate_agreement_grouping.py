@@ -14,6 +14,8 @@ Usage:
 Arguments:
     -a/--annotation: Path to the pandas DataFrame containing AI2D-RST Diagram
                      objects.
+    -s/--sample: Path to the file containing data sampled from the AI2D-RST
+                 Diagram objects.
     -i/--images: Path to the directory containing the AI2D diagram images.
     -o/--output: Path to the output file, in which the resulting annotation is
                  stored.
@@ -30,7 +32,6 @@ from core.draw import *
 import argparse
 import cv2
 import os
-import numpy as np
 import pandas as pd
 
 
