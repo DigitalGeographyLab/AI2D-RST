@@ -237,3 +237,9 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
 
             # Exit the annotator
             exit()
+
+# Save the output DataFrame
+sample.to_pickle(output_path)
+
+# Print status
+print(Fore.RED + "[INFO] Annotation completed!" + Style.RESET_ALL)
