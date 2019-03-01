@@ -15,6 +15,9 @@ Arguments:
     -r/--review: Optional argument that activates review mode. This mode opens
                  each Diagram object marked as complete for editing.
     -dr/--disable_rst: Optional argument for disabling RST annotation.
+    -e/--edit: Optional argument that activates editing mode. This mode opens a
+               single Diagram object for editing. Provide the diagram identifier
+               using this flag.
 
 Returns:
     A pandas DataFrame containing a Diagram object for each diagram.
@@ -43,6 +46,8 @@ ap.add_argument("-r", "--review", required=False, action='store_true',
                      " complete for inspection.")
 ap.add_argument("-dr", "--disable_rst", required=False, action='store_true',
                 help="Disables RST annotation.")
+ap.add_argument("-e", "--edit", required=False, type=int,
+                help="Activates editing mode for modifying a single diagram.")
 
 # Parse arguments
 args = vars(ap.parse_args())
@@ -82,6 +87,25 @@ if not args['disable_rst']:
 
     disable_rst = False
 
+# Activate editing mode if requested using the -e/--edit flag
+if args['edit']:
+
+    # Check that the user is not running review mode in parallel
+    if review:
+
+        # Print error message and exit
+        exit("[ERROR] Cannot run in edit and review mode at the same time.")
+
+    # Set editing mode to True
+    edit = True
+
+    # Assign the identifier of the diagram to be edited to a variable
+    edit_id = args['edit']
+
+if not args['edit']:
+
+    edit = False
+
 # Check if the output file exists already, or whether to continue with previous
 # annotation.
 if os.path.isfile(output_path):
@@ -98,8 +122,11 @@ if not os.path.isfile(output_path):
     # Make a copy of the input DataFrame
     annotation_df = pd.read_pickle(ann_path).copy()
 
-    # Set up an empty column to hold the diagram
-    annotation_df['diagram'] = None
+    # If the annotator is not running in editing mode, initiate an empty column
+    # to hold the diagram
+    if not edit:
+
+        annotation_df['diagram'] = None
 
 # Begin looping over the rows of the input DataFrame. Enumerate the result to
 # show annotation progress to the user.
@@ -128,8 +155,31 @@ for i, (ix, row) in enumerate(annotation_df.iterrows(), start=1):
     # Check if a Diagram object has been initialized
     if diagram is not None:
 
-        # If the annotator runs in a review open the diagram for revision and
-        # editing.
+        # Check if edit mode is active
+        if edit:
+
+            # Get the identifier of current image and cast into integer
+            current_id = int(image_fname.split('.')[0])
+
+            # Check the current identifier against the requested identifier
+            if current_id != edit_id:
+
+                # In case a match is not found, move on to next diagram
+                continue
+
+            # If a match can be found, open the requested diagram for editing
+            if current_id == edit_id:
+
+                # Set review mode to True to allow editing
+                review = True
+
+                # Set the methods tracking completeness to False
+                diagram.group_complete = False
+                diagram.connectivity_complete = False
+                diagram.rst_complete = False
+                diagram.complete = False
+
+        # If the annotator runs in a review open the diagram for revision
         if review:
 
             # Set the methods tracking completeness to False
