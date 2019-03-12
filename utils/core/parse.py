@@ -68,7 +68,7 @@ def create_graph(annotation, edges=False, arrowheads=False, mode='layout'):
             # Add node to graph
             graph.add_node(element, kind=kind)
 
-        # Draw edges between nodes if requested
+        # Draw edges between conn_nodes if requested
         if edges:
 
             # Loop over individual relations
@@ -168,19 +168,19 @@ def extract_types(elements, annotation):
 
 def get_node_dict(graph, kind=None):
     """
-    A function for creating a dictionary of nodes and their kind.
+    A function for creating a dictionary of conn_nodes and their kind.
 
     Parameters:
         graph: A NetworkX Graph.
         kind: A string defining what to include in the dictionary. 'node'
-              returns only nodes and 'group' returns only groups. By
-              default, the function returns all nodes defined in the graph.
+              returns only conn_nodes and 'group' returns only groups. By
+              default, the function returns all conn_nodes defined in the graph.
 
     Returns:
         A dictionary with node names as keys and kind as values.
     """
 
-    # Generate a dictionary with nodes and their kind
+    # Generate a dictionary with conn_nodes and their kind
     node_types = nx.get_node_attributes(graph, 'kind')
 
     # If the requested output consists of node groups, return group dict
@@ -193,10 +193,10 @@ def get_node_dict(graph, kind=None):
         # Return dictionary
         return group_dict
 
-    # If the requested output consists of nodes, return node dict
+    # If the requested output consists of conn_nodes, return node dict
     if kind == 'node':
 
-        # Generate a dictionary of nodes
+        # Generate a dictionary of conn_nodes
         node_dict = {k: k for k, v in node_types.items() if v not in
                      ['group', 'relation']}
 
@@ -312,7 +312,7 @@ def prepare_input(input_str, from_item):
         A list of node identifiers.
     """
 
-    # Get the list of nodes provided by the user
+    # Get the list of conn_nodes provided by the user
     input_list = input_str.lower().split()[from_item:]
 
     # Strip commas
@@ -363,10 +363,10 @@ def prepare_input(input_str, from_item):
 
 def validate_input(user_input, current_graph, **kwargs):
     """
-    A function for validating user input against the nodes of a NetworkX graph.
+    A function for validating user input against the conn_nodes of a NetworkX graph.
 
     Parameters:
-        user_input: A list of nodes provided by the user.
+        user_input: A list of conn_nodes provided by the user.
         current_graph: The current NetworkX graph.
 
     Returns:
@@ -376,7 +376,7 @@ def validate_input(user_input, current_graph, **kwargs):
     # Generate a list of valid elements present in the graph
     valid_nodes = [n.lower() for n in current_graph.nodes]
 
-    # Forms the initial set of nodes, which may be updated using optional flags
+    # Forms the initial set of conn_nodes, which may be updated using optional flags
     valid_elems = set(valid_nodes)
 
     # Check for optional keywords and arguments, begin by checking if groups
@@ -460,10 +460,10 @@ def replace_aliases(current_graph, kind='group'):
          A dictionary mapping group aliases to actual group identifiers.
     """
 
-    # Generate a dictionary of nodes present in the graph
+    # Generate a dictionary of conn_nodes present in the graph
     gd = get_node_dict(current_graph, kind=kind)
 
-    # Count the current nodes and enumerate for convenience
+    # Count the current conn_nodes and enumerate for convenience
     gd = {"{}{}".format(kind[0], i):
           k for i, (k, v) in enumerate(gd.items(), start=1)}
 
@@ -474,7 +474,7 @@ def replace_aliases(current_graph, kind='group'):
 def update_grouping(diagram, graph):
     """
     Updates a graph after switches between annotation tasks. This means removing
-    obsolete grouping nodes and edges, which have been removed from the grouping
+    obsolete grouping conn_nodes and edges, which have been removed from the grouping
     annotation.
 
     Parameters:
@@ -485,7 +485,7 @@ def update_grouping(diagram, graph):
         A NetworkX graph with updated grouping edges.
     """
 
-    # Get a lists of existing nodes and edge tuples
+    # Get a lists of existing conn_nodes and edge tuples
     edge_bunch = list(graph.edges(data=True))
     nodes = dict(graph.nodes(data=True))
 
@@ -495,19 +495,19 @@ def update_grouping(diagram, graph):
     # Remove grouping edges from current graph
     graph.remove_edges_from(edge_bunch)
 
-    # Use the isolates function to locate obsolete grouping nodes
+    # Use the isolates function to locate obsolete grouping conn_nodes
     isolates = list(nx.isolates(graph))
 
-    # Remove isolated grouping nodes
+    # Remove isolated grouping conn_nodes
     isolates = [i for i in isolates if nodes[i]['kind'] == 'group']
 
-    # Remove isolated nodes from the graph
+    # Remove isolated conn_nodes from the graph
     graph.remove_nodes_from(isolates)
 
     # Create a temporary copy of the layout graph for filtering content
     temp_graph = diagram.layout_graph.copy()
 
-    # Get a dictionary of nodes and a list of edges
+    # Get a dictionary of conn_nodes and a list of edges
     nodes = dict(temp_graph.nodes(data=True))
     edges = list(temp_graph.edges())
 
@@ -519,20 +519,20 @@ def update_grouping(diagram, graph):
     # Remove grouping edges using the list
     temp_graph.remove_edges_from(iconst_edges)
 
-    # Use the isolates function to locate grouping nodes for groups
+    # Use the isolates function to locate grouping conn_nodes for groups
     isolates = list(nx.isolates(temp_graph))
 
-    # Remove isolated grouping nodes
+    # Remove isolated grouping conn_nodes
     isolates = [i for i in isolates if nodes[i]['kind']
                 in ['group', 'imageConsts']]
 
-    # Remove isolated nodes from the graph
+    # Remove isolated conn_nodes from the graph
     temp_graph.remove_nodes_from(isolates)
 
     # Add attributes to the remaining edges
     nx.set_edge_attributes(temp_graph, 'grouping', 'kind')
 
-    # Add the filtered nodes and edges to the graph
+    # Add the filtered conn_nodes and edges to the graph
     graph.add_nodes_from(temp_graph.nodes(data=True))
     graph.add_edges_from(temp_graph.edges(data=True))
 

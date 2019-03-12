@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
 """
-This script loads the grouping annotation from the AI2D-RST corpus and presents
-them to the annotator. The resulting description is used for measuring
-agreement between the annotators.
+This script loads examples from the connectivity annotation from the AI2D-RST
+corpus and presents them to the annotator. The resulting description is used for
+measuring agreement between the annotators.
 
 To continue annotation from a previous session, give the path to the existing
 DataFrame to the -o/--output argument.
 
 Usage:
-    python evaluate_agreement_group.py -a annotation.pkl -o output.pkl
+    python evaluate_agreement_connectivity.py -a annotation.pkl -o output.pkl
     -s sample.pkl -i path_to_ai2d_images/
 
 Arguments:
@@ -87,29 +87,19 @@ if not os.path.isfile(output_path):
     sample = pd.read_pickle(sample_path)
 
 # Define prompts for user input
-group_prompt = Fore.RED + "[GROUPING] Do these elements form a SINGLE " \
-                          "group? Please enter (y)es or n(o). " \
-               + Style.RESET_ALL
+conn_prompt = Fore.RED + "[CONNECTIVITY] What kind of connection holds " \
+                         "between the source (red) and the target (blue)? " \
+              + Style.RESET_ALL
 
-gestalt = Fore.RED + "[GROUPING] For which reason? " \
-          + Style.RESET_ALL
-
-# Define a dictionary of gestalt principles with descriptions
-principles = {'prox': {'cat': 'proximity', 'desc': 'the elements are close to '
-                                                   'each other.'},
-              'sim': {'cat': 'similarity', 'desc': 'the elements are similar in'
-                                                   'terms of appearance.'},
-              'conn': {'cat': 'connectedness', 'desc': 'the elements are '
-                                                       'connected to each '
-                                                       'other.'},
-              'cont': {'cat': 'continuity', 'desc': 'the elements form a '
-                                                    'continuous unit.'},
-              'sym': {'cat': 'symmetry', 'desc': 'the elements are symmetrical '
-                                                 'in terms of shape.'},
-              'clos': {'cat': 'closure', 'desc': 'one or more element encloses '
-                                                 'the other.'},
-              'guide': {'cat': 'guide', 'desc': 'the annotation manual defines '
-                                                'a grouping in this case.'}
+# Define a dictionary of connection types with descriptions
+connections = {'u': {'cat': 'undirected', 'desc': 'The connection is '
+                                                  'undirected.'},
+               'd': {'cat': 'directed', 'desc': 'The connection is directed.'},
+               'b': {'cat': 'bidirectional', 'desc': 'The connection is '
+                                                     'bidirectional.'},
+               'n': {'cat': 'no-connection', 'desc': 'No valid connection holds'
+                                                     ' between the source and '
+                                                     'the target.'}
               }
 
 # Define a list of annotator commands
@@ -120,8 +110,7 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
 
     # Check if annotation has already been performed
     try:
-        if row['annotation'] in [v['cat'] for k, v in principles.items()] + \
-                ['no-group']:
+        if row['annotation'] in [v['cat'] for k, v in connections.items()]:
 
             continue
 
@@ -141,7 +130,7 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
     image_path = os.path.join(images_path, row['image_name'])
 
     # Print status message
-    print(Fore.YELLOW + "[INFO] Now processing group {}/{} from {}."
+    print(Fore.YELLOW + "[INFO] Now processing connection {}/{} from {}."
           .format(i, len(sample), image_name) + Style.RESET_ALL)
 
     # Fetch the layout annotation from the original DataFrame
@@ -150,9 +139,66 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
     # Get the annotation dictionary for the original AI2D annotation
     annotation = original_row['annotation'].item()
 
-    # Draw the annotation
+    # Get the AI2D Diagram object
+    diagram = original_row['diagram'].item()
+
+    # Assign source and target information to variables
+    source = row['source']
+    target = row['target']
+
+    # Check the source for group identifiers
+    if len(source) == 6:
+
+        # Convert undirected graph to directed graph for access to successors
+        layout_digraph = diagram.layout_graph.copy().to_directed()
+
+        # Get successors of the group and cast into list. The node connected
+        # to the outbound edge is the last item in the list.
+        successors = list(layout_digraph.successors(source))
+
+        # Get add nodes except the last node in the list
+        grouped_nodes = successors[:-1]
+
+        # Assign extracted elements to source
+        source = grouped_nodes
+
+    # Check the target for group identifiers
+    if len(target) == 6:
+
+        # Convert undirected graph to directed graph for access to predecessors
+        layout_digraph = diagram.layout_graph.copy().to_directed()
+
+        # Get successors of the group and cast into list. The node connected
+        # to the outbound edge is the last item in the list.
+        successors = list(layout_digraph.successors(target))
+
+        # Get add nodes except the last node in the list
+        grouped_nodes = successors[:-1]
+
+        # Assign extracted elements to target
+        target = grouped_nodes
+
+    # Ensure that both source and target are lists
+    if type(source) is not list:
+
+        source = source.split()
+
+    if type(target) is not list:
+
+        target = target.split()
+
+    # Combine source and target for highlighting
+    highlight = {'red': source, 'blue': target}
+
+    # Add an exception for self-loops in connectivity
+    if source == target:
+
+        # Highlight self-loops in yellow
+        highlight = {'yellow': source + target}
+
+    # Draw the annotation and highlight the source and the target
     segmentation = draw_layout(image_path, annotation, height=480,
-                               point=row['elements'])
+                               highlight=highlight)
 
     # Show the annotation
     cv2.imshow("Annotation", segmentation)
@@ -164,51 +210,25 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
         command = None
 
         # Ask for initial input
-        is_group = input(group_prompt)
+        is_connection = input(conn_prompt)
 
         # Check if the input string is a command
-        if is_group in commands:
+        if is_connection in commands:
 
             # Set command variable
-            command = is_group
+            command = is_connection
 
-        # Check initial input
-        if is_group == 'n' or is_group == 'no':
+        # If the input string is a valid description of connection
+        if is_connection in connections.keys():
 
-            # Store value for no grouping
-            sample.at[ix, 'annotation'] = str('no-group')
+            # Fetch the connection from the list
+            connection = connections[is_connection]['cat']
 
-            # Set annotation complete
+            # Save the input to DataFrame
+            sample.at[ix, 'annotation'] = str(connection)
+
+            # Set annotation to complete
             annotation_complete = True
-
-        # If the group is valid, continue with annotating Gestalt principle
-        if is_group == 'y' or is_group == 'yes':
-
-            # Set initial value for while loop
-            gestalt_principle = None
-
-            # Check input against valid inputs
-            while gestalt_principle not in list(principles.keys()) + commands:
-
-                # Request Gestalt principle
-                gestalt_principle = input(gestalt)
-
-                # Check for command
-                if gestalt_principle in commands:
-
-                    # Set command variable
-                    command = gestalt_principle
-
-                if gestalt_principle in list(principles.keys()):
-
-                    # Fetch the principle from the dict
-                    principle = principles[gestalt_principle]['cat']
-
-                    # When valid input has been entered, save input to DataFrame
-                    sample.at[ix, 'annotation'] = str(principle)
-
-                    # Set annotation to complete
-                    annotation_complete = True
 
         # Check if user requests help
         if command == 'help':
@@ -217,7 +237,7 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
                   Style.RESET_ALL)
 
             # Loop over the Gestalt principles and print information
-            for k, v in principles.items():
+            for k, v in connections.items():
                 print(Fore.YELLOW + "[INFO] "
                                     "{} ({}): {}"
                       .format(k, v['cat'], v['desc'])

@@ -31,13 +31,13 @@ def draw_graph(graph, dpi=100, mode='layout'):
     # Initialize a neato layout for the graph
     pos = nx.nx_pydot.graphviz_layout(graph, prog='neato')
 
-    # Generate a dictionary with nodes and their kind
+    # Generate a dictionary with conn_nodes and their kind
     node_types = nx.get_node_attributes(graph, 'kind')
 
-    # Create a label dictionary for nodes
+    # Create a label dictionary for conn_nodes
     node_dict = get_node_dict(graph, kind='node')
 
-    # Create a label dictionary for grouping nodes
+    # Create a label dictionary for grouping conn_nodes
     group_dict = get_node_dict(graph, kind='group')
 
     # Enumerate groups and use their numbers as labels for clarity
@@ -79,7 +79,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
 
                 edge_dict[k] = 'n'
 
-    # Draw nodes present in the graph
+    # Draw conn_nodes present in the graph
     draw_nodes(graph, pos=pos, ax=ax, node_types=node_types, mode=mode)
 
     # Draw labels for each node in the graph
@@ -90,7 +90,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
 
     if mode == 'rst':
 
-        # Draw labels for nodes representing for RST relations
+        # Draw labels for conn_nodes representing for RST relations
         nx.draw_networkx_labels(graph, pos, font_size=10, labels=rel_dict)
 
         # Draw edge labels for nuclei and satellites
@@ -159,11 +159,42 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
     try:
         for b in annotation['blobs']:
 
+            # Define default colour for blobs
+            blob_color = 'orangered'
+
             # Check if some annotation should be highlighted
             if kwargs and 'point' in kwargs:
 
                 # Continue if the blob is not in the list of elements to draw
                 if b not in kwargs['point']:
+
+                    continue
+
+            # Check if some annotation should be highlighted in different colors
+            if kwargs and 'highlight' in kwargs:
+
+                # Check that kwargs['highlight'] is a dictionary
+                assert type(kwargs['highlight']) == dict
+
+                # Assign highlights to a dictionary
+                highlights = kwargs['highlight']
+
+                # Loop over colours and elements
+                for color, elements in highlights.items():
+
+                    # If match is found, set colour and highlight to True
+                    if b in elements:
+
+                        blob_color = color
+                        highlight = True
+
+                        break
+
+                    else:
+                        highlight = False
+
+                # If no element is to be highlighted, continue to next item
+                if not highlight:
 
                     continue
 
@@ -182,7 +213,7 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
                                    closed=True,
                                    fill=False,
                                    alpha=1,
-                                   color='orangered')
+                                   color=blob_color)
 
             # Add arrow to the image
             ax.add_patch(blob)
@@ -198,7 +229,7 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
                               fontsize=10, ha='center', va='center')
 
             # Add a box around the annotation
-            ann.set_bbox(dict(alpha=1, color='orangered', pad=0))
+            ann.set_bbox(dict(alpha=1, color=blob_color, pad=0))
 
     # Skip if there are no blobs to draw
     except KeyError:
@@ -208,11 +239,42 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
     try:
         for a in annotation['arrows']:
 
+            # Define default colour for arrows
+            arrow_color = 'mediumseagreen'
+
             # Check if some annotation should be highlighted
             if kwargs and 'point' in kwargs:
 
                 # Continue if the blob is not in the list of elements to draw
                 if a not in kwargs['point']:
+
+                    continue
+
+            # Check if some annotation should be highlighted in different colors
+            if kwargs and 'highlight' in kwargs:
+
+                # Check that kwargs['highlight'] is a dictionary
+                assert type(kwargs['highlight']) == dict
+
+                # Assign highlights to a dictionary
+                highlights = kwargs['highlight']
+
+                # Loop over colours and elements
+                for color, elements in highlights.items():
+
+                    # If match is found, set colour and highlight to True
+                    if a in elements:
+
+                        arrow_color = color
+                        highlight = True
+
+                        break
+
+                    else:
+                        highlight = False
+
+                # If no element is to be highlighted, continue to next item
+                if not highlight:
 
                     continue
 
@@ -230,7 +292,7 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
                                     closed=True,
                                     fill=False,
                                     alpha=1,
-                                    color='mediumseagreen')
+                                    color=arrow_color)
 
             # Add arrow to the image
             ax.add_patch(arrow)
@@ -246,7 +308,7 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
                               ha='center', va='center')
 
             # Add a box around the annotation
-            ann.set_bbox(dict(alpha=1, color='mediumseagreen', pad=0))
+            ann.set_bbox(dict(alpha=1, color=arrow_color, pad=0))
 
     # Skip if there are no arrows to draw
     except KeyError:
@@ -256,11 +318,42 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
     try:
         for t in annotation['text']:
 
+            # Define default colour for text blocks
+            text_color = 'dodgerblue'
+
             # Check if some annotation should be highlighted
             if kwargs and 'point' in kwargs:
 
                 # Continue if the blob is not in the list of elements to draw
                 if t not in kwargs['point']:
+
+                    continue
+
+            # Check if some annotation should be highlighted in different colors
+            if kwargs and 'highlight' in kwargs:
+
+                # Check that kwargs['highlight'] is a dictionary
+                assert type(kwargs['highlight']) == dict
+
+                # Assign highlights to a dictionary
+                highlights = kwargs['highlight']
+
+                # Loop over colours and elements
+                for color, elements in highlights.items():
+
+                    # If match is found, set colour and highlight to True
+                    if t in elements:
+
+                        text_color = color
+                        highlight = True
+
+                        break
+
+                    else:
+                        highlight = False
+
+                # If no element is to be highlighted, continue to next item
+                if not highlight:
 
                     continue
 
@@ -284,7 +377,7 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
                                           width, height,
                                           fill=False,
                                           alpha=1,
-                                          color='dodgerblue',
+                                          color=text_color,
                                           edgecolor=None)
 
             # Add patch to the image
@@ -305,7 +398,7 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
                               fontsize=10, ha='center', va='center')
 
             # Add a box around the annotation
-            ann.set_bbox(dict(alpha=1, color='dodgerblue', pad=0))
+            ann.set_bbox(dict(alpha=1, color=text_color, pad=0))
 
     # Skip if there are no text boxes to draw
     except KeyError:
@@ -313,6 +406,9 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
 
     # If requested, draw arrowheads
     if kwargs and 'arrowheads' in kwargs:
+
+        # Define colour for arrowheads
+        arrowhead_color = 'darkorange'
 
         try:
             for ah in annotation['arrowHeads']:
@@ -339,7 +435,7 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
                                               width, height,
                                               fill=False,
                                               alpha=1,
-                                              color='darkorange',
+                                              color=arrowhead_color,
                                               edgecolor=None)
 
                 # Add patch to the image
@@ -360,7 +456,7 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
                                   fontsize=10, ha='center', va='center')
 
                 # Add a box around the annotation
-                ann.set_bbox(dict(alpha=1, color='darkorange', pad=0))
+                ann.set_bbox(dict(alpha=1, color=arrowhead_color, pad=0))
 
         # Skip if there are no arrowheads to draw
         except KeyError:
@@ -391,7 +487,7 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
 
 def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     """
-    A generic function for visualising the nodes in a graph.
+    A generic function for visualising the conn_nodes in a graph.
 
     Parameters:
         graph: A NetworkX Graph.
@@ -406,12 +502,12 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
          None
     """
 
-    # Draw nodes for text elements
+    # Draw conn_nodes for text elements
     try:
-        # Retrieve text nodes for the list of nodes
+        # Retrieve text conn_nodes for the list of conn_nodes
         texts = [k for k, v in node_types.items() if v == 'text']
 
-        # Add the list of nodes to the graph
+        # Add the list of conn_nodes to the graph
         nx.draw_networkx_nodes(graph,
                                pos,
                                nodelist=texts,
@@ -420,16 +516,16 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
                                ax=ax
                                )
 
-    # Skip if there are no text nodes to draw
+    # Skip if there are no text conn_nodes to draw
     except KeyError:
         pass
 
-    # Draw nodes for blobs
+    # Draw conn_nodes for blobs
     try:
-        # Retrieve blob nodes for the list of nodes
+        # Retrieve blob conn_nodes for the list of conn_nodes
         blobs = [k for k, v in node_types.items() if v == 'blobs']
 
-        # Add the list of nodes to the graph
+        # Add the list of conn_nodes to the graph
         nx.draw_networkx_nodes(graph,
                                pos,
                                nodelist=blobs,
@@ -438,13 +534,13 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
                                ax=ax
                                )
 
-    # Skip if there are no blob nodes to draw
+    # Skip if there are no blob conn_nodes to draw
     except KeyError:
         pass
 
-    # Draw nodes for arrowheads
+    # Draw conn_nodes for arrowheads
     try:
-        # Retrieve arrowhead nodes for the list of nodes
+        # Retrieve arrowhead conn_nodes for the list of conn_nodes
         arrowhs = [k for k, v in node_types.items() if v == 'arrowHeads']
 
         # Add the list of arrowheads to the graph
@@ -460,9 +556,9 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     except KeyError:
         pass
 
-    # Draw nodes for arrows
+    # Draw conn_nodes for arrows
     try:
-        # Retrieve arrow nodes for the list of nodes
+        # Retrieve arrow conn_nodes for the list of conn_nodes
         arrows = [k for k, v in node_types.items() if v == 'arrows']
 
         # Add the list of arrows to the graph
@@ -478,7 +574,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     except KeyError:
         pass
 
-    # Draw nodes for image constants
+    # Draw conn_nodes for image constants
     try:
         # Retrieve image constants (in most cases, only one per diagram)
         constants = [k for k, v in node_types.items() if
@@ -497,12 +593,12 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     except KeyError:
         pass
 
-    # Draw nodes for groups
+    # Draw conn_nodes for groups
     try:
-        # Retrieve group nodes from the list of nodes
+        # Retrieve group conn_nodes from the list of conn_nodes
         groups = [k for k, v in node_types.items() if v == 'group']
 
-        # Add the group nodes to the graph
+        # Add the group conn_nodes to the graph
         nx.draw_networkx_nodes(graph,
                                pos,
                                nodelist=groups,
@@ -511,16 +607,16 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
                                ax=ax
                                )
 
-    # Skip if there are no group nodes to draw
+    # Skip if there are no group conn_nodes to draw
     except KeyError:
         pass
 
     # Check drawing mode, continue with RST
     if mode == 'rst' and draw_edges:
 
-        # Draw nodes for RST relations
+        # Draw conn_nodes for RST relations
         try:
-            # Retrieve relations from the list of nodes
+            # Retrieve relations from the list of conn_nodes
             relations = [k for k, v in node_types.items() if v == 'relation']
 
             # Add the relations to the graph
@@ -571,7 +667,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
             grouping_edges = [(u, v, d) for (u, v, d) in edge_list if
                               d['kind'] == 'grouping']
 
-            # Draw edges between elements and their grouping nodes
+            # Draw edges between elements and their grouping conn_nodes
             nx.draw_networkx_edges(graph,
                                    pos,
                                    grouping_edges,
@@ -639,7 +735,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
             grouping_edges = [(u, v, d) for (u, v, d) in all_edges if
                               d['kind'] == 'grouping']
 
-            # Draw edges between elements and their grouping nodes
+            # Draw edges between elements and their grouping conn_nodes
             nx.draw_networkx_edges(graph,
                                    pos,
                                    grouping_edges,
@@ -656,7 +752,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     # Otherwise, draw standard edges if requested
     if draw_edges and mode == 'layout':
 
-        # Draw edges between nodes
+        # Draw edges between conn_nodes
         nx.draw_networkx_edges(graph,
                                pos,
                                alpha=0.75,
@@ -692,3 +788,21 @@ def resize_img(path_to_image, height):
 
     # Return image
     return img, r
+
+
+def highlight(element, highlight):
+
+    # Check that highlight is a dictionary
+    assert type(highlight) == dict
+
+    # Loop over colours and elements
+    for color, elements in highlight.items():
+
+        # If match is found, set colour and highlight to True
+        if element in elements:
+
+            return color, True
+
+        else:
+
+            return None, False

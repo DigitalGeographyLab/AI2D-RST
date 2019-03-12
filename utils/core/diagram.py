@@ -238,7 +238,7 @@ class Diagram:
                     user_input = [group_dict[u] if u in group_dict.keys()
                                   else u for u in user_input]
 
-                    # Assign macro groups to nodes
+                    # Assign macro groups to conn_nodes
                     macro_group(self.layout_graph, user_input)
 
                     continue
