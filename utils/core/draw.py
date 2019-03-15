@@ -224,6 +224,11 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
             # Get centroid
             cx, cy = np.round(points.mean(axis=0), decimals=0).astype('int')[:2]
 
+            # If highlights have been requested, skip annotations and continue
+            if 'highlight' in kwargs:
+
+                continue
+
             # Annotate the blob
             ann = ax.annotate(blob_id, (cx, cy), color='white',
                               fontsize=10, ha='center', va='center')
@@ -303,9 +308,14 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
             # Get centroid
             cx, cy = np.round(points.mean(axis=0), decimals=0).astype('int')[:2]
 
+            # If highlights have been requested, skip annotations and continue
+            if 'highlight' in kwargs:
+
+                continue
+
             # Annotate the arrow
-            ann = ax.annotate(arrow_id, (cx, cy), color='white', fontsize=10,
-                              ha='center', va='center')
+            ann = ax.annotate(arrow_id, (cx, cy), color='white',
+                              fontsize=10, ha='center', va='center')
 
             # Add a box around the annotation
             ann.set_bbox(dict(alpha=1, color=arrow_color, pad=0))
@@ -393,6 +403,11 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
             cx = (x + rectangle.get_width() / 2.0)
             cy = (y + rectangle.get_height() / 2.0)
 
+            # If highlights have been requested, skip annotations and continue
+            if 'highlight' in kwargs:
+
+                continue
+
             # Add annotation to the text box
             ann = ax.annotate(text_id, (cx, cy), color='white',
                               fontsize=10, ha='center', va='center')
@@ -450,6 +465,12 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
                 # Get coordinates for the centre; adjust positioning
                 cx = (x + rectangle.get_width() / 2.0)
                 cy = (y + rectangle.get_height() / 2.0)
+
+                # If highlights have been requested, skip annotations and
+                # continue
+                if 'highlight' in kwargs:
+
+                    continue
 
                 # Add annotation to the text box
                 ann = ax.annotate(arrowhead_id, (cx, cy), color='white',

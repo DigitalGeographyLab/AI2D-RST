@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
 """
-This script loads the grouping annotation from the AI2D-RST corpus and presents
-them to the annotator. The resulting description is used for measuring
+This script loads examples from the RST annotation in the AI2D-RST dataset and
+presents them to the annotator. The resulting description is used for measuring
 agreement between the annotators.
 
 To continue annotation from a previous session, give the path to the existing
 DataFrame to the -o/--output argument.
 
 Usage:
-    python evaluate_agreement_group.py -a annotation.pkl -o output.pkl
+    python evaluate_agreement_connectivity.py -a annotation.pkl -o output.pkl
     -s sample.pkl -i path_to_ai2d_images/
 
 Arguments:
@@ -27,9 +27,10 @@ Returns:
 """
 
 # Import packages
-from pathlib import Path
 from colorama import Fore, Style, init
 from core.draw import *
+from core.interface import rst_relations
+from pathlib import Path
 import argparse
 import cv2
 import os
@@ -87,30 +88,9 @@ if not os.path.isfile(output_path):
     sample = pd.read_pickle(sample_path)
 
 # Define prompts for user input
-group_prompt = Fore.RED + "[GROUPING] Do these elements form a SINGLE " \
-                          "group? Please enter (y)es or n(o). " \
-               + Style.RESET_ALL
-
-gestalt = Fore.RED + "[GROUPING] For which reason? " \
-          + Style.RESET_ALL
-
-# Define a dictionary of gestalt principles with descriptions
-principles = {'prox': {'cat': 'proximity', 'desc': 'the elements are close to '
-                                                   'each other.'},
-              'sim': {'cat': 'similarity', 'desc': 'the elements are similar in'
-                                                   'terms of appearance.'},
-              'conn': {'cat': 'connectedness', 'desc': 'the elements are '
-                                                       'connected to each '
-                                                       'other.'},
-              'cont': {'cat': 'continuity', 'desc': 'the elements form a '
-                                                    'continuous unit.'},
-              'sym': {'cat': 'symmetry', 'desc': 'the elements are symmetrical '
-                                                 'in terms of shape.'},
-              'clos': {'cat': 'closure', 'desc': 'one or more element encloses '
-                                                 'the other.'},
-              'guide': {'cat': 'guide', 'desc': 'the annotation manual defines '
-                                                'a grouping in this case.'}
-              }
+rst_prompt = Fore.RED + "[RST] What kind of relation holds between the " \
+                        "nucleus (red) and satellites (blue) or nuclei " \
+                        "(green)? " + Style.RESET_ALL
 
 # Define a list of annotator commands
 commands = ['help', 'exit']
@@ -120,13 +100,11 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
 
     # Check if annotation has already been performed
     try:
-        if row['annotation'] in [v['cat'] for k, v in principles.items()] + \
-                ['no-group']:
+        if row['annotation'] in [v['name'] for k, v in rst_relations.items()]:
 
             continue
 
     except KeyError:
-
         pass
 
     # Begin the annotation by clearing the screen
@@ -142,7 +120,7 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
     image_path = os.path.join(images_path, row['image_name'])
 
     # Print status message
-    print(Fore.YELLOW + "[INFO] Now processing group {}/{} from {}."
+    print(Fore.YELLOW + "[INFO] Now processing RST relation {}/{} from {}."
           .format(i, len(sample), image_name) + Style.RESET_ALL)
 
     # Fetch the layout annotation from the original DataFrame
@@ -151,9 +129,31 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
     # Get the annotation dictionary for the original AI2D annotation
     annotation = original_row['annotation'].item()
 
-    # Draw the annotation
+    # Get the AI2D Diagram object
+    diagram = original_row['diagram'].item()
+
+    # Check relation type: if nuclei is None, the relation is asymmetric.
+    if row['nuclei'] is None:
+
+        # Get nucleus and satellites and split into lists
+        nucleus = row['nucleus'].split()
+        satellites = row['satellites'].split()
+
+        # Generate highlights dictionary
+        highlight = {'red': nucleus, 'blue': satellites}
+
+    # Otherwise, the relation must be symmetric.
+    else:
+
+        # Get nuclei and split into list
+        nuclei = row['nuclei'].split()
+
+        # Generate highlights dictionary
+        highlight = {'green': nuclei}
+
+    # Draw the annotation and highlight the source and the target
     segmentation = draw_layout(image_path, annotation, height=480,
-                               point=row['elements'])
+                               highlight=highlight)
 
     # Show the annotation
     cv2.imshow("Annotation", segmentation)
@@ -165,63 +165,35 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
         command = None
 
         # Ask for initial input
-        is_group = input(group_prompt)
+        is_rst = input(rst_prompt)
 
         # Check if the input string is a command
-        if is_group in commands:
+        if is_rst in commands:
 
             # Set command variable
-            command = is_group
+            command = is_rst
 
-        # Check initial input
-        if is_group == 'n' or is_group == 'no':
+        # If the input string is a valid shorthand code for an RST relation
+        if is_rst in rst_relations.keys():
 
-            # Store value for no grouping
-            sample.at[ix, 'annotation'] = str('no-group')
+            # Fetch the connection from the list
+            relation = rst_relations[is_rst]['name']
 
-            # Set annotation complete
+            # Save the input to DataFrame
+            sample.at[ix, 'annotation'] = str(relation)
+
+            # Set annotation to complete
             annotation_complete = True
-
-        # If the group is valid, continue with annotating Gestalt principle
-        if is_group == 'y' or is_group == 'yes':
-
-            # Set initial value for while loop
-            gestalt_principle = None
-
-            # Check input against valid inputs
-            while gestalt_principle not in list(principles.keys()) + commands:
-
-                # Request Gestalt principle
-                gestalt_principle = input(gestalt)
-
-                # Check for command
-                if gestalt_principle in commands:
-
-                    # Set command variable
-                    command = gestalt_principle
-
-                if gestalt_principle in list(principles.keys()):
-
-                    # Fetch the principle from the dict
-                    principle = principles[gestalt_principle]['cat']
-
-                    # When valid input has been entered, save input to DataFrame
-                    sample.at[ix, 'annotation'] = str(principle)
-
-                    # Set annotation to complete
-                    annotation_complete = True
 
         # Check if user requests help
         if command == 'help':
 
-            print(Fore.YELLOW + "[INFO] VALID OPTIONS INCLUDE: " +
+            print(Fore.YELLOW + "[INFO] VALID RELATIONS INCLUDE: " +
                   Style.RESET_ALL)
 
             # Loop over the Gestalt principles and print information
-            for k, v in principles.items():
-                print(Fore.YELLOW + "[INFO] "
-                                    "{} ({}): {}"
-                      .format(k, v['cat'], v['desc'])
+            for k, v in rst_relations.items():
+                print(Fore.YELLOW + "[INFO] {} ({})".format(k, v['name'])
                       + Style.RESET_ALL)
 
             # Reset command variable
