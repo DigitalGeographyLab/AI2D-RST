@@ -10,7 +10,7 @@ import networkx as nx
 import os
 
 
-def draw_graph(graph, dpi=100, mode='layout'):
+def draw_graph(graph, dpi=100, mode='layout', **kwargs):
     """
     Draws an image of a NetworkX Graph for visual inspection.
     
@@ -19,6 +19,9 @@ def draw_graph(graph, dpi=100, mode='layout'):
         dpi: The resolution of the image as dots per inch.
         mode: String indicating the diagram structure to be drawn, valid options
               include 'layout' (default), 'connectivity' and 'rst'.
+
+    Optional parameters:
+        highlight: A dictionary of identifier/colour pairs to emphasise.
         
     Returns:
          An image showing the NetworkX Graph.
@@ -31,13 +34,13 @@ def draw_graph(graph, dpi=100, mode='layout'):
     # Initialize a neato layout for the graph
     pos = nx.nx_pydot.graphviz_layout(graph, prog='neato')
 
-    # Generate a dictionary with conn_nodes and their kind
+    # Generate a dictionary with nodes and their kind
     node_types = nx.get_node_attributes(graph, 'kind')
 
-    # Create a label dictionary for conn_nodes
+    # Create a label dictionary for nodes
     node_dict = get_node_dict(graph, kind='node')
 
-    # Create a label dictionary for grouping conn_nodes
+    # Create a label dictionary for grouping nodes
     group_dict = get_node_dict(graph, kind='group')
 
     # Enumerate groups and use their numbers as labels for clarity
@@ -79,8 +82,17 @@ def draw_graph(graph, dpi=100, mode='layout'):
 
                 edge_dict[k] = 'n'
 
-    # Draw conn_nodes present in the graph
-    draw_nodes(graph, pos=pos, ax=ax, node_types=node_types, mode=mode)
+    # Check if some nodes need to be highlighted
+    if kwargs and 'highlight' in kwargs:
+
+        # Draw nodes and highlight some nodes
+        draw_nodes(graph, pos=pos, ax=ax, node_types=node_types, mode=mode,
+                   highlight=kwargs['highlight'])
+
+    # Otherwise draw nodes present in the graph as usual
+    else:
+
+        draw_nodes(graph, pos=pos, ax=ax, node_types=node_types, mode=mode)
 
     # Draw labels for each node in the graph
     nx.draw_networkx_labels(graph, pos, font_size=10, labels=node_dict)
@@ -90,7 +102,7 @@ def draw_graph(graph, dpi=100, mode='layout'):
 
     if mode == 'rst':
 
-        # Draw labels for conn_nodes representing for RST relations
+        # Draw labels for nodes representing for RST relations
         nx.draw_networkx_labels(graph, pos, font_size=10, labels=rel_dict)
 
         # Draw edge labels for nuclei and satellites
@@ -506,9 +518,10 @@ def draw_layout(path_to_image, annotation, height, hide=False, **kwargs):
     return img
 
 
-def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
+def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout',
+               **kwargs):
     """
-    A generic function for visualising the conn_nodes in a graph.
+    A generic function for visualising the nodes in a graph.
 
     Parameters:
         graph: A NetworkX Graph.
@@ -519,16 +532,19 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
         mode: A string indicating the selected drawing mode. Valid options are
              'layout' (default), 'connectivity' and 'rst'.
 
+    Optional parameters:
+        highlight: A dictionary of identifier/colour pairs to emphasise.
+
     Returns:
          None
     """
 
-    # Draw conn_nodes for text elements
+    # Draw nodes for text elements
     try:
-        # Retrieve text conn_nodes for the list of conn_nodes
+        # Retrieve text nodes for the list of nodes
         texts = [k for k, v in node_types.items() if v == 'text']
 
-        # Add the list of conn_nodes to the graph
+        # Add the list of nodes to the graph
         nx.draw_networkx_nodes(graph,
                                pos,
                                nodelist=texts,
@@ -537,16 +553,16 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
                                ax=ax
                                )
 
-    # Skip if there are no text conn_nodes to draw
+    # Skip if there are no text nodes to draw
     except KeyError:
         pass
 
-    # Draw conn_nodes for blobs
+    # Draw nodes for blobs
     try:
-        # Retrieve blob conn_nodes for the list of conn_nodes
+        # Retrieve blob nodes for the list of nodes
         blobs = [k for k, v in node_types.items() if v == 'blobs']
 
-        # Add the list of conn_nodes to the graph
+        # Add the list of nodes to the graph
         nx.draw_networkx_nodes(graph,
                                pos,
                                nodelist=blobs,
@@ -555,13 +571,13 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
                                ax=ax
                                )
 
-    # Skip if there are no blob conn_nodes to draw
+    # Skip if there are no blob nodes to draw
     except KeyError:
         pass
 
-    # Draw conn_nodes for arrowheads
+    # Draw nodes for arrowheads
     try:
-        # Retrieve arrowhead conn_nodes for the list of conn_nodes
+        # Retrieve arrowhead nodes for the list of nodes
         arrowhs = [k for k, v in node_types.items() if v == 'arrowHeads']
 
         # Add the list of arrowheads to the graph
@@ -577,9 +593,9 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     except KeyError:
         pass
 
-    # Draw conn_nodes for arrows
+    # Draw nodes for arrows
     try:
-        # Retrieve arrow conn_nodes for the list of conn_nodes
+        # Retrieve arrow nodes for the list of nodes
         arrows = [k for k, v in node_types.items() if v == 'arrows']
 
         # Add the list of arrows to the graph
@@ -595,7 +611,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     except KeyError:
         pass
 
-    # Draw conn_nodes for image constants
+    # Draw nodes for image constants
     try:
         # Retrieve image constants (in most cases, only one per diagram)
         constants = [k for k, v in node_types.items() if
@@ -614,12 +630,12 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     except KeyError:
         pass
 
-    # Draw conn_nodes for groups
+    # Draw nodes for groups
     try:
-        # Retrieve group conn_nodes from the list of conn_nodes
+        # Retrieve group nodes from the list of nodes
         groups = [k for k, v in node_types.items() if v == 'group']
 
-        # Add the group conn_nodes to the graph
+        # Add the group nodes to the graph
         nx.draw_networkx_nodes(graph,
                                pos,
                                nodelist=groups,
@@ -628,19 +644,44 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
                                ax=ax
                                )
 
-    # Skip if there are no group conn_nodes to draw
+    # Skip if there are no group nodes to draw
     except KeyError:
         pass
 
     # Check drawing mode, continue with RST
     if mode == 'rst' and draw_edges:
 
-        # Draw conn_nodes for RST relations
+        # Draw nodes for RST relations
         try:
-            # Retrieve relations from the list of conn_nodes
+
+            # Retrieve relations from the list of nodes
             relations = [k for k, v in node_types.items() if v == 'relation']
 
-            # Add the relations to the graph
+            # Check if some relations are to be highlighted
+            if kwargs and 'highlight' in kwargs:
+
+                # Assert highlight is a dict
+                assert type(kwargs['highlight']) == dict
+
+                # Draw the highlighted relations
+                for relation, colour in kwargs['highlight'].items():
+
+                    # Get the index of the relation and pop it from the list
+                    relation_ix = relations.index(relation)
+                    relations.pop(relation_ix)
+
+                    # Draw the nodes
+                    nx.draw_networkx_nodes(graph,
+                                           pos,
+                                           nodelist=relation.split(),
+                                           alpha=1,
+                                           linewidths=4,
+                                           node_color=colour,
+                                           node_shape='s',
+                                           ax=ax
+                                           )
+
+            # Otherwise add the relations to the graph as usual
             nx.draw_networkx_nodes(graph,
                                    pos,
                                    nodelist=relations,
@@ -688,7 +729,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
             grouping_edges = [(u, v, d) for (u, v, d) in edge_list if
                               d['kind'] == 'grouping']
 
-            # Draw edges between elements and their grouping conn_nodes
+            # Draw edges between elements and their grouping node
             nx.draw_networkx_edges(graph,
                                    pos,
                                    grouping_edges,
@@ -756,7 +797,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
             grouping_edges = [(u, v, d) for (u, v, d) in all_edges if
                               d['kind'] == 'grouping']
 
-            # Draw edges between elements and their grouping conn_nodes
+            # Draw edges between elements and their grouping nodes
             nx.draw_networkx_edges(graph,
                                    pos,
                                    grouping_edges,
@@ -773,7 +814,7 @@ def draw_nodes(graph, pos, ax, node_types, draw_edges=True, mode='layout'):
     # Otherwise, draw standard edges if requested
     if draw_edges and mode == 'layout':
 
-        # Draw edges between conn_nodes
+        # Draw edges between nodes
         nx.draw_networkx_edges(graph,
                                pos,
                                alpha=0.75,

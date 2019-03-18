@@ -199,7 +199,8 @@ def create_relation(rst_graph, user_input):
                     rst_graph.add_edge(new_rel_id, origin,
                                        kind='nucleus')
 
-                # If all nuclei are conn_nodes, draw edges from relation to nuclei
+                # If all nuclei are conn_nodes, draw edges from relation to
+                # nuclei
                 else:
 
                     # Add edge to graph
@@ -256,7 +257,8 @@ def group_nodes(graph, user_input):
 
 def macro_group(graph, user_input):
     """
-    A function for assigning macro-grouping information to conn_nodes in the graph.
+    A function for assigning macro-grouping information to conn_nodes in the
+    graph.
 
     Parameters:
         graph: A NetworkX Graph.

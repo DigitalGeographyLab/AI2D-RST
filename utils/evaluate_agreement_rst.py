@@ -30,9 +30,12 @@ Returns:
 from colorama import Fore, Style, init
 from core.draw import *
 from core.interface import rst_relations
+from core.parse import *
 from pathlib import Path
 import argparse
 import cv2
+import matplotlib.pyplot as plt
+import numpy as np
 import os
 import pandas as pd
 
@@ -87,13 +90,8 @@ if not os.path.isfile(output_path):
     # Load DataFrame containing sample
     sample = pd.read_pickle(sample_path)
 
-# Define prompts for user input
-rst_prompt = Fore.RED + "[RST] What kind of relation holds between the " \
-                        "nucleus (red) and satellites (blue) or nuclei " \
-                        "(green)? " + Style.RESET_ALL
-
 # Define a list of annotator commands
-commands = ['help', 'exit']
+commands = ['help', 'exit', 'hide', 'show']
 
 # Begin looping over the sample and presenting the relations to the user
 for i, (ix, row) in enumerate(sample.iterrows(), start=1):
@@ -132,34 +130,47 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
     # Get the AI2D Diagram object
     diagram = original_row['diagram'].item()
 
-    # Check relation type: if nuclei is None, the relation is asymmetric.
-    if row['nuclei'] is None:
+    # Generate a dictionary of RST relations present in the graph
+    relation_ix = get_node_dict(diagram.rst_graph, kind='relation')
 
-        # Get nucleus and satellites and split into lists
-        nucleus = row['nucleus'].split()
-        satellites = row['satellites'].split()
+    # Loop through current RST relations and rename for convenience.
+    relation_ix = {"R{}".format(i): k for i, (k, v) in
+                   enumerate(relation_ix.items(), start=1)}
 
-        # Generate highlights dictionary
-        highlight = {'red': nucleus, 'blue': satellites}
+    # Get the relation shown to the user
+    for k, v in relation_ix.items():
 
-    # Otherwise, the relation must be symmetric.
-    else:
+        # Find the item corresponding to the row identifier for RST relation
+        if v == row['id']:
 
-        # Get nuclei and split into list
-        nuclei = row['nuclei'].split()
+            # Assign the abbreviated ID used in the visualisation into variable
+            abbrv_id = k
 
-        # Generate highlights dictionary
-        highlight = {'green': nuclei}
+    # Create a dictionary for highlighting the RST relation
+    rst_highlight = {row['id']: 'aquamarine'}
 
     # Draw the annotation and highlight the source and the target
-    segmentation = draw_layout(image_path, annotation, height=480,
-                               highlight=highlight)
+    segmentation = draw_layout(image_path, annotation, height=480)
 
-    # Show the annotation
-    cv2.imshow("Annotation", segmentation)
+    # Draw the graph using RST mode
+    rst_graph = draw_graph(diagram.rst_graph, dpi=100, mode='rst',
+                           highlight=rst_highlight)
+
+    # Define prompts for user input
+    rst_prompt = Fore.RED + "[RST] How would you annotate relation {}? " \
+                            "".format(abbrv_id) + Style.RESET_ALL
+
+    # Set up flag a for tracking whether annotation is hidden
+    hide = False
 
     # Enter a while loop for performing annotation
     while not annotation_complete:
+
+        # Join the graph and the layout structure horizontally
+        preview = np.hstack((segmentation, rst_graph))
+
+        # Show the annotation
+        cv2.imshow("Annotation", preview)
 
         # Set command to None
         command = None
@@ -167,8 +178,11 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
         # Ask for initial input
         is_rst = input(rst_prompt)
 
+        # Split the input to check for commands
+        is_command = is_rst.split()[0]
+
         # Check if the input string is a command
-        if is_rst in commands:
+        if is_command in commands:
 
             # Set command variable
             command = is_rst
@@ -211,6 +225,60 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
 
             # Exit the annotator
             exit()
+
+        # Hide layout segmentation if requested
+        if command == 'hide':
+
+            # Re-draw the layout
+            segmentation = draw_layout(image_path, annotation, height=480,
+                                       hide=True)
+
+            # Flag the annotation as hidden
+            hide = True
+
+            continue
+
+        # Show layout segmentation if requested
+        if command == 'show':
+
+            # Re-draw the layout
+            segmentation = draw_layout(image_path, annotation, height=480,
+                                       hide=False)
+
+            # Flag the annotation as visible
+            hide = False
+
+            continue
+
+        # Check if some elements should be highlighted in the segmentation
+        if command and command.split()[0] == 'show':
+
+            # Prepare user input
+            user_input = prepare_input(command, from_item=1)
+
+            # Validate input against current graph
+            valid = validate_input(user_input, diagram.layout_graph)
+
+            # Proceed if the input is valid
+            if valid:
+
+                # Convert input to uppercase
+                user_input = [u.upper() for u in user_input]
+
+                # Re-draw the layout
+                segmentation = draw_layout(image_path, annotation, height=480,
+                                           hide=False, point=user_input)
+
+                continue
+
+            # If the user input is not valid, continue
+            if not valid:
+
+                continue
+
+
+    # Close plot
+    plt.close()
 
 # Save the output DataFrame
 sample.to_pickle(output_path)
