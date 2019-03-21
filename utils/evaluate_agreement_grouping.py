@@ -9,7 +9,7 @@ To continue annotation from a previous session, give the path to the existing
 DataFrame to the -o/--output argument.
 
 Usage:
-    python evaluate_agreement_group.py -a annotation.pkl -o output.pkl
+    python evaluate_agreement_grouping.py -a annotation.pkl -o output.pkl
     -s sample.pkl -i path_to_ai2d_images/
 
 Arguments:

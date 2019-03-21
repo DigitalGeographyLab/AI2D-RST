@@ -174,7 +174,7 @@ def get_node_dict(graph, kind=None):
         graph: A NetworkX Graph.
         kind: A string defining what to include in the dictionary. 'node'
               returns only conn_nodes and 'group' returns only groups. By
-              default, the function returns all conn_nodes defined in the graph.
+              default, the function returns all nodes defined in the graph.
 
     Returns:
         A dictionary with node names as keys and kind as values.

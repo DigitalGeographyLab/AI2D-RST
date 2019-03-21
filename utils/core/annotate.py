@@ -411,7 +411,8 @@ def macro_group(graph, user_input):
                                 # Prepare the input for validation
                                 entry = prepare_input(entry, from_item=0)
 
-                                # Validate the input for both conn_nodes and groups
+                                # Validate the input for both conn_nodes and
+                                # groups
                                 valid = validate_input(entry, graph,
                                                        groups=True)
 

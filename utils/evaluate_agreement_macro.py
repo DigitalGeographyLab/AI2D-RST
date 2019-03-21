@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
 """
-This script loads examples from the RST annotation in the AI2D-RST dataset and
-presents them to the annotator. The resulting description is used for measuring
-agreement between the annotators.
+This script loads examples from the macro-group annotation in the AI2D-RST
+dataset and presents them to the annotator. The resulting description is used
+for measuring agreement between the annotators.
 
 To continue annotation from a previous session, give the path to the existing
 DataFrame to the -o/--output argument.
 
 Usage:
-    python evaluate_agreement_rst.py -a annotation.pkl -o output.pkl
+    python evaluate_agreement_macro.py -a annotation.pkl -o output.pkl
     -s sample.pkl -i path_to_ai2d_images/
 
 Arguments:
@@ -29,7 +29,7 @@ Returns:
 # Import packages
 from colorama import Fore, Style, init
 from core.draw import *
-from core.interface import rst_relations
+from core.interface import macro_groups
 from core.parse import *
 from pathlib import Path
 import argparse
@@ -98,7 +98,7 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
 
     # Check if annotation has already been performed
     try:
-        if row['annotation'] in [v['name'] for k, v in rst_relations.items()]:
+        if row['annotation'] in [v for k, v in macro_groups.items()]:
 
             continue
 
@@ -118,7 +118,7 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
     image_path = os.path.join(images_path, row['image_name'])
 
     # Print status message
-    print(Fore.YELLOW + "[INFO] Now processing RST relation {}/{} from {}."
+    print(Fore.YELLOW + "[INFO] Now processing macro-group {}/{} from {}."
           .format(i, len(sample), image_name) + Style.RESET_ALL)
 
     # Fetch the layout annotation from the original DataFrame
@@ -130,35 +130,36 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
     # Get the AI2D Diagram object
     diagram = original_row['diagram'].item()
 
-    # Generate a dictionary of RST relations present in the graph
-    relation_ix = get_node_dict(diagram.rst_graph, kind='relation')
+    # Check if the macro-group refers to a group
+    if row['node_type'] == 'group':
 
-    # Loop through current RST relations and rename for convenience.
-    relation_ix = {"R{}".format(i): k for i, (k, v) in
-                   enumerate(relation_ix.items(), start=1)}
+        # Generate a dictionary mapping group aliases to IDs
+        group_dict = replace_aliases(diagram.layout_graph, 'group')
 
-    # Get the relation shown to the user
-    for k, v in relation_ix.items():
+        # Get the relation shown to the user
+        for k, v in group_dict.items():
 
-        # Find the item corresponding to the row identifier for RST relation
-        if v == row['id']:
+            # Find the item corresponding to the row identifier for RST relation
+            if v == row['id']:
 
-            # Assign the abbreviated ID used in the visualisation into variable
-            abbrv_id = k
+                # Assign the abbreviated ID used in the visualisation into
+                # variable
+                abbrv_id = k.upper()
 
-    # Create a dictionary for highlighting the RST relation
-    rst_highlight = {row['id']: 'aquamarine'}
+    # Otherwise, simply assign the node_id to abbrv_id in 'mg_prompt' below
+    else:
+
+        abbrv_id = row['id']
 
     # Draw the annotation and highlight the source and the target
     segmentation = draw_layout(image_path, annotation, height=480)
 
-    # Draw the graph using RST mode
-    rst_graph = draw_graph(diagram.rst_graph, dpi=100, mode='rst',
-                           highlight=rst_highlight)
+    # Draw the graph
+    layout_graph = draw_graph(diagram.layout_graph, dpi=100, mode='layout')
 
     # Define prompt for user input
-    rst_prompt = Fore.RED + "[RST] How would you annotate relation {}? " \
-                            "".format(abbrv_id) + Style.RESET_ALL
+    mg_prompt = Fore.RED + "[GROUPING] Which macro-group would you assign to " \
+                           "{}? ".format(abbrv_id) + Style.RESET_ALL
 
     # Set up flag a for tracking whether annotation is hidden
     hide = False
@@ -167,7 +168,7 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
     while not annotation_complete:
 
         # Join the graph and the layout structure horizontally
-        preview = np.hstack((segmentation, rst_graph))
+        preview = np.hstack((segmentation, layout_graph))
 
         # Show the annotation
         cv2.imshow("Annotation", preview)
@@ -176,11 +177,11 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
         command = None
 
         # Ask for initial input
-        is_rst = input(rst_prompt)
+        is_mg = input(mg_prompt)
 
         # Split the input to check for commands
         try:
-            is_command = is_rst.split()[0]
+            is_command = is_mg.split()[0]
 
         # Catch error from pressing enter with no input
         except IndexError:
@@ -191,16 +192,16 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
         if is_command in commands:
 
             # Set command variable
-            command = is_rst
+            command = is_mg
 
-        # If the input string is a valid shorthand code for an RST relation
-        if is_rst in rst_relations.keys():
+        # If the input string is a valid shorthand code for a macro-group
+        if is_mg in macro_groups.keys():
 
-            # Fetch the connection from the list
-            relation = rst_relations[is_rst]['name']
+            # Fetch the macro-group from the dictionary
+            macro_group = macro_groups[is_mg]
 
             # Save the input to DataFrame
-            sample.at[ix, 'annotation'] = str(relation)
+            sample.at[ix, 'annotation'] = str(macro_group)
 
             # Set annotation to complete
             annotation_complete = True
@@ -208,12 +209,13 @@ for i, (ix, row) in enumerate(sample.iterrows(), start=1):
         # Check if user requests help
         if command == 'help':
 
-            print(Fore.YELLOW + "[INFO] VALID RELATIONS INCLUDE: " +
+            print(Fore.YELLOW + "[INFO] VALID MACRO-GROUPS INCLUDE: " +
                   Style.RESET_ALL)
 
-            # Loop over the RST relations and print information
-            for k, v in rst_relations.items():
-                print(Fore.YELLOW + "[INFO] {} ({})".format(k, v['name'])
+            # Loop over the macro-groups and print information
+            for k, v in macro_groups.items():
+
+                print(Fore.YELLOW + "[INFO] {} ({})".format(k, v)
                       + Style.RESET_ALL)
 
             # Reset command variable
