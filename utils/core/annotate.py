@@ -199,7 +199,7 @@ def create_relation(rst_graph, user_input):
                     rst_graph.add_edge(new_rel_id, origin,
                                        kind='nucleus')
 
-                # If all nuclei are conn_nodes, draw edges from relation to
+                # If all nuclei are nodes, draw edges from relation to
                 # nuclei
                 else:
 
@@ -210,17 +210,17 @@ def create_relation(rst_graph, user_input):
 
 def group_nodes(graph, user_input):
     """
-    A function for grouping together conn_nodes of a graph, which are included in
+    A function for grouping together nodes of a graph, which are included in
     the accompanying list.
 
     Parameters:
         graph: A NetworkX Graph.
-        user_input: A list of valid conn_nodes in the graph.
+        user_input: A list of valid nodes in the graph.
 
     Returns:
         An updated NetworkX Graph.
     """
-    # Create a dictionary of conn_nodes in the graph
+    # Create a dictionary of nodes in the graph
     node_dict = get_node_dict(graph)
 
     # Check user input against the node dictionary for input types
@@ -249,7 +249,7 @@ def group_nodes(graph, user_input):
         # Add the new node to the graph
         graph.add_node(new_node, kind='group')
 
-        # Add edges from conn_nodes in the user input to the new node
+        # Add edges from nodes in the user input to the new node
         for valid_elem in user_input:
 
             graph.add_edge(valid_elem.upper(), new_node)
@@ -257,12 +257,12 @@ def group_nodes(graph, user_input):
 
 def macro_group(graph, user_input):
     """
-    A function for assigning macro-grouping information to conn_nodes in the
+    A function for assigning macro-grouping information to nodes in the
     graph.
 
     Parameters:
         graph: A NetworkX Graph.
-        user_input: A list of valid conn_nodes in the graph.
+        user_input: A list of valid nodes in the graph.
 
     Returns:
         An updated NetworkX graph.
@@ -284,7 +284,7 @@ def macro_group(graph, user_input):
 
         return
 
-    # If the input is valid, add macro grouping information to the conn_nodes
+    # If the input is valid, add macro grouping information to the nodes
     if macro_group_type in valid_macro_groups:
 
         # Check if formatting is needed in case the input is an abbreviation
@@ -411,8 +411,7 @@ def macro_group(graph, user_input):
                                 # Prepare the input for validation
                                 entry = prepare_input(entry, from_item=0)
 
-                                # Validate the input for both conn_nodes and
-                                # groups
+                                # Validate the input for both nodes and groups
                                 valid = validate_input(entry, graph,
                                                        groups=True)
 
@@ -466,7 +465,7 @@ def macro_group(graph, user_input):
                         # Prepare the input for validation
                         axis_label = prepare_input(axis_label, from_item=0)
 
-                        # Validate the input for both conn_nodes and groups
+                        # Validate the input for both nodes and groups
                         valid = validate_input(axis_label, graph, groups=True)
 
                         # If the the input is valid, proceed
@@ -501,7 +500,7 @@ def macro_group(graph, user_input):
                     # Add table information to node
                     nx.set_node_attributes(graph, label_data, 'table_labels')
 
-        # Add macro grouping information to the graph conn_nodes
+        # Add macro grouping information to the graph nodes
         nx.set_node_attributes(graph, macro_grouping, 'macro_group')
 
         # Print status message

@@ -179,7 +179,7 @@ def process_command(user_input, mode, diagram, current_graph):
             # Remove grouping edges from current graph
             current_graph.remove_edges_from(edge_bunch)
 
-        # Find conn_nodes without edges (isolates)
+        # Find nodes without edges (isolates)
         isolates = list(nx.isolates(current_graph))
 
         # Remove isolates
@@ -227,7 +227,7 @@ def process_command(user_input, mode, diagram, current_graph):
             # Remove grouping edges from current graph
             current_graph.remove_edges_from(edge_bunch)
 
-        # Find conn_nodes without edges (isolates)
+        # Find nodes without edges (isolates)
         isolates = list(nx.isolates(current_graph))
 
         # Remove isolates
@@ -284,7 +284,7 @@ def process_command(user_input, mode, diagram, current_graph):
     # If requested, remove isolates from the current graph
     if command == 'isolate':
 
-        # Find conn_nodes without edges (isolates)
+        # Find nodes without edges (isolates)
         isolates = list(nx.isolates(current_graph))
 
         # Remove isolates
@@ -338,7 +338,7 @@ def process_command(user_input, mode, diagram, current_graph):
 
         return
 
-    # If requested, removing grouping conn_nodes
+    # If requested, removing grouping nodes
     if command == 'ungroup':
 
         # Retrieve a list of edges in the graph
@@ -438,7 +438,7 @@ def process_command(user_input, mode, diagram, current_graph):
 
         return
 
-    # If requested, delete grouping conn_nodes
+    # If requested, delete grouping nodes
     if command == 'rm':
 
         # Prepare input for validation
@@ -480,7 +480,7 @@ def process_command(user_input, mode, diagram, current_graph):
                 user_input = [rel_dict[u] if u in rel_dict.keys()
                               else u.upper() for u in user_input]
 
-            # Remove the designated conn_nodes from the graph
+            # Remove the designated nodes from the graph
             current_graph.remove_nodes_from(user_input)
 
             # Flag the graph for re-drawing
@@ -503,13 +503,13 @@ def process_command(user_input, mode, diagram, current_graph):
         # If the input is valid, proceed
         if valid:
 
-            # Set up a placeholder list for split conn_nodes
+            # Set up a placeholder list for split nodes
             split_list = []
 
             # Get properties of the node to duplicate
             for n in user_input:
 
-                # Generate new identifiers for split conn_nodes by taking the node
+                # Generate new identifiers for split nodes by taking the node
                 # name in uppercase and adding the number of split after stop.
                 split_ids = [n.upper() + '.{}'.format(i)
                              for i in range(1, n_splits + 1)]
@@ -529,7 +529,7 @@ def process_command(user_input, mode, diagram, current_graph):
                 # Remove node from the RST graph
                 current_graph.remove_node(n.upper())
 
-            # Add split conn_nodes to the graph
+            # Add split nodes to the graph
             current_graph.add_nodes_from(split_list)
 
             # Flag the graph for re-drawing
@@ -553,10 +553,10 @@ info = {'layout': "---\n"
                   "\n"
                   "Example of valid input: b1, a1, t1\n\n"
                   ""
-                  "This command groups conn_nodes B1, A1 and T1 together under a\n"
+                  "This command groups nodes B1, A1 and T1 together under a\n"
                   "grouping node.\n"
                   "---\n"
-                  "Grouping conn_nodes may be deleted using command rm.\n\n"
+                  "Grouping nodes may be deleted using command rm.\n\n"
                   "Example command: rm g1\n\n"
                   "This command deletes group G1. Multiple groups can be\n"
                   "deleted by entering multiple identifiers, e.g. rm g1 g2 g3\n"
@@ -583,11 +583,11 @@ info = {'layout': "---\n"
                "This creates multiple instances of the same node, which can \n"
                "be picked out as parts of different rhetorical relations.\n\n"
                "Example command: split 2 b1\n\n"
-               "This command splits node B1 into two conn_nodes, which are given\n"
+               "This command splits node B1 into two nodes, which are given\n"
                "identifiers B1.1 and B1.2.\n"
                "---\n",
         'connectivity': "---\n"
-                        "Drawing a connection between conn_nodes requires three\n"
+                        "Drawing a connection between nodes requires three\n"
                         "types of information: source, connection type and\n"
                         "target.\n\n"
                         "The sources and targets must be valid identifiers,\n"
@@ -621,7 +621,7 @@ info = {'layout': "---\n"
 # Define a dictionary of various prompts presented to user during annotation
 prompts = {'nucleus_id': "[RST] Enter the identifier of nucleus: ",
            'satellite_id': "[RST] Enter the identifier(s) of satellite(s): ",
-           'layout_default': "[GROUPING] Please enter conn_nodes to group or a valid"
+           'layout_default': "[GROUPING] Please enter nodes to group or a valid"
                              " command: ",
            'comment': "Enter comment: ",
            'rst_default': "[RST] Please enter a valid command: ",
