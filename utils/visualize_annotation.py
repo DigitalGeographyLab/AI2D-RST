@@ -57,13 +57,6 @@ args = vars(ap.parse_args())
 ann_path = args['annotation']
 images_path = args['images']
 
-# Parse arguments
-args = vars(ap.parse_args())
-
-# Assign arguments to variables
-ann_path = args['annotation']
-images_path = args['images']
-
 # Verify the input paths, print error and exit if not found
 if not Path(ann_path).exists():
 
